@@ -31,17 +31,13 @@
         .menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
         .menu-item-card { position: relative; background: #fff; border: 1.5px solid #e0e0e0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02); gap: 10px; overflow: hidden; }
         
-        /*.sauce-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }*/
-        /*.sauce-item-card { position: relative; background: #fafafa; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.01); overflow: hidden; }*/
-        /* ★ [수정됨] 추가 소스 영역: 2열 그리드 (가로로 2개씩 콤팩트하게 배치) */
         .sauce-grid { 
             display: grid; 
-            grid-template-columns: repeat(2, 1fr); /* 가로로 2등분 균등 배치 */
-            gap: 10px; /* 카드와 카드 사이 간격 */
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
             margin-top: 10px; 
         }
         
-        /* ★ [수정됨] 2열에 맞춘 아담한 소스 카드 박스 디자인 */
         .sauce-item-card { 
             position: relative; 
             background: #fafafa; 
@@ -58,7 +54,6 @@
         .sauce-info { display: flex; flex-direction: column; gap: 2px; flex: 1; z-index: 1; }
         .sauce-title { font-weight: bold; font-size: 16px; color: #333; }
         .sauce-price { font-size: 14.5px; color: #555; font-weight: bold; }
-        /* ★ [추가됨] 소스 카드 하단 수량 조절 버튼 영역 중앙 정렬 */
         .sauce-card-bottom {
             display: flex;
             justify-content: center;
@@ -67,64 +62,6 @@
             padding-top: 8px;
         }
 
-        .sold-out-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.55);
-            backdrop-filter: blur(0.5px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-            cursor: pointer;
-        }
-        .sold-out-badge {
-            background: rgba(213, 0, 0, 0.92);
-            color: #ffffff;
-            font-size: 20px;
-            font-weight: 900;
-            padding: 8px 18px;
-            border-radius: 30px;
-            box-shadow: 0 4px 12px rgba(213, 0, 0, 0.35);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            letter-spacing: -0.5px;
-            border: 2px solid #ffffff;
-            pointer-events: none;
-        }
-
-        .sold-out-badge-sauce {
-            background: rgba(213, 0, 0, 0.92);
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 900;
-            padding: 5px 14px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(213, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            border: 1.5px solid #ffffff;
-            pointer-events: none;
-        }
-
-        .reserved-badge-sauce {
-            background: rgba(46, 125, 50, 0.92);
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 900;
-            padding: 4px 12px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            border: 1.5px solid #ffffff;
-            pointer-events: none;
-        }
-        
         .menu-card-top { display: flex; align-items: flex-start; gap: 15px; width: 100%; }
         .menu-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; flex-shrink: 0; }
         
@@ -153,8 +90,27 @@
         .modal-btn { background-color: #d32f2f; color: white; border: none; padding: 15px; font-size: 17px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; }
         .close-btn { background-color: #6c757d; margin-top: 8px; }
         
-        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 9999; padding: 20px; cursor: pointer; }
-        #modalImage { max-width: 100%; max-height: 85vh; border-radius: 12px; object-fit: contain; }
+        /* 💡 다중 이미지 가로 스크롤(스와이프) 모달 스타일 */
+        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        #modalImageContainer {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 70vh;
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        #modalImageContainer img {
+            flex: 0 0 100%;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            scroll-snap-align: center;
+            border-radius: 8px;
+        }
 
         .kakao-btn { background-color: #fee500; color: #3c1e1e; border: 1.5px solid #dfca00; padding: 12px 14px; font-size: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; display: block; text-decoration: none; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
         .share-link-btn { background-color: #f1f8ff; color: #0d47a1; border: 1.5px solid #bbe2ff; padding: 12px 14px; font-size: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: background-color 0.2s; line-height: 1.4; text-align: center; }
@@ -276,9 +232,41 @@
             flex: 1;
             line-height: 1.4;
         }
+        .sticky-submit-wrapper {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            padding: 12px 0 5px 0;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            z-index: 99;
+        }
+        .container {
+            padding-bottom: 90px !important; 
+        }
     </style>
 </head>
 <body>
+
+<!-- 🎨 감성적인 서비스 점검 중 화면 -->
+<div id="maintenanceOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #fafafa; z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; text-align: center;">
+    <div style="background: #ffffff; border-radius: 20px; padding: 40px 24px; max-width: 420px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
+        <div style="font-size: 54px; margin-bottom: 16px;">🛠️</div>
+        <h2 style="font-size: 22px; color: #222; font-weight: 700; margin-bottom: 12px; word-break: keep-all;">장날동천 시스템 점검 안내</h2>
+        <p style="font-size: 14.5px; color: #666; line-height: 1.6; margin-bottom: 24px; word-break: keep-all;">
+            더 쾌적하고 안정적인 예약 서비스를 제공하기 위해<br>현재 <b>시스템 점검 및 업데이트</b>를 진행 중입니다.
+        </p>
+        <div style="background: #fff8e1; border: 1px solid #ffe0b2; border-radius: 12px; padding: 14px; font-size: 13.5px; color: #d84315; margin-bottom: 28px; line-height: 1.5;">
+            ⏰ 점검 중에는 신규 예약 및 예약 변경이 일시 중단됩니다. 이용에 불편을 드려 죄송합니다.
+        </div>
+        
+        <!-- 💡 사장님 전용 비밀 인증 영역 -->
+        <button type="button" onclick="openAdminAuthPrompt()" style="background: transparent; border: none; color: #bbb; font-size: 12px; text-decoration: underline; cursor: pointer;">
+            관리자 테스트 접속
+        </button>
+    </div>
+</div>
 
 <div class="container">
     <h1>장날동천 돈가스 예약</h1>
@@ -302,28 +290,23 @@
             운영 시간 외에는 예약을 받지 않으니 양해 부탁드립니다! 🙏
         </div>
 
-        <!-- 휑한 여백을 채워줄 깔끔한 하단 편의 버튼 영역 -->
         <div style="margin-top: 25px; background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 15px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); text-align: left;">
             <div style="font-size: 15px; font-weight: bold; color: #444; margin-bottom: 12px; text-align: center;">
                 💡 영업 외 시간에 필요한 메뉴 바로가기
             </div>
             
-            <!-- 1. 1:1 문의 -->
             <a href="https://open.kakao.com/o/s5cl8IRi" target="_blank" class="kakao-btn" style="margin-top: 0;">
                 💬 삼촌한테 1:1 문의하기
             </a>
 
-            <!-- 2. 바탕화면 앱 추가 가이드 -->
             <button type="button" class="pwa-guide-btn" onclick="openPwaGuideModal()">
                 📱 폰 바탕화면에 단골 앱으로 추가하기
             </button>
 
-            <!-- 3. 공지사항 / 꿀팁 안내 (새로 추가된 4번째 유용한 버튼) -->
             <button type="button" class="notice-extra-btn" onclick="openNoticeModal()">
                 📢 단골 혜택 & 이용 꿀팁 보기
             </button>
 
-            <!-- 4. 링크 공유 -->
             <button type="button" class="share-link-btn" onclick="shareStoreLink()">
                 📤 장날동천 돈가스 예약 링크 친구에게 공유하기
             </button>
@@ -339,8 +322,8 @@
         
         <div class="order-info-card">
             <div class="order-info-row">
-                <span class="order-info-label">예약자</span>
-                <span class="order-info-value" style="color: #2e7d32;"><span id="displayNick"></span> <span style="font-size: 13px; color: #777; font-weight: normal;">(<span id="displayPhone"></span>)</span></span>
+                <span class="order-info-label">닉네임/전화번호</span>
+                <span class="order-info-value" id="displayNick" style="color: #2e7d32;"></span>
             </div>
 
             <div class="order-info-row">
@@ -419,10 +402,9 @@
         <div style="display: flex; flex-direction: column; gap: 9px;">
             <button type="button" onclick="executeQuickReorder()" style="background-color: #2e7d32; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
             <button type="button" onclick="loadPreviousToForm()" style="background-color: #0288d1; color: white; border: none; padding: 13px; font-size: 15.5px; font-weight: bold; border-radius: 10px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">✏️ 직전 메뉴 불러와서 수정하기</button>
-            <!-- 나중에 필요할지 몰라 남겨두는 주석 처리된 버튼 -->
-    <!-- <button type="button" onclick="dismissQuickReorder()" style="background-color: #6c757d; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; white-space: nowrap;">처음부터 새로 주문하기</button> -->
         </div>
     </div>
+
     <form id="orderForm">
         <div class="form-group">
             <label>1. 조리 방식을 선택해주세요 *</label>
@@ -439,8 +421,8 @@
         </div>
 
         <div class="form-group">
-            <label for="nickname">2. 카톡 닉네임 또는 성함 *</label>
-            <input type="text" id="nickname" placeholder="예: 간식7108" required>
+            <label for="nickname">2. 카톡 닉네임+전화번호 뒷자리 *</label>
+            <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
             <div style="margin-top: 8px; font-size: 13.5px; color: #c62828; background: #fff8e1; padding: 10px 12px; border-radius: 8px; border: 1.5px solid #ffe0b2; line-height: 1.4;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
                 꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라질 수 있으니 변경하지 말고 쭉 유지해 주세요!
@@ -448,17 +430,12 @@
         </div>
 
         <div class="form-group">
-            <label for="phone">3. 전화번호 뒷자리 (4자리) *</label>
-            <input type="text" id="phone" maxlength="4" placeholder="예: 7108" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);" required>
-        </div>
-
-        <div class="form-group">
-            <label>4. 메뉴 선택 및 수량 조절 *</label>
+            <label>3. 메뉴 선택 및 수량 조절 *</label>
             <div id="menuCardContainer" class="menu-grid"></div>
         </div>
 
         <div class="form-group">
-            <label>5. 추가 소스 선택</label>
+            <label>4. 추가 소스 선택</label>
             <div id="sauceCardContainer" class="sauce-grid"></div>
 
             <div id="mainSelectedSummaryBox" class="selected-summary-box" style="margin-top: 15px;">
@@ -472,32 +449,33 @@
         </div>
 
         <div class="form-group" id="pickupFormGroup">
-            <label for="pickupTime">6. 픽업 시간 선택 *</label>
+            <label for="pickupTime">5. 픽업 시간 선택 *</label>
             <select id="pickupTime" required onchange="handleTimeChange(this, 'mainBusyInfoBox')"></select>
             <div id="mainBusyInfoBox" class="busy-info-box"></div>
         </div>
 
-        <button type="submit" id="submitBtn" class="submit-btn">예약 완료하기</button>
-        <button type="button" class="share-link-btn" onclick="shareStoreLink()">장날동천 돈가스 예약 링크<br>친구에게 카카오톡으로 공유하기</button>
+        <div class="sticky-submit-wrapper">
+            <button type="submit" id="submitBtn" class="submit-btn" style="margin-top: 0;">예약 완료하기</button>
+            <button type="button" class="share-link-btn" style="margin-top: 8px;" onclick="shareStoreLink()">장날동천 돈가스 예약 링크<br>친구에게 카카오톡으로 공유하기</button>
+        </div>
     </form>
 </div>
 
-<!-- 단골 혜택 & 이용 꿀팁 안내 모달 (새로 추가) -->
+<!-- 모달들 -->
 <div id="noticeModal" class="modal" style="z-index: 10035;">
     <div class="modal-content" style="text-align: left;">
         <h3 style="color: #2e7d32; text-align: center; margin-bottom: 15px;">📢 단골 혜택 & 이용 안내</h3>
         <div style="font-size: 15.5px; color: #333; line-height: 1.7; margin-bottom: 20px;">
             • <b>온라인 예약 시간</b> <br>매일 오후1시부터 오후6시 30분까지 가능합니다.(주말&공휴일 제외)<br>
-            • <b>돈가스 픽업 시간</b> <br>매일 오후3시부터 오후8시까지 가능합니다. <br>6시 30분에 모든 주문건을 만들어 놓기때문에 8시에 찾아가실 수는 있으나 음식이 식을 수 있습니다.<br>돈가스 준비시간과 마감시간이 있기 때문에 예약시간과 픽업시간이 다르게 되어있습니다.<br>
+            • <b>돈가스 픽업 시간</b> <br>매일 오후3시부터 오후8시까지 가능합니다. <br>6시 30분에 모든 주문건을 만들어 놓기때문에 8시에 찾아가실 수는 있으나 음식이 식을 수 있습니다.<br>
             • <b>방문 횟수 적립</b> <br>최초 예약 닉네임과 전화번호를 그대로 유지하시면 단골 방문 횟수가 자동으로 쌓여 다양한 혜택을 드려요!<br>
-            • <b>픽업 안내</b> <br>예약 시간에 맞춰 오셔서 휴대폰 번호 뒷자리 4자리를 말씀해 주세요.<br>
+            • <b>픽업 안내</b> <br>예약 시간에 맞춰 오셔서 닉네임과 휴대폰 번호를 말씀해 주세요.<br>
             • <b>문의 사항</b> <br>영업 외 시간에도 카카오톡 1:1 문의를 남겨주시면 확인 후 답변드립니다!
         </div>
         <button class="modal-btn" style="background-color: #2e7d32; margin-top: 0;" onclick="closeNoticeModal()">확인했어요</button>
     </div>
 </div>
 
-<!-- 홈 화면 추가 가이드 안내 모달 -->
 <div id="pwaGuideModal" class="modal" style="z-index: 10030;">
     <div class="modal-content" style="text-align: left;">
         <h3 style="color: #2e7d32; text-align: center; margin-bottom: 15px;">📱 폰 바탕화면에 앱 추가하기</h3>
@@ -506,8 +484,13 @@
     </div>
 </div>
 
+<!-- 💡 다중 이미지 가로 스크롤 확대 모달 창 -->
 <div id="imageModal" onclick="closeImageModal()">
-    <img id="modalImage" src="" alt="실물 확대 사진">
+    <div style="position:relative; width:90%; max-width:500px; text-align:center;" onclick="event.stopPropagation()">
+        <div id="modalImageContainer"></div>
+        <div style="margin-top: 15px; color: #fff; font-size: 14px;">↔ 좌우로 밀어서 다른 사진도 확인하세요</div>
+        <button onclick="closeImageModal()" style="margin-top: 15px; padding: 8px 20px; background:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">닫기</button>
+    </div>
 </div>
 
 <div id="customAlertModal" class="modal" style="z-index: 10010;">
@@ -535,7 +518,7 @@
     <div class="modal-content">
         <h3 style="color:#2e7d32; margin-top:0;">예약 완료</h3>
         <p style="font-size:17px; line-height:1.6; text-align:left; color:#333;">
-            픽업 오셔서 <b>휴대폰 번호 뒷자리</b> 말씀해 주시고 <b>결제</b> 후 돈가스 받아가시면 됩니다!
+            픽업 오셔서 <b>예약하신 닉네임/전화번호</b> 말씀해 주시고 <b>결제</b> 후 돈가스 받아가시면 됩니다!
         </p>
         <button class="modal-btn" style="background-color:#2e7d32;" onclick="reloadAfterSuccess();">확인</button>
     </div>
@@ -637,7 +620,9 @@
                 <div id="editBusyInfoBox" class="busy-info-box"></div>
             </div>
             
-            <button id="updateBtn" class="modal-btn" style="background-color:#2e7d32; margin-top:15px; padding:12px;" onclick="updateReservation()">변경된 내용 저장하기</button>
+            <div class="sticky-submit-wrapper" style="background: white;">
+                <button id="updateBtn" class="modal-btn" style="background-color:#2e7d32; margin-top:0; padding:15px;" onclick="updateReservation()">변경된 내용 저장하기</button>
+            </div>
         </div>
 
         <button id="searchCloseBtn" class="modal-btn close-btn" onclick="closeSearchModal()">닫기</button>
@@ -646,6 +631,8 @@
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
+    
+    let serverMaintenanceCode = "5333";
 
     let menuList = [];
     let sauceList = [];
@@ -653,7 +640,7 @@
     let sauceItems = {};    
     let editOrderItems = {};  
     let editSauceItems = {};  
-    // 새로 추가될 픽업 시간 동적 변수
+    
     let globalPickupStartHour = 15;
     let globalPickupStartMin = 0;
     let globalPickupCloseHour = 20;
@@ -667,7 +654,6 @@
     let currentFoundRowIndex = null;
     let cachedEventMenuList = ["돈까스 1개", "새우까스 1개", "안심까스 1개"];
     let globalUserNickname = "";
-    let globalUserPhone = "";
     
     let globalFortuneList = []; 
     let globalPickupTimesList = []; 
@@ -680,13 +666,39 @@
     const newPickupSelect = document.getElementById('newPickupTime');
 
     window.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('out')) {
+            localStorage.removeItem('isDonkatsuAdmin');
+            alert('🔒 관리자 인증이 해제되었습니다. 이제 일반 고객 화면으로 테스트됩니다.');
+            window.location.href = window.location.pathname;
+            return;
+        }
+
         const savedNick = localStorage.getItem('savedNickname');
-        const savedPhone = localStorage.getItem('savedPhone');
-        if (savedNick) document.getElementById('nickname').value = savedNick;
-        if (savedPhone) document.getElementById('phone').value = savedPhone;
+        if (savedNick) {
+            document.getElementById('nickname').value = savedNick;
+        }
 
         checkAndRenderState();
     });
+
+    function openAdminAuthPrompt() {
+        const input = prompt("관리자 긴급코드를 입력하세요:");
+        
+        if (!serverMaintenanceCode || serverMaintenanceCode.trim() === "") {
+            alert("⚠️ 구글 시트 B10 셀에 긴급코드가 설정되어 있지 않습니다. 시트를 확인해 주세요!");
+            return;
+        }
+
+        if (input && input.trim() === serverMaintenanceCode.trim()) {
+            localStorage.setItem("isDonkatsuAdmin", "true");
+            alert("🔓 사장님 인증 완료! 점검 중 상태여도 자유롭게 테스트 가능합니다.");
+            document.getElementById("maintenanceOverlay").style.display = "none";
+            location.reload();
+        } else if (input !== null) {
+            alert("긴급코드가 올바르지 않습니다.");
+        }
+    }
 
     function getTodayDateString() {
         const d = new Date();
@@ -702,7 +714,6 @@
         return cleanNum.toLocaleString() + '원';
     }
 
-    // 공지사항 모달 제어 함수 (새로 추가)
     function openNoticeModal() {
         document.getElementById('noticeModal').style.display = 'flex';
     }
@@ -769,10 +780,8 @@
         const btn = document.getElementById('fortuneOpenBtn');
         const card = document.getElementById('fortuneCard');
 
-        if (!section) return; // 섹션이 없으면 안전하게 종료
+        if (!section) return;
 
-        // ★ 핵심: globalFortuneEnabled가 false(즉, 스프레드시트 설정이 Off인 경우)라면 
-        // 하루 한 번 제한(날짜 체크)을 아예 건너뛰고 계속 띄웁니다!
         const isTestingMode = (typeof globalFortuneEnabled !== 'undefined' && globalFortuneEnabled === false);
 
         if (!isTestingMode) {
@@ -785,7 +794,6 @@
             }
         }
 
-        // On 상태(평소)이거나 테스트 모드(Off)일 때 화면에 표시
         section.style.display = 'block';
         if (btn) btn.style.display = 'block';
         if (card) {
@@ -856,12 +864,7 @@
         }
     }
 
-    /*function dismissQuickReorder() {
-        document.getElementById('quickReorderBox').style.display = 'none';
-        document.getElementById('topNoticeBox').style.display = 'block';
-    }*/
-
-function loadPreviousToForm() {
+    function loadPreviousToForm() {
         const lastOrderStr = localStorage.getItem('lastOrderSummary');
         const lastSauce = localStorage.getItem('lastOrderSauce') || "없음";
         const lastPickupTime = localStorage.getItem('lastOrderPickupTime');
@@ -869,7 +872,6 @@ function loadPreviousToForm() {
         parseMenuStringToObj(lastOrderStr, orderItems);
         parseSauceStringToObj(lastSauce, sauceItems);
 
-        // 메뉴 카드와 소스 카드를 순서대로 렌더링하여 저장된 수량이 카드에 즉시 반영되도록 수정!
         renderMenuCards();
         if (typeof renderSauceCards === 'function') {
             renderSauceCards();
@@ -901,11 +903,10 @@ function loadPreviousToForm() {
 
     function executeQuickReorder() {
         const nickname = document.getElementById('nickname').value.trim();
-        const phone = document.getElementById('phone').value.trim();
         const selectedTime = quickPickupSelect.value;
 
-        if (!nickname || !phone) {
-            showCustomAlert('카톡 닉네임과 전화번호 뒷자리를 먼저 입력해 주세요!', '정보 입력 필요');
+        if (!nickname) {
+            showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
             return;
         }
 
@@ -935,7 +936,7 @@ function loadPreviousToForm() {
             time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
             cookType: cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장",
             nickname: nickname,
-            phone: phone,
+            phone: "", 
             menuSummary: lastOrderStr,
             sauce: lastSauce,
             pickupTime: selectedTime,
@@ -943,9 +944,7 @@ function loadPreviousToForm() {
         };
 
         globalUserNickname = nickname;
-        globalUserPhone = phone;
         localStorage.setItem('savedNickname', nickname);
-        localStorage.setItem('savedPhone', phone);
         localStorage.setItem('lastOrderPickupTime', selectedTime);
 
         document.getElementById('orderForm').style.display = 'none';
@@ -997,7 +996,7 @@ function loadPreviousToForm() {
             quickBox.style.display = 'none';
         });
     }
-  
+
     function shareStoreLink() {
         const shareUrl = "https://donkatsu-booking.onrender.com"; 
         
@@ -1048,13 +1047,11 @@ function loadPreviousToForm() {
         document.getElementById('customAlertModal').style.display = 'none';
         if (isCanceledOrNotFound) {
             localStorage.removeItem('savedNickname');
-            localStorage.removeItem('savedPhone');
             localStorage.removeItem('lastOrderSummary');
             localStorage.removeItem('lastOrderSauce');
             localStorage.removeItem('lastOrderPrice');
             localStorage.removeItem('lastOrderPickupTime');
             document.getElementById('nickname').value = "";
-            document.getElementById('phone').value = "";
             document.getElementById('quickReorderBox').style.display = 'none';
             checkAndRenderState();
         }
@@ -1094,127 +1091,121 @@ function loadPreviousToForm() {
         return count;
     }
 
-function initPickupOptions(selectElem, groupElemId, originalExistingTime = "") {
-    if (!selectElem) return;
-    selectElem.innerHTML = '';
-    
-    const now = new Date();
-    const currentTotalMin = now.getHours() * 60 + now.getMinutes();
-    const limitTotalMin = currentTotalMin + (globalPrepMinutes || 0);
-    
-    // 스프레드시트 설정(F1, F2)에서 가져온 동적 픽업 시작/마감 시간 적용
-    const pickupStartHour = globalPickupStartHour;
-    const pickupStartMin = globalPickupStartMin;
-    const pickupCloseHour = globalPickupCloseHour;
-    const pickupCloseMin = globalPickupCloseMin;
+    function initPickupOptions(selectElem, groupElemId, originalExistingTime = "") {
+        if (!selectElem) return;
+        selectElem.innerHTML = '';
+        
+        const now = new Date();
+        const currentTotalMin = now.getHours() * 60 + now.getMinutes();
+        const limitTotalMin = currentTotalMin + (globalPrepMinutes || 0);
+        
+        const pickupStartHour = globalPickupStartHour;
+        const pickupStartMin = globalPickupStartMin;
+        const pickupCloseHour = globalPickupCloseHour;
+        const pickupCloseMin = globalPickupCloseMin;
 
-    const startTotalMin = pickupStartHour * 60 + pickupStartMin;
-    const closeTotalMin = pickupCloseHour * 60 + pickupCloseMin;
-    
-    let availableCount = 0;
-    let firstSelectableVal = "";
-    let originalTimeIncluded = false;
+        const startTotalMin = pickupStartHour * 60 + pickupStartMin;
+        const closeTotalMin = pickupCloseHour * 60 + pickupCloseMin;
+        
+        let availableCount = 0;
+        let firstSelectableVal = "";
+        let originalTimeIncluded = false;
 
-    for (let h = pickupStartHour; h <= pickupCloseHour; h++) {
-        let mStart = (h === pickupStartHour) ? pickupStartMin : 0;
-        let mEnd = (h === pickupCloseHour) ? pickupCloseMin : 55;
+        for (let h = pickupStartHour; h <= pickupCloseHour; h++) {
+            let mStart = (h === pickupStartHour) ? pickupStartMin : 0;
+            let mEnd = (h === pickupCloseHour) ? pickupCloseMin : 55;
 
-        for (let m = mStart; m <= mEnd; m += 5) {
-            const slotTotalMin = h * 60 + m;
-            if (slotTotalMin > closeTotalMin) break; 
-            
-            // 만약 밤 늦은 시간 테스트를 위해 강제로 확인하고 싶다면 아래 현재시간 비교 체크를 잠시 주석 처리하거나 활용하세요.
-            // (평소 운영 시에는 아래 조건이 유지되어야 지나간 시간을 선택하지 않습니다)
-            if (slotTotalMin < currentTotalMin) {
-                // 주의: 밤 9시 47분에 테스트하실 때 이 조건 때문에 막히는 경우라면, 
-                // 테스트 동안만 임시로 'if (slotTotalMin < currentTotalMin)' 조건을 막아두고 테스트하시면 
-                // F1~F2 설정된 시간대가 싹 다 활성화되어 테스트가 가능해집니다!
-                continue;
-            }
-
-            const ampm = h < 12 ? "오전" : "오후";
-            const displayHour = h === 0 ? 12 : (h > 12 ? h - 12 : h);
-            const rawTimeStr = `${ampm} ${displayHour}:${m.toString().padStart(2, '0')}`;
-            
-            if (originalExistingTime && rawTimeStr === originalExistingTime) {
-                originalTimeIncluded = true;
-            }
-
-            const count = getCombinedCountForSlot(slotTotalMin);
-
-            let statusBadge = "";
-            if (count >= 8) {
-                statusBadge = ` (🔥 주문 폭주)`;
-            } else if (count >= 6) {
-                statusBadge = ` (🔴 몰림)`;
-            } else if (count >= 4) {
-                statusBadge = ` (🟠 혼잡)`;
-            }
-
-            const option = document.createElement('option');
-            option.value = rawTimeStr;
-            
-            if (slotTotalMin < limitTotalMin) {
-                option.textContent = `${rawTimeStr} (준비중)`;
-                option.disabled = true;
-                option.style.color = "#aaa";
-                option.style.backgroundColor = "#f1f1f1";
-            } else {
-                option.textContent = rawTimeStr + statusBadge;
-                if (!firstSelectableVal) firstSelectableVal = rawTimeStr;
+            for (let m = mStart; m <= mEnd; m += 5) {
+                const slotTotalMin = h * 60 + m;
+                if (slotTotalMin > closeTotalMin) break; 
                 
+                if (slotTotalMin < currentTotalMin) {
+                    continue;
+                }
+
+                const ampm = h < 12 ? "오전" : "오후";
+                const displayHour = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+                const rawTimeStr = `${ampm} ${displayHour}:${m.toString().padStart(2, '0')}`;
+                
+                if (originalExistingTime && rawTimeStr === originalExistingTime) {
+                    originalTimeIncluded = true;
+                }
+
+                const count = getCombinedCountForSlot(slotTotalMin);
+
+                let statusBadge = "";
                 if (count >= 8) {
-                    option.style.backgroundColor = "#ffebee";
-                    option.style.color = "#c62828";
-                    option.style.fontWeight = "bold";
+                    statusBadge = ` (🔥 주문 폭주)`;
                 } else if (count >= 6) {
-                    option.style.backgroundColor = "#fff3e0";
-                    option.style.color = "#ef6c00";
-                    option.style.fontWeight = "bold";
+                    statusBadge = ` (🔴 몰림)`;
                 } else if (count >= 4) {
-                    option.style.backgroundColor = "#fffde7";
-                    option.style.color = "#f57f17";
-                    option.style.fontWeight = "bold";
+                    statusBadge = ` (🟠 혼잡)`;
+                }
+
+                const option = document.createElement('option');
+                option.value = rawTimeStr;
+                
+                if (slotTotalMin < limitTotalMin) {
+                    option.textContent = `${rawTimeStr} (준비중)`;
+                    option.disabled = true;
+                    option.style.color = "#aaa";
+                    option.style.backgroundColor = "#f1f1f1";
+                } else {
+                    option.textContent = rawTimeStr + statusBadge;
+                    if (!firstSelectableVal) firstSelectableVal = rawTimeStr;
+                    
+                    if (count >= 8) {
+                        option.style.backgroundColor = "#ffebee";
+                        option.style.color = "#c62828";
+                        option.style.fontWeight = "bold";
+                    } else if (count >= 6) {
+                        option.style.backgroundColor = "#fff3e0";
+                        option.style.color = "#ef6c00";
+                        option.style.fontWeight = "bold";
+                    } else if (count >= 4) {
+                        option.style.backgroundColor = "#fffde7";
+                        option.style.color = "#f57f17";
+                        option.style.fontWeight = "bold";
+                    }
+                }
+
+                selectElem.appendChild(option);
+                availableCount++;
+            }
+        }
+        
+        if (originalExistingTime && !originalTimeIncluded) {
+            const option = document.createElement('option');
+            option.value = originalExistingTime;
+            option.textContent = originalExistingTime + " (현재 내 예약 시간)";
+            option.disabled = false;
+            option.style.fontWeight = "bold";
+            option.style.color = "#2e7d32";
+            selectElem.insertBefore(option, selectElem.firstChild);
+            selectElem.value = originalExistingTime;
+        } else if (originalExistingTime && originalTimeIncluded) {
+            for (let i = 0; i < selectElem.options.length; i++) {
+                if (selectElem.options[i].value === originalExistingTime) {
+                    selectElem.options[i].disabled = false;
+                    selectElem.options[i].textContent = originalExistingTime + " (현재 내 예약 시간)";
+                    selectElem.options[i].style.fontWeight = "bold";
+                    selectElem.options[i].style.color = "#2e7d32";
+                    break;
                 }
             }
+            selectElem.value = originalExistingTime;
+        }
 
+        if (availableCount === 0 && !originalExistingTime) {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "예약 가능한 시간이 없습니다";
+            option.disabled = true;
             selectElem.appendChild(option);
-            availableCount++;
+        } else if (!originalExistingTime && firstSelectableVal) {
+            selectElem.value = firstSelectableVal;
         }
     }
-    
-    if (originalExistingTime && !originalTimeIncluded) {
-        const option = document.createElement('option');
-        option.value = originalExistingTime;
-        option.textContent = originalExistingTime + " (현재 내 예약 시간)";
-        option.disabled = false;
-        option.style.fontWeight = "bold";
-        option.style.color = "#2e7d32";
-        selectElem.insertBefore(option, selectElem.firstChild);
-        selectElem.value = originalExistingTime;
-    } else if (originalExistingTime && originalTimeIncluded) {
-        for (let i = 0; i < selectElem.options.length; i++) {
-            if (selectElem.options[i].value === originalExistingTime) {
-                selectElem.options[i].disabled = false;
-                selectElem.options[i].textContent = originalExistingTime + " (현재 내 예약 시간)";
-                selectElem.options[i].style.fontWeight = "bold";
-                selectElem.options[i].style.color = "#2e7d32";
-                break;
-            }
-        }
-        selectElem.value = originalExistingTime;
-    }
-
-    if (availableCount === 0 && !originalExistingTime) {
-        const option = document.createElement('option');
-        option.value = "";
-        option.textContent = "예약 가능한 시간이 없습니다";
-        option.disabled = true;
-        selectElem.appendChild(option);
-    } else if (!originalExistingTime && firstSelectableVal) {
-        selectElem.value = firstSelectableVal;
-    }
-}
 
     function handleTimeChange(selectElem, infoBoxId) {
         const infoBox = document.getElementById(infoBoxId);
@@ -1242,7 +1233,7 @@ function initPickupOptions(selectElem, groupElemId, originalExistingTime = "") {
         }
     }
 
-function formatMenuName(fullName) {
+    function formatMenuName(fullName) {
         let match = fullName.match(/^(세트\d+|모듬세트)(.*)$/);
         if (match) {
             let prefix = match[1].trim();
@@ -1256,7 +1247,7 @@ function formatMenuName(fullName) {
         return `<div class="menu-title">${fullName}</div>`;
     }
 
-function renderSauceCards() {
+    function renderSauceCards() {
         const sauceContainer = document.getElementById('sauceCardContainer');
         const editSauceContainer = document.getElementById('editSauceCardContainer');
 
@@ -1269,18 +1260,16 @@ function renderSauceCards() {
             const card = document.createElement('div');
             card.classList.add('sauce-item-card');
 
-            // sauceItems(메인 주문 소스)와 sauceOrderItems 양쪽을 모두 안전하게 체크하도록 변경!
-let currentQty = 0;
-if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
-    currentQty = sauceItems[idx];
-} else if (typeof sauceOrderItems !== 'undefined' && sauceOrderItems[idx]) {
-    currentQty = sauceOrderItems[idx];
-}
+            let currentQty = 0;
+            if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
+                currentQty = sauceItems[idx];
+            } else if (typeof sauceOrderItems !== 'undefined' && sauceOrderItems[idx]) {
+                currentQty = sauceOrderItems[idx];
+            }
             let formattedPriceStr = formatPriceText(sauce.price);
             let isSoldOut = sauce.isSoldOut;
             let alreadyReserved = (typeof editSauceOrderItems !== 'undefined' && editSauceOrderItems[idx] && editSauceOrderItems[idx] > 0);
 
-            // 이미지 링크 안전하게 변환
             let safeUrl = "";
             if (sauce.imageUrl) {
                 safeUrl = sauce.imageUrl;
@@ -1292,20 +1281,19 @@ if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
                 }
             }
 
-            // 1. 카드 상단 (동그란 사진 + 이름(줄바꿈 허용, 12px) + 가격)
             const topFlexDiv = document.createElement('div');
             topFlexDiv.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;";
 
             if (safeUrl) {
                 const img = document.createElement('img');
-                img.src = safeUrl;
+                img.src = safeUrl.split(',')[0].trim(); // 첫 번째 이미지 썸네일
                 img.style.cssText = "width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; cursor: pointer; flex-shrink: 0;";
                 img.loading = 'eager';
                 img.onerror = function() {
                     this.onerror = null;
                     this.src = "https://via.placeholder.com/36x36?text=이미지";
                 };
-                img.onclick = function() { openImageModal(safeUrl); };
+                img.onclick = function() { openImageModal(sauce.imageUrl); };
                 topFlexDiv.appendChild(img);
             } else {
                 const noImg = document.createElement('div');
@@ -1323,7 +1311,6 @@ if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
             topFlexDiv.appendChild(textDiv);
             card.appendChild(topFlexDiv);
 
-            // 2. 카드 하단 (버튼과 수량 레이블이 영역 안에서 꽉 차게 조절된 컨트롤러)
             const bottomDiv = document.createElement('div');
             bottomDiv.classList.add('sauce-card-bottom');
             bottomDiv.style.cssText = "display: flex; justify-content: center; width: 100%; margin-top: 4px;";
@@ -1340,7 +1327,6 @@ if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
             minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
             minusBtn.onclick = function() { updateSauceQty(idx, -1); };
 
-            // ★ [변경] 텍스트 필드(input) 대신 깔끔한 라벨(span) 형식으로 변경하여 공간 확보 및 텍스트 짤림 방지
             const qtyLabel = document.createElement('div');
             qtyLabel.id = `qty_sauce_${idx}`;
             qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 15px; font-weight: bold; color: #333;";
@@ -1365,21 +1351,20 @@ if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
             }
             if (sauceContainer) sauceContainer.appendChild(card);
 
-            // 3. 수정 모달용 소스 카드 복제 및 데이터 연동
             const editCard = card.cloneNode(true);
             let editQty = (typeof editSauceItems !== 'undefined' && editSauceItems[idx]) ? editSauceItems[idx] : 
-                          ((typeof editSauceOrderItems !== 'undefined' && editSauceOrderItems[idx]) ? editSauceOrderItems[idx] : 0);
+                        ((typeof editSauceOrderItems !== 'undefined' && editSauceOrderItems[idx]) ? editSauceOrderItems[idx] : 0);
             
             let editLabel = editCard.querySelector(`#qty_sauce_${idx}`);
             if (editLabel) {
                 editLabel.id = `qty_edit_sauce_${idx}`;
-                editLabel.textContent = editQty; // 수정창 수량 라벨에 표시
+                editLabel.textContent = editQty;
             }
 
             if (safeUrl) {
                 let editImg = editCard.querySelector('img');
                 if (editImg) {
-                    editImg.onclick = function() { openImageModal(safeUrl); };
+                    editImg.onclick = function() { openImageModal(sauce.imageUrl); };
                 }
             }
 
@@ -1409,7 +1394,7 @@ if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
         });
     }
 
-function renderMenuCards() {
+    function renderMenuCards() {
         const mainContainer = document.getElementById('menuCardContainer');
         const editContainer = document.getElementById('editMenuCardContainer');
 
@@ -1419,7 +1404,6 @@ function renderMenuCards() {
         if (typeof menuList === 'undefined' || !menuList) return;
 
         menuList.forEach((item, idx) => {
-            // 1. 메인 카드 생성
             const card = document.createElement('div');
             card.classList.add('menu-item-card');
             
@@ -1439,23 +1423,21 @@ function renderMenuCards() {
             let isSoldOut = item.isSoldOut;
             let alreadyReserved = (typeof editOrderItems !== 'undefined' && editOrderItems[idx] && editOrderItems[idx] > 0);
 
-            // 2. 카드 상단 (이미지 + 이름 + 가격)
             const topDiv = document.createElement('div');
             topDiv.classList.add('menu-card-top');
 
             const imgElem = document.createElement('div');
             if (safeUrl) {
                 const img = document.createElement('img');
-                img.src = safeUrl;
+                img.src = safeUrl.split(',')[0].trim(); // 첫 번째 이미지 썸네일
                 img.classList.add('menu-thumb');
                 img.loading = 'eager';
                 img.onerror = function() {
                     this.onerror = null;
                     this.src = "https://via.placeholder.com/70x70?text=이미지";
                 };
-                // ★ [핵심 복구] 이미지 클릭 시 확대 팝업 모달이 뜨도록 연결!
                 img.onclick = function() {
-                    openImageModal(safeUrl);
+                    openImageModal(item.imageUrl); // 전체 URL 스트링 전달로 다중 스크롤 모달 실행
                 };
                 imgElem.appendChild(img);
             } else {
@@ -1473,7 +1455,6 @@ function renderMenuCards() {
             topDiv.appendChild(detailsDiv);
             card.appendChild(topDiv);
 
-            // 3. 카드 하단 (수량 조절 버튼 및 텍스트 라벨 영역)
             const bottomDiv = document.createElement('div');
             bottomDiv.classList.add('menu-card-bottom');
             bottomDiv.style.cssText = "display: flex; justify-content: center; width: 100%; margin-top: 8px;";
@@ -1490,7 +1471,6 @@ function renderMenuCards() {
             minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
             minusBtn.onclick = function() { updateMainQty(idx, -1); };
 
-            // 깔끔한 숫자 라벨(div) 적용
             const qtyLabel = document.createElement('div');
             qtyLabel.id = `qty_main_${idx}`;
             qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 15px; font-weight: bold; color: #333;";
@@ -1515,21 +1495,19 @@ function renderMenuCards() {
             }
             if (mainContainer) mainContainer.appendChild(card);
 
-            // 4. 수정 모달용 카드 생성 (예약 수정 폼)
             const editCard = card.cloneNode(true);
             let editQty = (typeof editOrderItems !== 'undefined' && editOrderItems[idx]) ? editOrderItems[idx] : 0;
             
             let editLabel = editCard.querySelector(`#qty_main_${idx}`);
             if (editLabel) {
                 editLabel.id = `qty_edit_${idx}`;
-                editLabel.textContent = editQty; // 수정창 메뉴 수량 라벨에 표시
+                editLabel.textContent = editQty;
             }
 
-            // 수정 폼 카드 안의 이미지에도 클릭 모달 이벤트 확실하게 재연결
             if (safeUrl) {
                 let editImg = editCard.querySelector('img');
                 if (editImg) {
-                    editImg.onclick = function() { openImageModal(safeUrl); };
+                    editImg.onclick = function() { openImageModal(item.imageUrl); };
                 }
             }
 
@@ -1655,7 +1633,7 @@ function renderMenuCards() {
         renderMenuCards();
     }
 
-function updateSauceQty(idx, delta) {
+    function updateSauceQty(idx, delta) {
         if (typeof sauceOrderItems === 'undefined') sauceOrderItems = {};
         if (typeof sauceItems === 'undefined') sauceItems = {};
         
@@ -1712,17 +1690,41 @@ function updateSauceQty(idx, delta) {
         document.getElementById('editSelectedSummary').innerHTML = buildVerticalSummaryHtml(editOrderItems, editSauceItems);
     }
 
-function openImageModal(url) {
-    const modalImg = document.getElementById('modalImage');
-    modalImg.src = ""; // 기존 잔상 초기화
-    setTimeout(() => {
-        modalImg.src = url; // 리디렉션 주소가 안정적으로 꽂히도록 미세한 타이밍 지연 부여
-    }, 50);
-    document.getElementById('imageModal').style.display = 'flex';
-}
+    // 💡 콤마(,)로 구분된 여러 장의 이미지를 분리해 가로 스크롤 슬라이더로 띄우는 모달 함수
+    function openImageModal(urlStr) {
+        var container = document.getElementById('modalImageContainer');
+        container.innerHTML = ""; 
+
+        if (!urlStr || urlStr.trim() === "" || urlStr === "undefined") {
+            container.innerHTML = "<div style='color:#fff; padding:20px;'>등록된 상세 이미지가 없습니다.</div>";
+        } else {
+            var urls = urlStr.split(',');
+            for (var i = 0; i < urls.length; i++) {
+                var imgUrl = urls[i].trim();
+                if (imgUrl !== "") {
+                    if (imgUrl.includes("drive.google.com/uc") || imgUrl.includes("drive.google.com/file/d/")) {
+                        let match = imgUrl.match(/id=([a-zA-Z0-9_-]+)/) || imgUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                        if (match && match[1]) {
+                            imgUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
+                        }
+                    }
+                    var imgTag = document.createElement('img');
+                    imgTag.src = imgUrl;
+                    container.appendChild(imgTag);
+                }
+            }
+        }
+        document.getElementById('imageModal').style.display = 'flex';
+        
+        // 💡 사진 모달이 열릴 때 뒷 화면 스크롤 고정
+        document.body.style.overflow = 'hidden';
+    }
 
     function closeImageModal() {
         document.getElementById('imageModal').style.display = 'none';
+        
+        // 💡 모달이 닫힐 때 뒷 화면 스크롤 해제
+        document.body.style.overflow = '';
     }
 
     function buildMenuSummary(itemsObj) {
@@ -1782,7 +1784,6 @@ function openImageModal(url) {
 
     function checkAndRenderState() {
         const savedNick = localStorage.getItem('savedNickname');
-        const savedPhone = localStorage.getItem('savedPhone');
 
         document.getElementById('pageLoadingOverlay').style.display = 'flex';
         document.getElementById('topNoticeBox').style.display = 'none';
@@ -1798,35 +1799,45 @@ function openImageModal(url) {
         }).then(res => res.text()).catch(e => null);
 
         let checkPromise = Promise.resolve(null);
-        if (savedNick && savedPhone) {
+        if (savedNick) {
             checkPromise = fetch(WEB_APP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'check', nickname: savedNick, phone: savedPhone })
+                body: JSON.stringify({ action: 'checkSimple', nickname: savedNick })
             }).then(res => res.text()).catch(e => null);
         }
 
         Promise.all([settingsPromise, checkPromise]).then(([settingsText, vText]) => {
-            let settings = { openHour: 0, openMin: 0, closeHour: 4, closeMin: 0, prepMinutes: 0, menuList: [], sauceList: [] };
+            let settings = { openHour: 0, openMin: 0, closeHour: 4, closeMin: 0, prepMinutes: 0, menuList: [], sauceList: [], isMaintenance: false, maintenanceCode: "3808" };
             try {
                 if (settingsText) settings = JSON.parse(settingsText);
             } catch(e) {}
 
+            if (settings.maintenanceCode) {
+                serverMaintenanceCode = String(settings.maintenanceCode).trim();
+            }
+
+            const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
+            if (settings.isMaintenance && !isAdminPassed) {
+                document.getElementById('pageLoadingOverlay').style.display = 'none';
+                document.getElementById('maintenanceOverlay').style.display = 'flex';
+                return;
+            } else {
+                document.getElementById('maintenanceOverlay').style.display = 'none';
+            }
+
             globalPrepMinutes = parseInt(settings.prepMinutes) || 0;
             
-            // ★ 서버(Code.gs)에서 넘어온 스프레드시트 설정값(B1, B2)을 오차 없이 그대로 반영합니다.
             globalOpenHour = parseInt(settings.openHour) !== undefined ? parseInt(settings.openHour) : 0;
             globalOpenMin = parseInt(settings.openMin) !== undefined ? parseInt(settings.openMin) : 0;
             globalCloseHour = parseInt(settings.closeHour) !== undefined ? parseInt(settings.closeHour) : 4;
             globalCloseMin = parseInt(settings.closeMin) !== undefined ? parseInt(settings.closeMin) : 0;
             
-            // F1, F2 설정값 반영
             globalPickupStartHour = parseInt(settings.pickupStartHour) !== undefined ? parseInt(settings.pickupStartHour) : 15;
             globalPickupStartMin = parseInt(settings.pickupStartMin) !== undefined ? parseInt(settings.pickupStartMin) : 0;
             globalPickupCloseHour = parseInt(settings.pickupCloseHour) !== undefined ? parseInt(settings.pickupCloseHour) : 20;
             globalPickupCloseMin = parseInt(settings.pickupCloseMin) !== undefined ? parseInt(settings.pickupCloseMin) : 0;
             
-            // ★ [추가됨] 스프레드시트 B8(포춘쿠키_여부 On/Off) 값을 전역 변수에 정확히 담아줍니다!
             globalFortuneEnabled = (settings.fortuneEnabled !== undefined) ? settings.fortuneEnabled : true;
             
             if (settings.pickupTimesList) globalPickupTimesList = settings.pickupTimesList;
@@ -1848,10 +1859,8 @@ function openImageModal(url) {
 
             if (data && data.result === "found") {
                 globalUserNickname = data.nickname || savedNick;
-                globalUserPhone = data.phone || savedPhone;
 
                 document.getElementById('displayNick').textContent = globalUserNickname;
-                document.getElementById('displayPhone').textContent = globalUserPhone;
                 document.getElementById('displayCookType').textContent = formatCookType(data.cookType);
                 
                 let rawMenu = data.menu || "-";
@@ -1958,6 +1967,12 @@ function openImageModal(url) {
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        const nickname = document.getElementById('nickname').value.trim();
+        if (!nickname) {
+            showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
+            return;
+        }
+
         let summary = buildMenuSummary(orderItems);
         if (!summary) {
             showCustomAlert('최소 1개 이상의 메뉴를 선택해주세요!', '메뉴 선택 필요');
@@ -1995,7 +2010,6 @@ function openImageModal(url) {
         submitBtn.textContent = "예약 접수 중입니다...";
 
         const nickname = document.getElementById('nickname').value.trim();
-        const phone = document.getElementById('phone').value.trim();
         const cookTypeElem = document.querySelector('input[name="cookType"]:checked');
         const menuSummaryText = buildMenuSummary(orderItems);
         const sauceSummaryText = buildSauceSummary(sauceItems);
@@ -2007,7 +2021,7 @@ function openImageModal(url) {
             time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
             cookType: cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장",
             nickname: nickname,
-            phone: phone,
+            phone: "", 
             menuSummary: menuSummaryText,
             sauce: sauceSummaryText,
             pickupTime: finalPickupTime,
@@ -2015,14 +2029,12 @@ function openImageModal(url) {
         };
 
         localStorage.setItem('savedNickname', nickname);
-        localStorage.setItem('savedPhone', phone);
         localStorage.setItem('lastOrderSummary', menuSummaryText);
         localStorage.setItem('lastOrderSauce', sauceSummaryText);
         localStorage.setItem('lastOrderPrice', priceText);
         localStorage.setItem('lastOrderPickupTime', finalPickupTime);
 
         globalUserNickname = nickname;
-        globalUserPhone = phone;
 
         fetch(WEB_APP_URL, {
             method: 'POST',
@@ -2103,7 +2115,7 @@ function openImageModal(url) {
             body: JSON.stringify({
                 action: "selectEventPrize",
                 nickname: globalUserNickname,
-                phone: globalUserPhone,
+                phone: "",
                 prize: prize
             })
         })
@@ -2124,8 +2136,7 @@ function openImageModal(url) {
 
     function openSearchModal() {
         const savedNick = localStorage.getItem('savedNickname');
-        const savedPhone = localStorage.getItem('savedPhone');
-        if (!savedNick || !savedPhone) return;
+        if (!savedNick) return;
 
         document.getElementById('searchModal').style.display = 'flex';
         document.getElementById('modalLoadingBox').style.display = 'flex';
@@ -2134,7 +2145,7 @@ function openImageModal(url) {
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'check', nickname: savedNick, phone: savedPhone })
+            body: JSON.stringify({ action: 'checkSimple', nickname: savedNick })
         })
         .then(res => res.text())
         .then(text => {
@@ -2232,11 +2243,6 @@ function openImageModal(url) {
         const newCookType = cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장";
         const newSauceSummary = buildSauceSummary(editSauceItems);
         const newTotalPrice = calculateEditTotal().toLocaleString() + '원';
-
-        localStorage.setItem('lastOrderSummary', newSummary);
-        localStorage.setItem('lastOrderSauce', newSauceSummary);
-        localStorage.setItem('lastOrderPrice', newTotalPrice);
-        localStorage.setItem('lastOrderPickupTime', newTime);
 
         fetch(WEB_APP_URL, {
             method: 'POST',
