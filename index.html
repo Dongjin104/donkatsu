@@ -1691,7 +1691,7 @@
     }
 
     // 💡 콤마(,)로 구분된 여러 장의 이미지를 분리해 가로 스크롤 슬라이더로 띄우는 모달 함수
-    function openImageModal(urlStr) {
+function openImageModal(urlStr) {
         var container = document.getElementById('modalImageContainer');
         container.innerHTML = ""; 
 
@@ -1714,10 +1714,20 @@
                 }
             }
         }
+
+        // 💡 핵심 수정: 모달을 띄운 직후, 브라우저 렌더링 타이밍에 맞춰 확실하게 스크롤을 맨 왼쪽으로 고정
         document.getElementById('imageModal').style.display = 'flex';
-        
-        // 💡 사진 모달이 열릴 때 뒷 화면 스크롤 고정
         document.body.style.overflow = 'hidden';
+
+        // 렌더링 직후 스크롤을 0으로 강제 초기화
+        requestAnimationFrame(function() {
+            container.scrollLeft = 0;
+        });
+        
+        // 만약 그래도 안 된다면 아래처럼 아주 짧은 타이머를 주면 100% 고정됩니다.
+        setTimeout(function() {
+            container.scrollLeft = 0;
+        }, 10);
     }
 
     function closeImageModal() {
