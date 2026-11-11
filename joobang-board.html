@@ -80,20 +80,32 @@
             } catch (e) {}
         }
 
-        // 💥 오류 해결의 핵심: 안전하고 확실한 POST 방식 fetch 통신
+        // 💥 CORS 에러 없는 안전한 JSONP 방식 통신 함수
         function callGasAPI(action, params = {}, callback) {
-            const payload = Object.assign({ action: action }, params);
-            fetch(GAS_WEBAPP_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
+            const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
                 if (callback) callback(data);
-            })
-            .catch(err => {
-                console.error("GAS API 통신 실패:", err);
-            });
+            };
+
+            let url = GAS_WEBAPP_URL + '?action=' + action + '&callback=' + callbackName;
+            for (let key in params) {
+                url += '&' + key + '=' + encodeURIComponent(params[key]);
+            }
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = function() {
+                console.error("GAS API 통신 실패");
+                delete window[callbackName];
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
+            };
+            document.body.appendChild(script);
         }
 
         function fetchOrders() {
