@@ -3,73 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>돈가스 주방 주문 대시보드</title>
+    <title>장날동천 주방 대시보드</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
         body { background-color: #121212; color: #ffffff; padding: 10px; }
-        
-        /* 상단 현황 바 */
-        .header { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; }
-        .header h1 { font-size: 1.1rem; color: #ff9800; }
-        .status-badge { background: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
-        
-        /* 주문 리스트 (컴팩트 세로 압축형) */
+
+        /* 상단 네비 바 */
+        header { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; }
+        header h1 { font-size: 1.1rem; }
+        .status-badge { background: #333; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; }
+
+        /* 주문 리스트 */
         .order-list { display: flex; flex-direction: column; gap: 8px; }
-        .order-item { display: flex; align-items: center; justify-content: space-between; background: #1e1e1e; border-left: 6px solid #888; padding: 10px 12px; border-radius: 6px; }
-        
-        /* 미확인 강조 (붉은 테두리 및 은은한 배경) */
+        .order-item { display: flex; align-items: center; justify-content: space-between; background: #1e1e1e; border-left: 6px solid #888; padding: 10px 12px; border-radius: 8px; }
+
         .order-item.unconfirmed { border-left-color: #ff5252; background: #2a1b1b; }
-        /* 확인 완료 건 */
-        .order-item.confirmed { border-left-color: #4caf50; opacity: 0.65; }
+        .order-item.confirmed { border-left-color: #4caf50; }
 
-        /* 좌측: 픽업시간 & 예약정보 */
-        .order-info { flex: 1; padding-right: 10px; }
-        .time-tag { font-size: 1.15rem; font-weight: bold; color: #ffeb3b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-        .winner-badge { background: #e91e63; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; font-weight: normal; }
+        /* 주문 정보 영역 */
+        .order-info { flex: 1; padding-right: 8px; }
+        .time-tag { font-size: 1.1rem; font-weight: bold; color: #ffeb3b; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+        .winner-badge { background: #e91e63; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: normal; }
+        
+        .cooking-badge { display: inline-block; background: #333; color: #ffffff; border: 1px solid #555; font-size: 0.75rem; font-weight: bold; padding: 1px 6px; border-radius: 4px; margin-right: 6px; }
+        .cooking-badge.special { background: #d32f2f; border-color: #f44336; }
+
         .menu-text { font-size: 1.05rem; font-weight: bold; color: #ffffff; margin-bottom: 2px; }
-        .sub-text { font-size: 0.85rem; color: #aaa; }
+        .sub-text { font-size: 0.8rem; color: #aaa; display: flex; align-items: center; gap: 8px; }
 
-        /* 우측: 확인 상태 토글 대형 버튼 (터치 편의성) */
-        .btn-status { width: 85px; height: 50px; font-size: 0.95rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+        /* 버튼 그룹 영역 */
+        .btn-group { display: flex; gap: 6px; flex-shrink: 0; }
+        
+        .btn-status { width: 68px; height: 42px; font-size: 0.75rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
         .btn-status.unconfirmed { background: #d32f2f; }
         .btn-status.confirmed { background: #388e3c; }
+
+        /* 수령 완료 버튼 (파란색 계열로 눈에 띄게) */
+        .btn-done { width: 68px; height: 42px; font-size: 0.75rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: white; background: #1976d2; display: flex; align-items: center; justify-content: center; }
+        .btn-done:active { background: #115293; }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <header>
         <h1>🍳 장날동천 주방 뷰</h1>
-        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ff5252; font-weight:bold;">0</span>건 / 총 <span id="totalCount">0</span>건</div>
-    </div>
+        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ff5252; font-weight:bold;">0</span> / 총 <span id="totalCount">0</span></div>
+    </header>
 
     <div id="orderContainer" class="order-list">
         <div style="text-align:center; padding: 30px; color:#888;">주문 목록을 불러오는 중...</div>
     </div>
 
     <script>
-        // Apps Script 웹앱 URL을 입력하세요 (또는 서버 백엔드 API)
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbvEII7d2FfV25dHI61c5pr5Ax5AqDt5ShOPcjNsTc/exec"; 
         let previousTotalCount = 0;
 
-        // 🎵 신규 주문 도착 알림음 (간단한 웹 오디오 2연타 띵동 소리)
         function playNewOrderSound() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const now = ctx.currentTime;
                 
-                // 첫번째 음
                 const osc1 = ctx.createOscillator();
                 const gain1 = ctx.createGain();
-                osc1.frequency.setValueAtTime(523.25, now); // C5
+                osc1.frequency.setValueAtTime(523.25, now);
                 gain1.gain.setValueAtTime(0.3, now);
                 gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
                 osc1.connect(gain1); gain1.connect(ctx.destination);
                 osc1.start(now); osc1.stop(now + 0.3);
 
-                // 두번째 음
                 const osc2 = ctx.createOscillator();
                 const gain2 = ctx.createGain();
-                osc2.frequency.setValueAtTime(659.25, now + 0.15); // E5
+                osc2.frequency.setValueAtTime(659.25, now + 0.15);
                 gain2.gain.setValueAtTime(0.3, now + 0.15);
                 gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
                 osc2.connect(gain2); gain2.connect(ctx.destination);
@@ -77,31 +81,40 @@
             } catch (e) {}
         }
 
-        // 실시간 주문 데이터 불러오기 (5초 주기 Polling)
-        function fetchOrders() {
-            // Google Apps Script 연동 방식 (JSONP 또는 google.script.run 방식 활용)
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run.withSuccessHandler(renderOrders).getAdminOrderList();
-            } else {
-                // 외부 웹서버(Render)에서 GAS API를 fetch로 호출할 때
-                fetch(GAS_WEBAPP_URL + '?action=getAdminOrderList')
-                    .then(res => res.json())
-                    .then(data => renderOrders(data))
-                    .catch(err => console.error("데이터 로딩 실패:", err));
+        function callGasAPI(action, params = {}, callback) {
+            const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                if (callback) callback(data);
+            };
+
+            let url = GAS_WEBAPP_URL + '?action=' + action + '&callback=' + callbackName;
+            for (let key in params) {
+                url += '&' + key + '=' + encodeURIComponent(params[key]);
             }
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = function() { console.error("GAS API 통신 실패"); };
+            document.body.appendChild(script);
         }
 
-        // 화면 그리기
+        function fetchOrders() {
+            callGasAPI('getAdminOrderList', {}, function(data) {
+                renderOrders(data);
+            });
+        }
+
         function renderOrders(orders) {
             const container = document.getElementById('orderContainer');
             if (!orders || orders.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 40px; color:#666;">접수된 예약이 없습니다.</div>';
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color:#666;">접수된 대기 예약이 없습니다.</div>';
                 document.getElementById('unconfirmedCount').innerText = 0;
                 document.getElementById('totalCount').innerText = 0;
                 return;
             }
 
-            // 신규 주문 발생 시 소리 재생
             if (orders.length > previousTotalCount && previousTotalCount !== 0) {
                 playNewOrderSound();
             }
@@ -114,6 +127,8 @@
                 const isUnconfirmed = (item.status === '미확인');
                 if (isUnconfirmed) unconfirmedCnt++;
 
+                const isSpecialCooking = item.cooking && item.cooking.includes('비튀김');
+
                 html += `
                     <div class="order-item ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}">
                         <div class="order-info">
@@ -122,12 +137,20 @@
                                 ${item.isEventWinner ? '<span class="winner-badge">🎁 이벤트 당첨</span>' : ''}
                             </div>
                             <div class="menu-text">${item.menu} ${item.extraSauce ? '(' + item.extraSauce + ')' : ''}</div>
-                            <div class="sub-text">조리: <b>${item.cooking}</b> | 닉네임: ${item.nickname}</div>
+                            <div class="sub-text">
+                                <span class="cooking-badge ${isSpecialConfirmed ? 'special' : (isSpecialCooking ? 'special' : '')}">조리: ${item.cooking || '튀김'}</span>
+                                <span>닉네임: ${item.nickname}</span>
+                            </div>
                         </div>
-                        <button class="btn-status ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}" 
-                                onclick="toggleStatus(${item.rowIndex}, '${item.status}')">
-                            ${isUnconfirmed ? '미확인🔴' : '확인완료🟢'}
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn-status ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}" 
+                                    onclick="toggleStatus(${item.rowIndex}, '${item.status}')">
+                                ${isUnconfirmed ? '미확인🔴' : '확인완료🟢'}
+                            </button>
+                            <button class="btn-done" onclick="completeOrder(${item.rowIndex})">
+                                수령완료🏁
+                            </button>
+                        </div>
                     </div>
                 `;
             });
@@ -137,22 +160,23 @@
             document.getElementById('totalCount').innerText = orders.length;
         }
 
-        // 미확인/확인 버튼 클릭 시 상태 변경 및 시트 업데이트
+        // 확인/미확인 토글
         function toggleStatus(rowIndex, currentStatus) {
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
-
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run.withSuccessHandler(fetchOrders).updateOrderStatus(rowIndex, nextStatus);
-            } else {
-                fetch(`${GAS_WEBAPP_URL}?action=updateOrderStatus&rowIndex=${rowIndex}&status=${encodeURIComponent(nextStatus)}`)
-                    .then(res => res.json())
-                    .then(() => fetchOrders());
-            }
+            callGasAPI('updateOrderStatus', { rowIndex: rowIndex, status: nextStatus }, function() {
+                fetchOrders();
+            });
         }
 
-        // 5초마다 자동 새로고침 (화면 갱신 없이 데이터만 바뀜)
+        // 수령 완료 버튼 누르면 시트 A열을 '완료'로 바꾸고 화면에서 즉시 숨김
+        function completeOrder(rowIndex) {
+            if (!confirm("고객에게 돈가스를 전달하고 수령 완료 처리하시겠습니까?")) return;
+            callGasAPI('updateOrderStatus', { rowIndex: rowIndex, status: '완료' }, function() {
+                fetchOrders();
+            });
+        }
+
         setInterval(fetchOrders, 5000);
-        // 최초 실행
         window.onload = fetchOrders;
     </script>
 </body>
