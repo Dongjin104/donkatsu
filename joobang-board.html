@@ -94,6 +94,21 @@
         }
 
         function callGasAPI(action, params = {}, callback) {
+            // 💡 상태 변경은 no-cors fetch로 처리하여 CORB 및 경고 완벽 차단
+            if (action === 'updateOrderStatus') {
+                let url = GAS_WEBAPP_URL + '?action=' + action;
+                for (let key in params) {
+                    url += '&' + key + '=' + encodeURIComponent(params[key]);
+                }
+                fetch(url, { mode: 'no-cors' }).then(() => {
+                    setTimeout(fetchOrders, 300); // 0.3초 후 목록 자동 새로고침
+                }).catch(() => {
+                    setTimeout(fetchOrders, 300);
+                });
+                return;
+            }
+
+            // 기존 주문 목록 가져오기 (JSONP 유지)
             const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
             window[callbackName] = function(data) {
                 delete window[callbackName];
