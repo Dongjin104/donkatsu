@@ -2173,7 +2173,7 @@ function openImageModal(urlStr) {
         });
     }
 
-    function openSearchModal() {
+function openSearchModal() {
         const savedNick = localStorage.getItem('savedNickname');
         if (!savedNick) return;
 
@@ -2192,10 +2192,17 @@ function openImageModal(urlStr) {
             try { data = JSON.parse(text); } catch (e) { return; }
 
             if (data && data.result === "found") {
-                if (data.status === "확인") {
+                // 💡 '확인' 상태이거나 이미 수령이 '완료'된 상태라면 수정 창을 띄우지 않고 안내
+                if (data.status === "확인" || data.status === "완료") {
                     closeSearchModal();
-                    document.getElementById('lockedModal').style.display = 'flex';
+                    
+                    let alertMsg = (data.status === "완료") 
+                        ? "이미 수령 완료된 주문 내역이 있습니다.<br><br>새로운 예약을 진행해 주세요!" 
+                        : "이미 확정된 예약 내역입니다.";
+
+                    showCustomAlert(alertMsg, "예약 안내", true);
                 } else {
+                    // 미확인 상태일 때만 정상적으로 기존 예약 수정 페이지 로드
                     currentFoundRowIndex = data.rowIndex;
                     
                     let cleanPickupTime = data.pickupTime || "";
