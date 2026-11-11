@@ -143,6 +143,14 @@
             line-height: 1.2;
         }
 
+        /* 💡 이벤트 당첨 상품 상세 표시 텍스트 (메뉴와 소스 사이) */
+        .event-detail-text {
+            font-size: 0.72rem;
+            color: #ff4081;
+            font-weight: bold;
+            margin-top: 1px;
+        }
+
         /* 하단 서브 정보 (소스, 닉네임) */
         .sub-row {
             display: flex;
@@ -287,7 +295,6 @@
             const script = document.createElement('script');
             script.src = url;
             script.onerror = function () {
-                // 에러가 나도 화면 갱신은 강제로 실행되게 처리
                 delete window[callbackName];
                 if (script.parentNode) document.body.removeChild(script);
                 if (callback) callback({ success: true });
@@ -330,6 +337,12 @@
                     priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : item.totalPrice;
                 }
 
+                // 💡 이벤트 당첨 내용이 있는지 확인 (예: "당첨 (새우까스 1개)")
+                let eventDetailHtml = '';
+                if (item.isEventWinner && item.eventPrize) {
+                    eventDetailHtml = `<div class="event-detail-text">🎁 이벤트 선물: ${item.eventPrize}</div>`;
+                }
+
                 html += `
                     <div class="order-item ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}">
                         <div class="order-info">
@@ -342,6 +355,7 @@
                                 ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
                             </div>
                             <div class="menu-text">${item.menu}</div>
+                            ${eventDetailHtml}
                             <div class="sub-row">
                                 ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + item.extraSauce + '</span>' : ''}
                                 <span class="nickname-text">👤 ${item.nickname}</span>
@@ -377,25 +391,20 @@
             const confirmBtn = document.getElementById('modal-confirm-btn');
             const cancelBtn = document.getElementById('modal-cancel-btn');
 
-            // 모달 띄우기
             modal.style.display = 'flex';
 
-            // 이벤트 중복 방지를 위한 클론 처리
             const newConfirmBtn = confirmBtn.cloneNode(true);
             const newCancelBtn = cancelBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
             cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
-            // 확인 버튼을 눌렀을 때
             newConfirmBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
 
-                // 서버에 상태 변경 요청 및 즉시 화면 갱신
                 callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) { });
                 fetchOrders();
             });
 
-            // 취소 버튼을 눌렀을 때
             newCancelBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
             });
