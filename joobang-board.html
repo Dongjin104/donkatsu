@@ -1,90 +1,258 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>장날동천 주방 대시보드</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
-        body { background-color: #121212; color: #ffffff; padding: 4px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            padding: 4px;
+        }
 
         /* 상단 바 */
-        header { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 5px 8px; border-radius: 4px; margin-bottom: 4px; }
-        header h1 { font-size: 0.85rem; font-weight: bold; }
-        .status-badge { background: #333; padding: 2px 4px; border-radius: 3px; font-size: 0.65rem; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 5px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+
+        header h1 {
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            background: #333;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+        }
 
         /* 주문 리스트 카드 (초압축 간격) */
-        .order-list { display: flex; flex-direction: column; gap: 3px; }
-        .order-item { display: flex; align-items: stretch; justify-content: space-between; background: #1e1e1e; border-left: 3px solid #888; border-radius: 3px; overflow: hidden; }
+        .order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
 
-        .order-item.unconfirmed { border-left-color: #ff5252; background: #221515; }
-        .order-item.confirmed { border-left-color: #4caf50; background: #1a221a; }
+        .order-item {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            background: #1e1e1e;
+            border-left: 3px solid #888;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .order-item.unconfirmed {
+            border-left-color: #ff5252;
+            background: #221515;
+        }
+
+        .order-item.confirmed {
+            border-left-color: #4caf50;
+            background: #1a221a;
+        }
 
         /* 왼쪽 정보 영역 */
-        .order-info { flex: 1; padding: 5px 7px; display: flex; flex-direction: column; gap: 1px; }
-        
-        .top-row { display: flex; align-items: center; justify-content: space-between; }
-        .time-group { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-        
+        .order-info {
+            flex: 1;
+            padding: 5px 7px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .time-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
         /* 폰트 크기를 더 미세하게 축소 */
-        .time-tag { font-size: 0.85rem; font-weight: 800; color: #ffeb3b; letter-spacing: -0.5px; }
-        .winner-badge { background: #e91e63; color: #fff; font-size: 0.5rem; padding: 1px 3px; border-radius: 2px; font-weight: bold; }
-        
-        .cooking-badge { display: inline-block; background: #333; color: #ffffff; border: 1px solid #555; font-size: 0.55rem; font-weight: bold; padding: 1px 3px; border-radius: 2px; }
-        .cooking-badge.special { background: #d32f2f; border-color: #f44336; color: #fff; }
+        .time-tag {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #ffeb3b;
+            letter-spacing: -0.5px;
+        }
+
+        .winner-badge {
+            background: #e91e63;
+            color: #fff;
+            font-size: 0.5rem;
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        .cooking-badge {
+            display: inline-block;
+            background: #333;
+            color: #ffffff;
+            border: 1px solid #555;
+            font-size: 0.55rem;
+            font-weight: bold;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+
+        .cooking-badge.special {
+            background: #d32f2f;
+            border-color: #f44336;
+            color: #fff;
+        }
 
         /* 가격 폰트 축소 */
-        .price-tag { font-size: 0.75rem; font-weight: bold; color: #4caf50; background: rgba(76, 175, 80, 0.15); padding: 1px 4px; border-radius: 2px; }
+        .price-tag {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #4caf50;
+            background: rgba(76, 175, 80, 0.15);
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
 
         /* 메뉴 텍스트 압축 */
-        .menu-text { font-size: 0.8rem; font-weight: bold; color: #ffffff; line-height: 1.2; }
-        
+        .menu-text {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
         /* 하단 서브 정보 (소스, 닉네임) */
-        .sub-row { display: flex; align-items: center; gap: 5px; margin-top: 1px; flex-wrap: wrap; }
-        .sauce-text { font-size: 0.65rem; color: #ff9800; font-weight: bold; }
-        .nickname-text { font-size: 0.65rem; color: #aaa; }
+        .sub-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 1px;
+            flex-wrap: wrap;
+        }
+
+        .sauce-text {
+            font-size: 0.65rem;
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .nickname-text {
+            font-size: 0.65rem;
+            color: #aaa;
+        }
 
         /* 오른쪽 버튼 그룹 컴팩트화 */
-        .btn-group { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 3px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
-        
-        .btn-status { width: 50px; height: 28px; font-size: 0.6rem; font-weight: bold; border: none; border-radius: 2px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
-        .btn-status.unconfirmed { background: #d32f2f; }
-        .btn-status.confirmed { background: #388e3c; }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            padding: 3px;
+            background: rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
 
-        .btn-done { width: 50px; height: 28px; font-size: 0.6rem; font-weight: bold; border: none; border-radius: 2px; cursor: pointer; color: white; background: #1976d2; display: flex; align-items: center; justify-content: center; }
-        .btn-done:active { background: #115293; }
+        .btn-status {
+            width: 50px;
+            height: 28px;
+            font-size: 0.6rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-status.unconfirmed {
+            background: #d32f2f;
+        }
+
+        .btn-status.confirmed {
+            background: #388e3c;
+        }
+
+        .btn-done {
+            width: 50px;
+            height: 28px;
+            font-size: 0.6rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            color: white;
+            background: #1976d2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-done:active {
+            background: #115293;
+        }
     </style>
 </head>
+
 <body>
 
     <header>
         <h1>🍳 장날동천 주방 뷰</h1>
-        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ff5252; font-weight:bold;">0</span> / 총 <span id="totalCount">0</span></div>
+        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ff5252; font-weight:bold;">0</span> / 총
+            <span id="totalCount">0</span></div>
     </header>
     <!-- 💡 커스텀 확인 모달 팝업 -->
-<div id="custom-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; color: #fff;">
-        <h3 id="modal-title" style="margin: 0 0 12px 0; font-size: 18px; color: #ffc107;">수령 완료 처리</h3>
-        <p id="modal-desc" style="margin: 0 0 20px 0; font-size: 14px; color: #ccc; line-height: 1.5;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
-        <div style="display: flex; gap: 10px;">
-            <button id="modal-cancel-btn" style="flex: 1; padding: 10px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">취소</button>
-            <button id="modal-confirm-btn" style="flex: 1; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">확인</button>
+    <div id="custom-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+        <div
+            style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; color: #fff;">
+            <h3 id="modal-title" style="margin: 0 0 12px 0; font-size: 18px; color: #ffc107;">수령 완료 처리</h3>
+            <p id="modal-desc" style="margin: 0 0 20px 0; font-size: 14px; color: #ccc; line-height: 1.5;">고객에게 돈가스를
+                전달하고<br>수령 완료 처리하시겠습니까?</p>
+            <div style="display: flex; gap: 10px;">
+                <button id="modal-cancel-btn"
+                    style="flex: 1; padding: 10px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">취소</button>
+                <button id="modal-confirm-btn"
+                    style="flex: 1; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">확인</button>
+            </div>
         </div>
     </div>
-</div>
     <div id="orderContainer" class="order-list">
         <div style="text-align:center; padding: 20px; color:#888;">주문 목록을 불러오는 중...</div>
     </div>
 
     <script>
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
         let previousTotalCount = 0;
 
         function playNewOrderSound() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const now = ctx.currentTime;
-                
+
                 const osc1 = ctx.createOscillator();
                 const gain1 = ctx.createGain();
                 osc1.frequency.setValueAtTime(523.25, now);
@@ -100,12 +268,12 @@
                 gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
                 osc2.connect(gain2); gain2.connect(ctx.destination);
                 osc2.start(now + 0.15); osc2.stop(now + 0.45);
-            } catch (e) {}
+            } catch (e) { }
         }
 
         function callGasAPI(action, params = {}, callback) {
             const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
-            window[callbackName] = function(data) {
+            window[callbackName] = function (data) {
                 delete window[callbackName];
                 if (script.parentNode) document.body.removeChild(script);
                 if (callback) callback(data);
@@ -118,7 +286,7 @@
 
             const script = document.createElement('script');
             script.src = url;
-            script.onerror = function() {
+            script.onerror = function () {
                 // 에러가 나도 화면 갱신은 강제로 실행되게 처리
                 delete window[callbackName];
                 if (script.parentNode) document.body.removeChild(script);
@@ -128,7 +296,7 @@
         }
 
         function fetchOrders() {
-            callGasAPI('getAdminOrderList', {}, function(data) {
+            callGasAPI('getAdminOrderList', {}, function (data) {
                 renderOrders(data);
             });
         }
@@ -199,7 +367,7 @@
 
         function toggleStatus(rowIndex, currentStatus) {
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
-            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function(res) {
+            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
                 fetchOrders();
             });
         }
@@ -219,16 +387,16 @@
             cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
             // 확인 버튼을 눌렀을 때
-            newConfirmBtn.addEventListener('click', function() {
+            newConfirmBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
-                
+
                 // 서버에 상태 변경 요청 및 즉시 화면 갱신
-                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function(res) {});
+                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) { });
                 fetchOrders();
             });
 
             // 취소 버튼을 눌렀을 때
-            newCancelBtn.addEventListener('click', function() {
+            newCancelBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
             });
         }
@@ -237,4 +405,5 @@
         window.onload = fetchOrders;
     </script>
 </body>
+
 </html>
