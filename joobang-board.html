@@ -38,7 +38,6 @@
         .btn-status.unconfirmed { background: #d32f2f; }
         .btn-status.confirmed { background: #388e3c; }
 
-        /* 수령 완료 버튼 (파란색 계열로 눈에 띄게) */
         .btn-done { width: 68px; height: 42px; font-size: 0.75rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: white; background: #1976d2; display: flex; align-items: center; justify-content: center; }
         .btn-done:active { background: #115293; }
     </style>
@@ -81,23 +80,20 @@
             } catch (e) {}
         }
 
+        // 💥 오류 해결의 핵심: 안전하고 확실한 POST 방식 fetch 통신
         function callGasAPI(action, params = {}, callback) {
-            const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
-            window[callbackName] = function(data) {
-                delete window[callbackName];
-                document.body.removeChild(script);
+            const payload = Object.assign({ action: action }, params);
+            fetch(GAS_WEBAPP_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
                 if (callback) callback(data);
-            };
-
-            let url = GAS_WEBAPP_URL + '?action=' + action + '&callback=' + callbackName;
-            for (let key in params) {
-                url += '&' + key + '=' + encodeURIComponent(params[key]);
-            }
-
-            const script = document.createElement('script');
-            script.src = url;
-            script.onerror = function() { console.error("GAS API 통신 실패"); };
-            document.body.appendChild(script);
+            })
+            .catch(err => {
+                console.error("GAS API 통신 실패:", err);
+            });
         }
 
         function fetchOrders() {
@@ -127,7 +123,6 @@
                 const isUnconfirmed = (item.status === '미확인');
                 if (isUnconfirmed) unconfirmedCnt++;
 
-                // 오타 수정: 정의되지 않은 변수 제거하고 isSpecialCooking만 깔끔하게 체크
                 const isSpecialCooking = item.cooking && item.cooking.includes('비튀김');
 
                 html += `
@@ -161,7 +156,6 @@
             document.getElementById('totalCount').innerText = orders.length;
         }
 
-        // 확인/미확인 토글
         function toggleStatus(rowIndex, currentStatus) {
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: rowIndex, status: nextStatus }, function() {
@@ -169,7 +163,6 @@
             });
         }
 
-        // 수령 완료 버튼 누르면 시트 A열을 '완료'로 바꾸고 화면에서 즉시 숨김
         function completeOrder(rowIndex) {
             if (!confirm("고객에게 돈가스를 전달하고 수령 완료 처리하시겠습니까?")) return;
             callGasAPI('updateOrderStatus', { rowIndex: rowIndex, status: '완료' }, function() {
