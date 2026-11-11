@@ -621,10 +621,10 @@
                 <div id="editBusyInfoBox" class="busy-info-box"></div>
             </div>
             
-            <!-- 💡 저장 버튼과 닫기 버튼을 하나의 하단 고정 박스(sticky)로 묶어서 스크롤을 내려도 함께 따라다니게 수정 -->
-            <div style="position: sticky; bottom: 0; background: #fff; padding-top: 10px; padding-bottom: 5px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); z-index: 10;">
+            <!-- 💡 배경을 완벽한 흰색으로 채우고 위아래 여백 및 그림자를 주어 아래 글씨가 절대 비쳐 보이지 않게 처리 -->
+            <div style="position: sticky; bottom: 0; background: #ffffff; padding: 12px 0 5px 0; margin-top: 15px; border-top: 1px solid #eee; box-shadow: 0 -8px 16px rgba(0,0,0,0.08); z-index: 10;">
                 <button id="updateBtn" class="modal-btn" style="background-color:#2e7d32; margin-top:0; padding:14px; margin-bottom:8px;" onclick="updateReservation()">변경된 내용 저장하기</button>
-                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:14px; background-color:#6c757d; color:#white;" onclick="closeSearchModal()">닫기</button>
+                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:14px; background-color:#6c757d; color:#fff;" onclick="closeSearchModal()">닫기</button>
             </div>
         </div>
     </div>
