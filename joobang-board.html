@@ -337,10 +337,24 @@
                     priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : item.totalPrice;
                 }
 
-                // 💡 I열 이벤트 당첨 내용(eventWinner)을 메뉴 바로 아래에 띄우도록 수정 완료!
+                // 💡 백엔드가 보내주는 여러 가능성 있는 변수명을 전부 체크해서 값이 있는 걸 무조건 가져옴!
+                let eventText = item.eventWinner || item.eventPrize || item.event || '';
+                
+                // 만약 위 변수들에 없더라도, 객체 전체에서 '당첨'이라는 글자가 포함된 값이 있으면 강제로 찾아냄
+                if (!eventText) {
+                    for (let key in item) {
+                        let val = String(item[key] || '');
+                        if (val.includes('당첨') || val.includes('새우') || val.includes('서비스')) {
+                            eventText = val;
+                            break;
+                        }
+                    }
+                }
+
                 let eventDetailHtml = '';
-                if (item.eventWinner) {
-                    eventDetailHtml = `<div class="event-detail-text" style="font-size: 0.72rem; color: #ff4081; font-weight: bold; margin-top: 1px;">🎁 선물: ${item.eventWinner}</div>`;
+                if (eventText) {
+                    // "당첨 (새우까스 1개)" 형태라면 그대로 깔끔하게 노출
+                    eventDetailHtml = `<div class="event-detail-text" style="font-size: 0.72rem; color: #ff4081; font-weight: bold; margin-top: 1px;">🎁 선물: ${eventText}</div>`;
                 }
 
                 html += `
@@ -350,7 +364,7 @@
                                 <div class="time-group">
                                     <span class="time-tag">⏰ ${item.pickupTime}</span>
                                     <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
-                                    ${item.isEventWinner ? '<span class="winner-badge">🎁 이벤트 당첨</span>' : ''}
+                                    ${item.isEventWinner || eventText ? '<span class="winner-badge">🎁 이벤트 당첨</span>' : ''}
                                 </div>
                                 ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
                             </div>
