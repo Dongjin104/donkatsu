@@ -581,7 +581,7 @@
             </div>
 
             <div class="form-group" style="margin-bottom:15px;">
-                <label style="font-size:15px; margin-bottom:8px;">조리 방식 변경</label>
+                <span style="font-size:15px; display:block; margin-bottom:8px; font-weight:bold;">조리 방식 변경</span>
                 <div class="radio-group">
                     <div class="radio-btn">
                         <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장">
@@ -595,12 +595,12 @@
             </div>
 
             <div class="form-group" style="margin-top:10px; margin-bottom:10px;">
-                <label style="font-size:15px; margin-bottom:8px;">메뉴별 수량 변경</label>
+                <span style="font-size:15px; display:block; margin-bottom:8px; font-weight:bold;">메뉴별 수량 변경</span>
                 <div id="editMenuCardContainer" class="menu-grid"></div>
             </div>
 
             <div class="form-group" style="margin-top:10px; margin-bottom:15px;">
-                <label style="font-size:15px; margin-bottom:8px;">추가 소스 변경</label>
+                <span style="font-size:15px; display:block; margin-bottom:8px; font-weight:bold;">추가 소스 변경</span>
                 <div id="editSauceCardContainer" class="sauce-grid"></div>
 
                 <div class="selected-summary-box" style="margin-top:12px;">
@@ -615,18 +615,18 @@
 
             <p style="margin:5px 0; font-size:15px;"><b>현재 픽업 시간:</b> <span id="resTime" style="color:#333; font-weight:bold;"></span></p>
 
-            <div class="form-group" style="margin-top:10px; margin-bottom:0;" id="editPickupFormGroup">
-                <label style="font-size:15px; margin-bottom:5px;">변경할 픽업 시간 선택</label>
+            <div class="form-group" style="margin-top:10px; margin-bottom:15px;" id="editPickupFormGroup">
+                <span style="font-size:15px; display:block; margin-bottom:5px; font-weight:bold;">변경할 픽업 시간 선택</span>
                 <select id="newPickupTime" style="padding:10px; font-size:16px;" onchange="handleTimeChange(this, 'editBusyInfoBox')"></select>
                 <div id="editBusyInfoBox" class="busy-info-box"></div>
             </div>
             
-            <div class="sticky-submit-wrapper" style="background: white;">
-                <button id="updateBtn" class="modal-btn" style="background-color:#2e7d32; margin-top:0; padding:15px;" onclick="updateReservation()">변경된 내용 저장하기</button>
+            <!-- 💡 저장 버튼과 닫기 버튼을 하나의 하단 고정 박스(sticky)로 묶어서 스크롤을 내려도 함께 따라다니게 수정 -->
+            <div style="position: sticky; bottom: 0; background: #fff; padding-top: 10px; padding-bottom: 5px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); z-index: 10;">
+                <button id="updateBtn" class="modal-btn" style="background-color:#2e7d32; margin-top:0; padding:14px; margin-bottom:8px;" onclick="updateReservation()">변경된 내용 저장하기</button>
+                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:14px; background-color:#6c757d; color:#white;" onclick="closeSearchModal()">닫기</button>
             </div>
         </div>
-
-        <button id="searchCloseBtn" class="modal-btn close-btn" onclick="closeSearchModal()">닫기</button>
     </div>
 </div>
 
