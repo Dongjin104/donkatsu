@@ -337,10 +337,10 @@
                     priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : item.totalPrice;
                 }
 
-                // 💡 이벤트 당첨 내용이 있는지 확인 (예: "당첨 (새우까스 1개)")
+                // 💡 I열 이벤트 당첨 내용(eventWinner)을 메뉴 바로 아래에 띄우도록 수정 완료!
                 let eventDetailHtml = '';
-                if (item.isEventWinner && item.eventPrize) {
-                    eventDetailHtml = `<div class="event-detail-text">🎁 이벤트 선물: ${item.eventPrize}</div>`;
+                if (item.eventWinner) {
+                    eventDetailHtml = `<div class="event-detail-text" style="font-size: 0.72rem; color: #ff4081; font-weight: bold; margin-top: 1px;">🎁 선물: ${item.eventWinner}</div>`;
                 }
 
                 html += `
