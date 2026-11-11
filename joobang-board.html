@@ -255,10 +255,27 @@
     <script>
         const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
         let previousTotalCount = 0;
+        let isInitialLoad = true; // 최초 로드 여부 체크 변수 추가
+
+        // 🎵 AudioContext 전역 관리 및 브라우저 정책 대응
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
 
         function playNewOrderSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = getAudioContext();
+                if (!ctx) return;
                 const now = ctx.currentTime;
 
                 const osc1 = ctx.createOscillator();
@@ -314,13 +331,18 @@
                 container.innerHTML = '<div style="text-align:center; padding: 20px; color:#666;">접수된 대기 예약이 없습니다.</div>';
                 document.getElementById('unconfirmedCount').innerText = 0;
                 document.getElementById('totalCount').innerText = 0;
+                previousTotalCount = 0;
+                isInitialLoad = false;
                 return;
             }
 
-            if (orders.length > previousTotalCount && previousTotalCount !== 0) {
+            // 첫 로드가 아닐 때, 이전 주문 수보다 현재 주문 수가 늘어났다면 새 주문 알림음 재생
+            if (!isInitialLoad && orders.length > previousTotalCount) {
                 playNewOrderSound();
             }
+
             previousTotalCount = orders.length;
+            isInitialLoad = false; // 최초 로드 완료 처리
 
             let unconfirmedCnt = 0;
             let html = '';
@@ -337,10 +359,7 @@
                     priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : item.totalPrice;
                 }
 
-                // 💡 백엔드가 보내주는 여러 가능성 있는 변수명을 전부 체크해서 값이 있는 걸 무조건 가져옴!
                 let eventText = item.eventWinner || item.eventPrize || item.event || '';
-                
-                // 만약 위 변수들에 없더라도, 객체 전체에서 '당첨'이라는 글자가 포함된 값이 있으면 강제로 찾아냄
                 if (!eventText) {
                     for (let key in item) {
                         let val = String(item[key] || '');
@@ -353,7 +372,6 @@
 
                 let eventDetailHtml = '';
                 if (eventText) {
-                    // "당첨 (새우까스 1개)" 형태라면 그대로 깔끔하게 노출
                     eventDetailHtml = `<div class="event-detail-text" style="font-size: 0.72rem; color: #ff4081; font-weight: bold; margin-top: 1px;">🎁 선물: ${eventText}</div>`;
                 }
 
@@ -394,6 +412,8 @@
         }
 
         function toggleStatus(rowIndex, currentStatus) {
+            // 주방 뷰 화면을 터치/클릭하는 순간 AudioContext도 자동으로 활성화됩니다.
+            getAudioContext(); 
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
                 fetchOrders();
@@ -401,6 +421,7 @@
         }
 
         function completeOrder(rowIndex) {
+            getAudioContext();
             const modal = document.getElementById('custom-modal');
             const confirmBtn = document.getElementById('modal-confirm-btn');
             const cancelBtn = document.getElementById('modal-cancel-btn');
@@ -414,7 +435,6 @@
 
             newConfirmBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
-
                 callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) { });
                 fetchOrders();
             });
@@ -423,6 +443,11 @@
                 modal.style.display = 'none';
             });
         }
+
+        // 페이지 어디든 최초 터치/클릭하는 순간 오디오 권한이 풀리도록 설정
+        document.addEventListener('click', function() {
+            getAudioContext();
+        }, { once: true });
 
         setInterval(fetchOrders, 5000);
         window.onload = fetchOrders;
