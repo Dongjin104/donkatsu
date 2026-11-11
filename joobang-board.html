@@ -197,16 +197,14 @@
         function completeOrder(rowIndex) {
             if (!confirm("고객에게 돈가스를 전달하고 수령 완료 처리하시겠습니까?")) return;
             
-            // 💡 1. 서버에 '완료' 요청을 백그라운드로 조용히 보냅니다.
-            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function(res) {
-                console.log("상태 변경 완료됨");
-            });
+            // 1. 서버에 상태 변경 요청 전송 (에러 무시)
+            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function(res) {});
 
-            // 💡 2. 서버 응답을 기다리지 않고, 사용자가 누르는 즉시 화면 리스트에서 해당 주문을 눈앞에서 확 지워버립니다!
+            // 2. 응답을 기다리지 않고 즉시 화면에서 해당 주문 요소를 찾아 삭제 처리
             const listEl = document.getElementById('order-list');
             if (listEl) {
-                // 화면 전체를 다시 그리지 않고 해당 주문 카드만 싹 숨깁니다.
-                fetchOrders(); // 서버 갱신 요청
+                // 즉시 화면 목록을 다시 불러와서 깔끔하게 갱신
+                fetchOrders();
             }
         }
 
