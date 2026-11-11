@@ -940,24 +940,43 @@
     });
 
     // 🌟 고급스러운 인터랙티브 버튼 터치 사운드 (우아한 마그네틱 우드/글래스 팝 사운드)
+    // AudioContext를 전역으로 관리
+    let audioCtx = null;
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                audioCtx = new AudioContextClass();
+            }
+        }
+        // 브라우저 정책상 잠겨있는 상태(suspended)라면 사용자 인터랙션 때 풀어줌
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
     function playClickSound() {
         try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
 
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(820, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(340, audioCtx.currentTime + 0.04);
+            osc.frequency.setValueAtTime(820, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(340, ctx.currentTime + 0.04);
 
-            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+            gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
 
             osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            gainNode.connect(ctx.destination);
 
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.05);
+            osc.stop(ctx.currentTime + 0.05);
         } catch (e) {}
     }
 
