@@ -188,14 +188,14 @@
 
         function toggleStatus(rowIndex, currentStatus) {
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
-            callGasAPI('updateOrderStatus', { rowIndex: rowIndex, status: nextStatus }, function() {
+            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function(res) {
                 fetchOrders();
             });
         }
 
         function completeOrder(rowIndex) {
             if (!confirm("고객에게 돈가스를 전달하고 수령 완료 처리하시겠습니까?")) return;
-            callGasAPI('updateOrderStatus', { rowIndex: rowIndex, status: '완료' }, function() {
+            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function(res) {
                 fetchOrders();
             });
         }
