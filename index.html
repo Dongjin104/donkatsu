@@ -5,102 +5,304 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>장날동천 돈가스 예약</title>
+    <!-- Pretendard 폰트 도입으로 극도의 가독성과 세련미 확보 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
     <style>
+        :root {
+            --bg-color: #F8F7F4;
+            --surface-color: #FFFFFF;
+            --surface-sub: #F3F1EC;
+            --text-main: #1C1B18;
+            --text-sub: #6B6860;
+            --text-muted: #9E9A90;
+            --border-color: #E6E3DA;
+            --accent-dark: #1C1B18;
+            --accent-gold: #C5A059;
+            --accent-gold-bg: #FBF8F0;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --shadow-card: 0 10px 30px -5px rgba(28, 27, 24, 0.04), 0 1px 3px rgba(28, 27, 24, 0.02);
+            --shadow-float: 0 20px 40px -10px rgba(28, 27, 24, 0.08);
+        }
+
         * { box-sizing: border-box; }
-        body { font-family: 'Apple SD Gothic Neo', '맑은 고딕', sans-serif; background-color: #f8f9fa; margin: 0; padding: 15px; color: #222; font-size: 18px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-        
-        h1 { text-align: center; color: #d32f2f; font-size: 32px; margin-bottom: 20px; font-weight: 700; }
-        .subtitle { text-align: center; color: #666; font-size: 15px; margin-bottom: 20px; }
+        body { 
+            font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 32px 16px; 
+            color: var(--text-main); 
+            font-size: 16.5px; 
+            letter-spacing: -0.02em;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        .form-group { margin-bottom: 25px; }
-        label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 18px; color: #333; }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: var(--surface-color); 
+            padding: 40px 28px; 
+            border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-card); 
+            border: 1px solid rgba(230, 227, 218, 0.6);
+        }
         
-        input[type="text"], select { width: 100%; padding: 14px; font-size: 17px; border: 1.5px solid #ddd; border-radius: 10px; background-color: #fafafa; }
+        .brand-badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            background: var(--accent-gold-bg);
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
 
-        .radio-group { display: flex; gap: 10px; }
+        .header-wrapper {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        h1 { 
+            color: var(--text-main); 
+            font-size: 30px; 
+            margin: 0 0 8px 0; 
+            font-weight: 800; 
+            letter-spacing: -0.03em;
+        }
+        .subtitle { 
+            color: var(--text-sub); 
+            font-size: 15.5px; 
+            margin: 0; 
+            font-weight: 400;
+        }
+
+        .form-group { margin-bottom: 32px; }
+        label { display: block; margin-bottom: 10px; font-weight: 700; font-size: 16px; color: var(--text-main); letter-spacing: -0.01em; }
+        
+        input[type="text"], select { 
+            width: 100%; 
+            padding: 16px 20px; 
+            font-size: 16px; 
+            border: 1.5px solid var(--border-color); 
+            border-radius: var(--radius-sm); 
+            background-color: #FAFAF9; 
+            color: var(--text-main);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            outline: none;
+            font-family: inherit;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent-dark);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(28, 27, 24, 0.06);
+        }
+
+        .radio-group { display: flex; gap: 12px; }
         .radio-btn { flex: 1; display: flex; }
         .radio-btn input { display: none; }
         .radio-btn label { 
             flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            padding: 15px 5px; background: #f8f9fa; border: 2px solid #ddd; border-radius: 12px; 
-            font-size: 16px; cursor: pointer; font-weight: bold; min-height: 80px; text-align: center;
-            word-break: keep-all; color: #555;
+            padding: 20px 12px; background: #FAFAF9; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); 
+            font-size: 15.5px; cursor: pointer; font-weight: 600; min-height: 80px; text-align: center;
+            word-break: keep-all; color: var(--text-sub);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .radio-btn input:checked + label { background-color: #e8f5e9; border-color: #2e7d32; color: #2e7d32; }
+        .radio-btn input:checked + label { 
+            background-color: var(--accent-dark); 
+            border-color: var(--accent-dark); 
+            color: #ffffff; 
+            box-shadow: 0 8px 20px rgba(28, 27, 24, 0.15);
+            transform: translateY(-1px);
+        }
 
-        .menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-        .menu-item-card { position: relative; background: #fff; border: 1.5px solid #e0e0e0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02); gap: 10px; overflow: hidden; }
+        .menu-grid { display: flex; flex-direction: column; gap: 16px; margin-top: 10px; }
+        .menu-item-card { 
+            position: relative; background: #fff; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); 
+            padding: 20px; display: flex; flex-direction: column; box-shadow: var(--shadow-card); gap: 16px; overflow: hidden; 
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .menu-item-card:hover {
+            border-color: #D1CFCD;
+            box-shadow: 0 12px 35px -5px rgba(28, 27, 24, 0.07);
+        }
         
         .sauce-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
-            gap: 10px; 
+            gap: 12px; 
             margin-top: 10px; 
         }
         
         .sauce-item-card { 
             position: relative; 
-            background: #fafafa; 
-            border: 1.5px solid #e0e0e0; 
-            border-radius: 10px; 
-            padding: 12px; 
+            background: #FAFAF9; 
+            border: 1.5px solid var(--border-color); 
+            border-radius: var(--radius-sm); 
+            padding: 16px; 
             display: flex; 
             flex-direction: column; 
             justify-content: space-between;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.01); 
+            box-shadow: var(--shadow-card); 
             overflow: hidden; 
-            gap: 10px;
+            gap: 12px;
+            transition: all 0.2s ease;
         }
-        .sauce-info { display: flex; flex-direction: column; gap: 2px; flex: 1; z-index: 1; }
-        .sauce-title { font-weight: bold; font-size: 16px; color: #333; }
-        .sauce-price { font-size: 14.5px; color: #555; font-weight: bold; }
+        .sauce-info { display: flex; flex-direction: column; gap: 3px; flex: 1; z-index: 1; }
+        .sauce-title { font-weight: 700; font-size: 15px; color: var(--text-main); }
+        .sauce-price { font-size: 14px; color: var(--text-sub); font-weight: 600; }
         .sauce-card-bottom {
             display: flex;
             justify-content: center;
             align-items: center;
-            border-top: 1px solid #f0f0f0;
-            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
         }
 
-        .menu-card-top { display: flex; align-items: flex-start; gap: 15px; width: 100%; }
-        .menu-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; flex-shrink: 0; }
+        .menu-card-top { display: flex; align-items: flex-start; gap: 18px; width: 100%; }
+        .menu-thumb { width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer; border: 1px solid var(--border-color); flex-shrink: 0; transition: transform 0.2s; }
+        .menu-thumb:hover { transform: scale(1.03); }
         
         .menu-details { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-        .menu-set-prefix { font-weight: bold; font-size: 15px; color: #d32f2f; margin-bottom: 2px; }
-        .menu-title { font-weight: bold; font-size: 14px; color: #333; line-height: 1.4; word-break: keep-all; overflow-wrap: break-word; }
-        .menu-price { font-size: 15px; color: #444; font-weight: bold; margin-top: 5px; }
+        .menu-set-prefix { font-weight: 700; font-size: 12.5px; color: var(--accent-gold); margin-bottom: 3px; letter-spacing: 0.05em; text-transform: uppercase; }
+        .menu-title { font-weight: 700; font-size: 16px; color: var(--text-main); line-height: 1.4; word-break: keep-all; overflow-wrap: break-word; }
+        .menu-price { font-size: 16px; color: var(--text-main); font-weight: 700; margin-top: 6px; }
 
-        .menu-card-bottom { display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid #f2f2f2; padding-top: 10px; }
-        .item-qty-control { display: flex; align-items: center; gap: 8px; z-index: 1; }
-        .item-q-btn { width: 40px; height: 40px; font-size: 20px; font-weight: bold; background-color: #f1f3f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
-        .item-q-btn:disabled { background-color: #e0e0e0 !important; color: #aaa !important; cursor: not-allowed !important; }
-        .item-q-input { width: 48px !important; text-align: center; font-size: 17px !important; font-weight: bold; padding: 4px !important; margin: 0 !important; }
+        .menu-card-bottom { display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; }
+        .item-qty-control { display: flex; align-items: center; gap: 10px; z-index: 1; }
+        .item-q-btn { 
+            width: 40px; height: 40px; font-size: 18px; font-weight: 700; background-color: var(--surface-sub); border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; color: var(--text-main);
+            transition: all 0.2s;
+        }
+        .item-q-btn:hover:not(:disabled) { background-color: #EBE8E1; border-color: #D1CFCD; }
+        .item-q-btn:disabled { background-color: #F5F4F0 !important; color: #C5C2BA !important; cursor: not-allowed !important; border-color: #EFEFEF !important; }
+        .item-q-input { width: 48px !important; text-align: center; font-size: 17px !important; font-weight: 700; padding: 4px !important; margin: 0 !important; }
 
-        .selected-summary-box { background: #f8f9fa; border: 1.5px solid #ddd; padding: 15px; border-radius: 10px; margin-top: 15px; font-size: 16px; color: #333; line-height: 1.6; text-align: left; }
-        .summary-item-line { display: block; margin-bottom: 4px; font-weight: bold; color: #d32f2f; }
+        .selected-summary-box { background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 20px; border-radius: var(--radius-sm); margin-top: 20px; font-size: 15.5px; color: var(--text-main); line-height: 1.7; text-align: left; }
+        .summary-item-line { display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-main); }
 
-        .total-price-box { background: #fff5f5; border: 1.5px solid #ffcdd2; padding: 15px; border-radius: 10px; text-align: right; margin-top: 10px; font-size: 19px; font-weight: bold; color: #c62828; }
+        .total-price-box { 
+            background: var(--accent-dark); 
+            border: none; 
+            padding: 20px 24px; 
+            border-radius: var(--radius-sm); 
+            text-align: right; 
+            margin-top: 14px; 
+            font-size: 18px; 
+            font-weight: 700; 
+            color: #ffffff; 
+            box-shadow: 0 10px 25px rgba(28, 27, 24, 0.12);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-price-box span { color: #E6C584; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
 
-        .submit-btn { width: 100%; background-color: #d32f2f; color: white; border: none; padding: 18px; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 10px rgba(211,47,47,0.2); }
-        .submit-btn:disabled, .modal-btn:disabled { background-color: #adb5bd !important; cursor: not-allowed; box-shadow: none; }
+        .submit-btn { 
+            width: 100%; 
+            background-color: var(--accent-dark); 
+            color: white; 
+            border: none; 
+            padding: 20px; 
+            border-radius: var(--radius-sm); 
+            font-size: 18.5px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            margin-top: 16px; 
+            box-shadow: 0 10px 30px rgba(28, 27, 24, 0.15);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            letter-spacing: -0.01em;
+        }
+        .submit-btn:hover { background-color: #2F2D29; transform: translateY(-2px); box-shadow: 0 15px 35px rgba(28, 27, 24, 0.2); }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled, .modal-btn:disabled { background-color: #D1CFCD !important; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; padding: 20px; z-index: 999; }
-        .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; text-align: center; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-        .modal-content h3 { font-size: 30px; margin-top: 0; }
-        .modal-btn { background-color: #d32f2f; color: white; border: none; padding: 15px; font-size: 17px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; }
-        .close-btn { background-color: #6c757d; margin-top: 8px; }
+        /* 🌟 부드러운 페이드인 애니메이션 모달 클래스 스타일 */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(28, 27, 24, 0); 
+            backdrop-filter: blur(0px); 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px; 
+            z-index: 999; 
+            opacity: 0;
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.35s ease, backdrop-filter 0.35s ease;
+            pointer-events: none;
+        }
+        .modal.active {
+            display: flex;
+            opacity: 1;
+            background: rgba(28, 27, 24, 0.65);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+        }
+        .modal-content { 
+            background: #FFFFFF; 
+            padding: 36px 28px; 
+            border-radius: var(--radius-lg); 
+            max-width: 460px; 
+            text-align: center; 
+            width: 100%; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            box-shadow: var(--shadow-float); 
+            border: 1px solid rgba(230, 227, 218, 0.8);
+            transform: translateY(16px) scale(0.97);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal.active .modal-content {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        .modal-content h3 { font-size: 23px; margin-top: 0; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em; }
+        .modal-btn { background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 17px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 18px; width: 100%; transition: background 0.2s, transform 0.15s; }
+        .modal-btn:hover { background-color: #2F2D29; transform: translateY(-1px); }
+        .close-btn { background-color: var(--surface-sub) !important; color: var(--text-sub) !important; margin-top: 10px; border: 1px solid var(--border-color); }
+        .close-btn:hover { background-color: #EBE8E1 !important; color: var(--text-main) !important; }
         
-        /* 💡 다중 이미지 가로 스크롤(스와이프) 모달 스타일 */
-        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        #imageModal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(28, 27, 24, 0); 
+            backdrop-filter: blur(0px); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999; 
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.35s ease, background 0.35s ease;
+            pointer-events: none;
+        }
+        #imageModal.active {
+            display: flex;
+            opacity: 1;
+            background: rgba(28, 27, 24, 0.9);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+        }
         #modalImageContainer {
             display: flex;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
-            gap: 15px;
+            gap: 16px;
             width: 100%;
-            max-width: 500px;
-            max-height: 70vh;
+            max-width: 520px;
+            max-height: 72vh;
             padding: 10px;
             -webkit-overflow-scrolling: touch;
         }
@@ -110,123 +312,121 @@
             height: auto;
             object-fit: contain;
             scroll-snap-align: center;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
         }
 
-        .kakao-btn { background-color: #fee500; color: #3c1e1e; border: 1.5px solid #dfca00; padding: 12px 14px; font-size: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; display: block; text-decoration: none; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
-        .share-link-btn { background-color: #f1f8ff; color: #0d47a1; border: 1.5px solid #bbe2ff; padding: 12px 14px; font-size: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: background-color 0.2s; line-height: 1.4; text-align: center; }
-        .share-link-btn:hover { background-color: #e3f2fd; }
+        .kakao-btn { background-color: #FEE500; color: #3C1E1E; border: 1.5px solid #FAD000; padding: 15px; font-size: 15.5px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 12px; width: 100%; display: block; text-decoration: none; text-align: center; box-shadow: var(--shadow-card); transition: filter 0.2s, transform 0.15s; }
+        .kakao-btn:hover { filter: brightness(0.97); transform: translateY(-1px); }
 
-        .pwa-guide-btn { background-color: #fffde7; color: #f57f17; border: 1.5px solid #fff59d; padding: 12px 14px; font-size: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .pwa-guide-btn:hover { background-color: #fff9c4; }
+        .share-link-btn { background-color: #FAFAF9; color: var(--text-main); border: 1.5px solid var(--border-color); padding: 15px; font-size: 15.5px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 12px; width: 100%; box-shadow: var(--shadow-card); transition: all 0.2s; line-height: 1.4; text-align: center; }
+        .share-link-btn:hover { background-color: var(--surface-sub); border-color: #D1CFCD; transform: translateY(-1px); }
 
-        .notice-extra-btn { background-color: #f4fbf7; color: #2e7d32; border: 1.5px solid #a3d9c9; padding: 12px 14px; font-size: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .notice-extra-btn:hover { background-color: #e8f5e9; }
+        .pwa-guide-btn { background-color: #FAFAF9; color: var(--text-main); border: 1.5px solid var(--border-color); padding: 15px; font-size: 15.5px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 12px; width: 100%; box-shadow: var(--shadow-card); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .pwa-guide-btn:hover { background-color: var(--surface-sub); border-color: #D1CFCD; transform: translateY(-1px); }
 
-        #alreadyOrderedNotice { display: none; background: #f4fbf7; border: 1.5px solid #a3d9c9; padding: 15px 12px; border-radius: 14px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(46,125,50,0.04); }
+        .notice-extra-btn { background-color: #FAFAF9; color: var(--text-main); border: 1.5px solid var(--border-color); padding: 15px; font-size: 15.5px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 12px; width: 100%; box-shadow: var(--shadow-card); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .notice-extra-btn:hover { background-color: var(--surface-sub); border-color: #D1CFCD; transform: translateY(-1px); }
+
+        #alreadyOrderedNotice { display: none; background: #FFFFFF; border: 1.5px solid var(--border-color); padding: 28px 22px; border-radius: var(--radius-md); text-align: center; margin-bottom: 24px; box-shadow: var(--shadow-card); }
         
-        #quickReorderBox { display: none; background: #f4fbf7; border: 1.5px solid #81c784; padding: 25px 20px; border-radius: 14px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(76,175,80,0.08); text-align: center; }
+        #quickReorderBox { display: none; background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 30px 22px; border-radius: var(--radius-md); margin-bottom: 28px; box-shadow: var(--shadow-card); text-align: center; }
         #orderForm { display: none; }
         
         .notice-box { 
             display: none; 
-            margin-bottom: 20px; 
-            background: linear-gradient(135deg, #fffbf0, #fff5e6); 
-            border: 1.5px solid #ffe0b2; 
-            padding: 14px 16px; 
-            border-radius: 12px; 
-            font-size: 14px; 
-            color: #d84315; 
+            margin-bottom: 24px; 
+            background: var(--accent-gold-bg); 
+            border: 1.5px solid #F3E6C8; 
+            padding: 16px 20px; 
+            border-radius: var(--radius-sm); 
+            font-size: 14.5px; 
+            color: #8C6D1F; 
             text-align: center; 
-            box-shadow: 0 2px 8px rgba(230,81,0,0.04);
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.05);
             word-break: keep-all;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-weight: 500;
         } 
         
         #closedNotice { 
             display: none; 
-            background: #fffafa; 
-            border: 2px solid #e57373; 
-            padding: 25px 20px; 
-            border-radius: 16px; 
+            background: #FFFFFF; 
+            border: 1.5px solid var(--border-color); 
+            padding: 36px 24px; 
+            border-radius: var(--radius-lg); 
             text-align: center; 
             margin-top: 10px;
-            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.05);
+            box-shadow: var(--shadow-card);
             word-break: keep-all;
             overflow-wrap: break-word;
         }
 
-        @keyframes spinHourglass {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(180deg); }
-            100% { transform: rotate(360deg); }
+        /* Skeleton UI Shimmer Animation & Styles */
+        @keyframes skeletonPulse {
+            0% { background-color: #EBE8E1; }
+            50% { background-color: #D1CFCD; }
+            100% { background-color: #EBE8E1; }
         }
-        .hourglass-spinning {
-            display: inline-block;
-            animation: spinHourglass 2s infinite ease-in-out;
+        .skeleton-shimmer {
+            animation: skeletonPulse 1.4s infinite ease-in-out;
+            border-radius: 8px;
         }
-
-        .unified-loading-box {
-            background: #f4fbf7;
-            border: 1.5px solid #a3d9c9;
-            padding: 35px 20px;
-            border-radius: 14px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(46,125,50,0.04);
-            margin: 10px 0;
+        .skeleton-card {
+            background: #fff;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            gap: 14px;
         }
 
         .busy-info-box {
             display: none;
-            margin-top: 10px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            font-size: 14.5px;
-            line-height: 1.5;
+            margin-top: 12px;
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            line-height: 1.6;
             word-break: keep-all;
-            font-weight: bold;
+            font-weight: 600;
         }
-        .busy-level-yellow { background-color: #fffde7; border: 1.5px solid #ffe082; color: #f57f17; }
-        .busy-level-orange { background-color: #fff3e0; border: 1.5px solid #ffb74d; color: #ef6c00; }
-        .busy-level-red { background-color: #ffebee; border: 1.5px solid #ffcdd2; color: #c62828; }
+        .busy-level-yellow { background-color: #FEFCE8; border: 1.5px solid #FEF08A; color: #A16207; }
+        .busy-level-orange { background-color: #FFF7ED; border: 1.5px solid #FFEDD5; color: #C2410C; }
+        .busy-level-red { background-color: #FFF1F2; border: 1.5px solid #FFE4E6; color: #BE123C; }
 
         .order-info-card {
-            background: white; 
-            border: 1.5px solid #d5e8df; 
-            padding: 12px 10px; 
-            border-radius: 10px; 
+            background: #FAFAF9; 
+            border: 1.5px solid var(--border-color); 
+            padding: 18px 16px; 
+            border-radius: var(--radius-sm); 
             text-align: left; 
-            margin-bottom: 12px; 
-            font-size: 15px; 
-            color: #333; 
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.01);
+            margin-bottom: 18px; 
+            font-size: 15.5px; 
+            color: var(--text-main); 
         }
         .order-info-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 9px 0;
-            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 0;
+            gap: 12px;
         }
         .order-info-row:last-child {
             border-bottom: none;
         }
         .order-info-label {
-            font-size: 14px;
-            color: #666;
-            font-weight: bold;
+            font-size: 14.5px;
+            color: var(--text-sub);
+            font-weight: 600;
             white-space: nowrap;
-            min-width: 70px;
+            min-width: 80px;
         }
         .order-info-value {
-            font-size: 15px;
-            font-weight: bold;
-            color: #222;
+            font-size: 15.5px;
+            font-weight: 700;
+            color: var(--text-main);
             text-align: right;
             word-break: keep-all;
             overflow-wrap: break-word;
@@ -236,63 +436,84 @@
         .sticky-submit-wrapper {
             position: sticky;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-            padding: 12px 0 5px 0;
-            margin-top: 20px;
-            border-top: 1px solid #eee;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            padding: 18px 0 12px 0;
+            margin-top: 28px;
+            border-top: 1px solid var(--border-color);
             z-index: 99;
         }
         .container {
-            padding-bottom: 90px !important; 
+            padding-bottom: 110px !important; 
         }
     </style>
 </head>
 <body>
 
-<!-- 🎨 감성적인 서비스 점검 중 화면 -->
-<div id="maintenanceOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #fafafa; z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; text-align: center;">
-    <div style="background: #ffffff; border-radius: 20px; padding: 40px 24px; max-width: 420px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
-        <div style="font-size: 54px; margin-bottom: 16px;">🛠️</div>
-        <h2 style="font-size: 22px; color: #222; font-weight: 700; margin-bottom: 12px; word-break: keep-all;">장날동천 시스템 점검 안내</h2>
-        <p style="font-size: 14.5px; color: #666; line-height: 1.6; margin-bottom: 24px; word-break: keep-all;">
+<!-- 🎨 시스템 점검 중 화면 -->
+<div id="maintenanceOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--bg-color); z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; text-align: center;">
+    <div style="background: #ffffff; border-radius: var(--radius-lg); padding: 48px 28px; max-width: 440px; width: 100%; box-shadow: var(--shadow-float); border: 1px solid var(--border-color);">
+        <div style="font-size: 52px; margin-bottom: 18px;">🛠️</div>
+        <h2 style="font-size: 24px; color: var(--text-main); font-weight: 800; margin-bottom: 12px; word-break: keep-all;">장날동천 시스템 점검 안내</h2>
+        <p style="font-size: 15px; color: var(--text-sub); line-height: 1.7; margin-bottom: 24px; word-break: keep-all;">
             더 쾌적하고 안정적인 예약 서비스를 제공하기 위해<br>현재 <b>시스템 점검 및 업데이트</b>를 진행 중입니다.
         </p>
-        <div style="background: #fff8e1; border: 1px solid #ffe0b2; border-radius: 12px; padding: 14px; font-size: 13.5px; color: #d84315; margin-bottom: 28px; line-height: 1.5;">
+        <div style="background: var(--accent-gold-bg); border: 1px solid #F3E6C8; border-radius: var(--radius-sm); padding: 16px; font-size: 14px; color: #8C6D1F; margin-bottom: 28px; line-height: 1.6; font-weight: 500;">
             ⏰ 점검 중에는 신규 예약 및 예약 변경이 일시 중단됩니다. 이용에 불편을 드려 죄송합니다.
         </div>
-        
-        <!-- 💡 사장님 전용 비밀 인증 영역 -->
-        <button type="button" onclick="openAdminAuthPrompt()" style="background: transparent; border: none; color: #bbb; font-size: 12px; text-decoration: underline; cursor: pointer;">
+        <button type="button" onclick="openAdminAuthPrompt()" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; text-decoration: underline; cursor: pointer; font-weight: 600;">
             관리자 테스트 접속
         </button>
     </div>
 </div>
 
 <div class="container">
-    <h1>장날동천 돈가스 예약</h1>
-    <div class="subtitle">항상 찾아주셔서 감사합니다!</div>
+    <div class="header-wrapper">
+        <div class="brand-badge">PREMIUM TONKATSU</div>
+        <h1>장날동천 돈가스 예약</h1>
+        <div class="subtitle">정성을 다해 준비하는 프리미엄 수제 돈가스</div>
+    </div>
 
-    <div id="pageLoadingOverlay" class="unified-loading-box">
-        <div class="hourglass-spinning" style="font-size: 36px; margin-bottom: 12px;">⏳</div>
-        <p style="font-size: 18px; font-weight: bold; color: #2e7d32; margin: 0 0 6px 0;">예약 시스템을 불러오는 중입니다.</p>
-        <p style="font-size: 14px; color: #666; margin: 0;">잠시만 기다려주세요.</p>
+    <!-- 첫 예약 페이지 진입 시 나타나는 깔끔한 스켈레톤 로딩 UI -->
+    <div id="pageLoadingOverlay" class="menu-grid">
+        <div class="skeleton-card">
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <div class="skeleton-shimmer" style="width: 76px; height: 76px; border-radius: 12px; flex-shrink: 0;"></div>
+                <div style="display: flex; flex-direction: column; gap: 10px; flex: 1;">
+                    <div class="skeleton-shimmer" style="width: 35%; height: 14px;"></div>
+                    <div class="skeleton-shimmer" style="width: 75%; height: 16px;"></div>
+                    <div class="skeleton-shimmer" style="width: 45%; height: 15px; margin-top: 4px;"></div>
+                </div>
+            </div>
+            <div class="skeleton-shimmer" style="width: 100%; height: 44px; border-radius: 10px; margin-top: 6px;"></div>
+        </div>
+        <div class="skeleton-card">
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <div class="skeleton-shimmer" style="width: 76px; height: 76px; border-radius: 12px; flex-shrink: 0;"></div>
+                <div style="display: flex; flex-direction: column; gap: 10px; flex: 1;">
+                    <div class="skeleton-shimmer" style="width: 30%; height: 14px;"></div>
+                    <div class="skeleton-shimmer" style="width: 65%; height: 16px;"></div>
+                    <div class="skeleton-shimmer" style="width: 40%; height: 15px; margin-top: 4px;"></div>
+                </div>
+            </div>
+            <div class="skeleton-shimmer" style="width: 100%; height: 44px; border-radius: 10px; margin-top: 6px;"></div>
+        </div>
     </div>
 
     <!-- 영업 시간 외 안내 및 하단 버튼 박스 -->
     <div id="closedNotice">
-        <div style="font-size: 22px; font-weight: bold; color: #d32f2f; margin-bottom: 12px; line-height: 1.4;">
+        <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-bottom: 14px; line-height: 1.4;">
             ⏰ 현재는 예약 가능 시간이 아닙니다
         </div>
-        <div style="font-size: 16.5px; color: #444; line-height: 1.7; margin-top: 10px;">
+        <div style="font-size: 16px; color: var(--text-sub); line-height: 1.7; margin-top: 10px;">
             온라인 예약 가능 시간은<br>
-            <span style="color: #d32f2f; font-weight: bold; font-size: 18px;" id="closedTimeRange"></span><br>
+            <span style="color: var(--text-main); font-weight: 800; font-size: 18px;" id="closedTimeRange"></span><br>
             입니다.<br><br>
             운영 시간 외에는 예약을 받지 않으니 양해 부탁드립니다! 🙏
         </div>
 
-        <div style="margin-top: 25px; background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 15px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); text-align: left;">
-            <div style="font-size: 15px; font-weight: bold; color: #444; margin-bottom: 12px; text-align: center;">
+        <div style="margin-top: 28px; background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 20px 16px; border-radius: var(--radius-md); text-align: left;">
+            <div style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 14px; text-align: center;">
                 💡 영업 외 시간에 필요한 메뉴 바로가기
             </div>
             
@@ -315,64 +536,64 @@
     </div>
 
     <div id="alreadyOrderedNotice">
-        <h3 style="color: #2e7d32; margin-top: 5px; font-size: 25px; margin-bottom: 4px; white-space: nowrap;">예약이 완료 되었습니다.</h3>
+        <h3 style="color: var(--text-main); margin-top: 4px; font-size: 24px; margin-bottom: 8px; white-space: nowrap; font-weight: 800;">예약이 완료 되었습니다</h3>
         
-        <p style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.4; word-break: keep-all;">
-            중복 예방을 위해 <br>이 기기에서는 1개의 예약만 관리됩니다.
+        <p style="font-size: 14px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; word-break: keep-all;">
+            중복 예방을 위해 이 기기에서는 1개의 예약만 관리됩니다.
         </p>
         
         <div class="order-info-card">
             <div class="order-info-row">
                 <span class="order-info-label">닉네임/전화번호</span>
-                <span class="order-info-value" id="displayNick" style="color: #2e7d32;"></span>
+                <span class="order-info-value" id="displayNick" style="color: var(--text-main);"></span>
             </div>
 
             <div class="order-info-row">
                 <span class="order-info-label">조리 방식</span>
-                <span class="order-info-value" id="displayCookType" style="color: #1b5e20;"></span>
+                <span class="order-info-value" id="displayCookType" style="color: var(--text-main);"></span>
             </div>
 
             <div class="order-info-row">
                 <span class="order-info-label">주문 메뉴</span>
-                <div class="order-info-value" id="displayMenu" style="color: #d32f2f;"></div>
+                <div class="order-info-value" id="displayMenu" style="color: var(--text-main);"></div>
             </div>
 
             <div class="order-info-row">
                 <span class="order-info-label">선택 소스</span>
-                <div class="order-info-value" id="displaySauce" style="color: #0277bd;"></div>
+                <div class="order-info-value" id="displaySauce" style="color: var(--text-sub);"></div>
             </div>
 
             <div class="order-info-row" id="eventRowContainer" style="display: none;">
                 <span class="order-info-label">이벤트 당첨</span>
-                <span class="order-info-value" id="displayEventPrize" style="color: #e67e22;"></span>
+                <span class="order-info-value" id="displayEventPrize" style="color: #D97706;"></span>
             </div>
 
             <div class="order-info-row">
                 <span class="order-info-label">픽업 시간</span>
-                <span class="order-info-value" id="displayPickupTime" style="color: #d32f2f; font-size: 16.5px;"></span>
+                <span class="order-info-value" id="displayPickupTime" style="color: var(--text-main); font-size: 17px;"></span>
             </div>
 
-            <div class="order-info-row" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1.5px solid #e9ecef; margin-top: 4px;">
-                <span class="order-info-label" style="color: #333; font-size: 14px;">총 결제 금액</span>
-                <span class="order-info-value" id="displayTotalPrice" style="color: #c62828; font-size: 18px; font-weight: 800;"></span>
+            <div class="order-info-row" style="background: var(--accent-dark); padding: 14px 16px; border-radius: var(--radius-sm); border: none; margin-top: 8px;">
+                <span class="order-info-label" style="color: #9CA3AF; font-size: 14px;">총 결제 금액</span>
+                <span class="order-info-value" id="displayTotalPrice" style="color: #E6C584; font-size: 19px; font-weight: 800;"></span>
             </div>
 
-            <button class="modal-btn" style="background-color: #2e7d32; margin-top: 12px; margin-bottom: 2px; padding: 16px; font-size: 18.5px; border-radius: 10px; box-shadow: 0 3px 8px rgba(46,125,50,0.2); white-space: nowrap; font-weight: 900;" onclick="openSearchModal()">✏️ 내 예약 내용 수정하기</button>
+            <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 16px; margin-bottom: 2px; padding: 18px; font-size: 17.5px; border-radius: var(--radius-sm); white-space: nowrap; font-weight: 800;" onclick="openSearchModal()">✏️ 내 예약 내용 수정하기</button>
         </div>
 
-        <div id="fortuneSection" style="display: none; margin-bottom: 12px; text-align: center;">
-            <button id="fortuneOpenBtn" onclick="openFortuneCookie()" style="width: 100%; background: linear-gradient(135deg, #fff3e0, #ffe082); border: 2px dashed #f57c00; padding: 12px; border-radius: 10px; font-size: 15px; font-weight: bold; color: #e65100; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <div id="fortuneSection" style="display: none; margin-bottom: 16px; text-align: center;">
+            <button id="fortuneOpenBtn" onclick="openFortuneCookie()" style="width: 100%; background: var(--accent-gold-bg); border: 2px dashed #FCD34D; padding: 16px; border-radius: var(--radius-sm); font-size: 15.5px; font-weight: 700; color: #B45309; cursor: pointer; box-shadow: var(--shadow-card);">
                 🥠 [클릭] 오늘의 포춘쿠키 열어보기 ✨
             </button>
 
-            <div id="fortuneCard" style="display: none; background: #fffdf0; border: 2px solid #ffd54f; padding: 15px 14px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(245,124,0,0.12); transform: scale(0.95); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-                <div style="font-size: 13.5px; font-weight: bold; color: #e65100; margin-bottom: 6px;">✨ 장날 삼촌의 따뜻한 마음 선물 ✨</div>
-                <div id="fortuneText" style="font-size: 14.5px; color: #333; line-height: 1.5; word-break: keep-all; font-style: italic; font-weight: 500;"></div>
+            <div id="fortuneCard" style="display: none; background: #FFFDF5; border: 2px solid #FEF08A; padding: 20px 18px; border-radius: var(--radius-sm); text-align: center; box-shadow: 0 10px 25px rgba(245,158,11,0.08); transform: scale(0.95); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                <div style="font-size: 14px; font-weight: 700; color: #B45309; margin-bottom: 6px;">✨ 장날 삼촌의 따뜻한 마음 선물 ✨</div>
+                <div id="fortuneText" style="font-size: 15px; color: var(--text-main); line-height: 1.6; word-break: keep-all; font-style: italic; font-weight: 500;"></div>
             </div>
         </div>
 
-        <div style="background: #ffffff; border: 1.5px solid #d5e8df; padding: 12px 10px; border-radius: 10px; margin-bottom: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.01);">
-            <div id="statusBadgeBox" style="padding: 10px 8px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 14px; line-height: 1.4; word-break: keep-all;"></div>
+        <div style="background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 16px 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+            <div id="statusBadgeBox" style="padding: 12px 10px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 14.5px; line-height: 1.5; word-break: keep-all;"></div>
             
             <a id="kakaoInquireBtn" href="https://open.kakao.com/o/s5cl8IRi" target="_blank" class="kakao-btn" style="display: none;">💬 삼촌한테 내역 확인 요청하기</a>
             
@@ -389,20 +610,21 @@
         (추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
     </div>
 
+    <!-- 3초 재주문 박스 -->
     <div id="quickReorderBox">
-        <h3 style="color: #2e7d32; margin-top: 0; font-size: 18px; margin-bottom: 8px;">직전에 주문하신 내역이 있어요</h3>
+        <h3 style="color: var(--text-main); margin-top: 0; font-size: 19px; margin-bottom: 12px; font-weight: 800;">직전에 주문하신 내역이 있어요</h3>
         
-        <div id="quickReorderSummaryCard" class="order-info-card" style="margin-bottom: 16px; border-color: #c8e6c9;"></div>
+        <div id="quickReorderSummaryCard" class="order-info-card" style="margin-bottom: 18px;"></div>
         
-        <div style="margin-bottom: 16px; text-align: left;">
-            <label for="quickPickupTime" style="font-size: 15.5px; font-weight: bold; color: #1b5e20; margin-bottom: 6px;">픽업 시간 선택 *</label>
-            <select id="quickPickupTime" style="padding: 12px; font-size: 16px; background: white; border: 1.5px solid #aed581;" onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
+        <div style="margin-bottom: 18px; text-align: left;">
+            <label for="quickPickupTime" style="font-size: 15.5px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">픽업 시간 선택 *</label>
+            <select id="quickPickupTime" style="padding: 15px 18px; font-size: 16px;" onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
             <div id="quickBusyInfoBox" class="busy-info-box"></div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 9px;">
-            <button type="button" onclick="executeQuickReorder()" style="background-color: #2e7d32; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
-            <button type="button" onclick="loadPreviousToForm()" style="background-color: #0288d1; color: white; border: none; padding: 13px; font-size: 15.5px; font-weight: bold; border-radius: 10px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">✏️ 직전 메뉴 불러와서 수정하기</button>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button type="button" onclick="executeQuickReorder()" style="background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 16.5px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; box-shadow: 0 8px 20px rgba(28, 27, 24, 0.12);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
+            <button type="button" onclick="loadPreviousToForm()" style="background-color: var(--surface-sub); color: var(--text-main); border: 1.5px solid var(--border-color); padding: 16px; font-size: 16px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap;">✏️ 직전 메뉴 불러와서 수정하기</button>
         </div>
     </div>
 
@@ -416,7 +638,7 @@
                 </div>
                 <div class="radio-btn">
                     <input type="radio" id="cook2" name="cookType" value="🥩 생고기(반죽+빵가루)">
-                    <label for="cook2">생고기<br><small style="font-size:12px; font-weight:normal;">(반죽+빵가루)</small></label>
+                    <label for="cook2">생고기<br><small style="font-size:12.5px; font-weight:normal; opacity:0.85;">(반죽+빵가루)</small></label>
                 </div>
             </div>
         </div>
@@ -424,7 +646,7 @@
         <div class="form-group">
             <label for="nickname">2. 카톡 닉네임+전화번호 뒷자리 *</label>
             <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
-            <div style="margin-top: 8px; font-size: 13.5px; color: #c62828; background: #fff8e1; padding: 10px 12px; border-radius: 8px; border: 1.5px solid #ffe0b2; line-height: 1.4;">
+            <div style="margin-top: 12px; font-size: 14px; color: #B45309; background: var(--accent-gold-bg); padding: 14px 16px; border-radius: var(--radius-sm); border: 1.5px solid #F3E6C8; line-height: 1.6; font-weight: 500;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
                 꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라질 수 있으니 변경하지 말고 쭉 유지해 주세요!
             </div>
@@ -439,13 +661,13 @@
             <label>4. 추가 소스 선택</label>
             <div id="sauceCardContainer" class="sauce-grid"></div>
 
-            <div id="mainSelectedSummaryBox" class="selected-summary-box" style="margin-top: 15px;">
-                <div style="font-weight:bold; margin-bottom:5px; color:#444;">선택하신 주문 내역:</div>
+            <div id="mainSelectedSummaryBox" class="selected-summary-box" style="margin-top: 20px;">
+                <div style="font-weight:700; margin-bottom:8px; color:var(--text-main);">선택하신 주문 내역:</div>
                 <div id="mainSelectedSummaryList">선택된 메뉴가 없습니다.</div>
             </div>
 
             <div class="total-price-box">
-                총 주문 금액: <span id="mainTotalPrice">0</span>원
+                총 주문 금액 <span id="mainTotalPrice">0</span>원
             </div>
         </div>
 
@@ -457,7 +679,7 @@
 
         <div class="sticky-submit-wrapper">
             <button type="submit" id="submitBtn" class="submit-btn" style="margin-top: 0;">예약 완료하기</button>
-            <button type="button" class="share-link-btn" style="margin-top: 8px;" onclick="shareStoreLink()">장날동천 돈가스 예약 링크<br>친구에게 카카오톡으로 공유하기</button>
+            <button type="button" class="share-link-btn" style="margin-top: 12px;" onclick="shareStoreLink()">장날동천 돈가스 예약 링크<br>친구에게 카카오톡으로 공유하기</button>
         </div>
     </form>
 </div>
@@ -465,97 +687,96 @@
 <!-- 모달들 -->
 <div id="noticeModal" class="modal" style="z-index: 10035;">
     <div class="modal-content" style="text-align: left;">
-        <h3 style="color: #2e7d32; text-align: center; margin-bottom: 15px;">📢 단골 혜택 & 이용 안내</h3>
-        <div style="font-size: 15.5px; color: #333; line-height: 1.7; margin-bottom: 20px;">
+        <h3 style="color: var(--text-main); text-align: center; margin-bottom: 18px;">📢 단골 혜택 & 이용 안내</h3>
+        <div style="font-size: 15.5px; color: var(--text-sub); line-height: 1.8; margin-bottom: 24px;">
             • <b>온라인 예약 시간</b> <br>매일 오후1시부터 오후6시 30분까지 가능합니다.(주말&공휴일 제외)<br>
             • <b>돈가스 픽업 시간</b> <br>매일 오후3시부터 오후8시까지 가능합니다. <br>6시 30분에 모든 주문건을 만들어 놓기때문에 8시에 찾아가실 수는 있으나 음식이 식을 수 있습니다.<br>
             • <b>방문 횟수 적립</b> <br>최초 예약 닉네임과 전화번호를 그대로 유지하시면 단골 방문 횟수가 자동으로 쌓여 다양한 혜택을 드려요!<br>
             • <b>픽업 안내</b> <br>예약 시간에 맞춰 오셔서 닉네임과 휴대폰 번호를 말씀해 주세요.<br>
             • <b>문의 사항</b> <br>영업 외 시간에도 카카오톡 1:1 문의를 남겨주시면 확인 후 답변드립니다!
         </div>
-        <button class="modal-btn" style="background-color: #2e7d32; margin-top: 0;" onclick="closeNoticeModal()">확인했어요</button>
+        <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 0;" onclick="closeNoticeModal()">확인했어요</button>
     </div>
 </div>
 
 <div id="pwaGuideModal" class="modal" style="z-index: 10030;">
     <div class="modal-content" style="text-align: left;">
-        <h3 style="color: #2e7d32; text-align: center; margin-bottom: 15px;">📱 폰 바탕화면에 앱 추가하기</h3>
-        <div id="pwaGuideContent" style="font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 20px;"></div>
-        <button class="modal-btn" style="background-color: #2e7d32; margin-top: 0;" onclick="closePwaGuideModal()">확인했어요</button>
+        <h3 style="color: var(--text-main); text-align: center; margin-bottom: 18px;">📱 폰 바탕화면에 앱 추가하기</h3>
+        <div id="pwaGuideContent" style="font-size: 16px; color: var(--text-sub); line-height: 1.8; margin-bottom: 24px;"></div>
+        <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 0;" onclick="closePwaGuideModal()">확인했어요</button>
     </div>
 </div>
 
-<!-- 💡 다중 이미지 가로 스크롤 확대 모달 창 -->
 <div id="imageModal" onclick="closeImageModal()">
-    <div style="position:relative; width:90%; max-width:500px; text-align:center;" onclick="event.stopPropagation()">
+    <div style="position:relative; width:90%; max-width:520px; text-align:center;" onclick="event.stopPropagation()">
         <div id="modalImageContainer"></div>
-        <div style="margin-top: 15px; color: #fff; font-size: 14px;">↔ 좌우로 밀어서 다른 사진도 확인하세요</div>
-        <button onclick="closeImageModal()" style="margin-top: 15px; padding: 8px 20px; background:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">닫기</button>
+        <div style="margin-top: 18px; color: #fff; font-size: 14.5px; font-weight: 500;">↔ 좌우로 밀어서 다른 사진도 확인하세요</div>
+        <button onclick="closeImageModal()" style="margin-top: 18px; padding: 10px 24px; background:#fff; color:#1C1B18; border:none; border-radius:8px; font-weight:700; cursor:pointer;">닫기</button>
     </div>
 </div>
 
 <div id="customAlertModal" class="modal" style="z-index: 10010;">
     <div class="modal-content">
-        <h3 id="customAlertTitle" style="color:#d32f2f; margin-top:0;">안내</h3>
-        <p id="customAlertMessage" style="font-size:15px; line-height:1.6; text-align:center; color:#333; margin: 20px 0;"></p>
+        <h3 id="customAlertTitle" style="color:var(--text-main); margin-top:0;">안내</h3>
+        <p id="customAlertMessage" style="font-size:15.5px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 20px 0;"></p>
         <button class="modal-btn" id="customAlertConfirmBtn" onclick="closeCustomAlert()">확인</button>
     </div>
 </div>
 
 <div id="confirmReduceModal" class="modal" style="z-index: 10015;">
     <div class="modal-content">
-        <h3 style="color:#d32f2f; margin-top:0;">수량 변경 안내</h3>
-        <p style="font-size:17px; line-height:1.6; text-align:center; color:#333; margin: 20px 0;">
+        <h3 style="color:var(--text-main); margin-top:0;">수량 변경 안내</h3>
+        <p style="font-size:16.5px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 20px 0;">
             현재 재고가 <b>품절 상태</b>라 수량을 빼면 다시 선택이 불가능할 수 있습니다. 변경하시겠습니까?
         </p>
-        <div style="display: flex; gap: 10px;">
-            <button class="modal-btn" style="background-color: #6c757d; margin-top:0;" onclick="closeConfirmReduce(false)">아니오</button>
-            <button class="modal-btn" style="background-color: #d32f2f; margin-top:0;" onclick="closeConfirmReduce(true)">예 (수량 줄이기)</button>
+        <div style="display: flex; gap: 12px;">
+            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); margin-top:0;" onclick="closeConfirmReduce(false)">아니오</button>
+            <button class="modal-btn" style="background-color: var(--accent-dark); margin-top:0;" onclick="closeConfirmReduce(true)">예 (수량 줄이기)</button>
         </div>
     </div>
 </div>
 
 <div id="successModal" class="modal">
     <div class="modal-content">
-        <h3 style="color:#2e7d32; margin-top:0;">예약 완료</h3>
-        <p style="font-size:17px; line-height:1.6; text-align:left; color:#333;">
+        <h3 style="color:var(--text-main); margin-top:0;">예약 완료</h3>
+        <p style="font-size:16.5px; line-height:1.7; text-align:left; color:var(--text-sub);">
             픽업 오셔서 <b>예약하신 닉네임/전화번호</b> 말씀해 주시고 <b>결제</b> 후 돈가스 받아가시면 됩니다!
         </p>
-        <button class="modal-btn" style="background-color:#2e7d32;" onclick="reloadAfterSuccess();">확인</button>
+        <button class="modal-btn" style="background-color:var(--accent-dark);" onclick="reloadAfterSuccess();">확인</button>
     </div>
 </div>
 
 <div id="eventWinModal" class="modal" style="z-index: 10000;">
-    <div class="modal-content" style="background: linear-gradient(135deg, #fff6ed 0%, #ffffff 100%); border: 2px solid #f39c12;">
-        <div style="font-size: 2.5rem; margin-bottom: 5px;">🎉</div>
-        <h3 style="color: #d35400; margin-bottom: 10px;">서프라이즈 이벤트 당첨</h3>
-        <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 20px;">
+    <div class="modal-content" style="background: linear-gradient(135deg, #FFFCF7 0%, #FFFFFF 100%); border: 2px solid var(--accent-gold);">
+        <div style="font-size: 2.8rem; margin-bottom: 8px;">🎉</div>
+        <h3 style="color: #B45309; margin-bottom: 12px;">서프라이즈 이벤트 당첨</h3>
+        <p style="font-size: 15.5px; color: var(--text-sub); line-height: 1.6; margin-bottom: 24px;">
             예약을 완료하신 고객님께 드리는 특별 선물!<br>원하시는 서비스 메뉴를 선택해 주세요.
         </p>
-        <div id="eventOptionsContainer" style="text-align: left; background: #fff; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 20px;">
+        <div id="eventOptionsContainer" style="text-align: left; background: #fff; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 24px;">
         </div>
-        <button id="eventSubmitBtn" class="modal-btn" style="background-color: #e67e22; margin-top: 0;" onclick="submitEventPrizeChoice()">선택 완료 및 확인</button>
+        <button id="eventSubmitBtn" class="modal-btn" style="background-color: #B45309; margin-top: 0;" onclick="submitEventPrizeChoice()">선택 완료 및 확인</button>
     </div>
 </div>
 
 <div id="warningModal" class="modal" style="z-index: 10020;">
     <div class="modal-content">
-        <h3 style="color:#d32f2f;">픽업 시간 안내</h3>
-        <p style="font-size:17px; line-height:1.6; text-align:left;">
+        <h3 style="color:var(--text-main);">픽업 시간 안내</h3>
+        <p style="font-size:16.5px; line-height:1.7; text-align:left; color:var(--text-sub);">
             <b>오후 6시 35분 이후 픽업</b> 건은 6시 30분 튀김기 마감 청소로 인해 <b>6시 30분에 일괄 조리</b>되어 포장됩니다.<br><br>
             픽업 시간이 늦으실 경우 <u>음식이 식을 수 있는 점</u> 양해 부탁드립니다!
         </p>
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="modal-btn" style="background-color: #6c757d; margin-top: 0;" onclick="cancelWarningOrder()">아니오</button>
-            <button class="modal-btn" style="background-color: #d32f2f; margin-top: 0;" onclick="confirmOrder()">네, 확인했습니다 (예약 완료)</button>
+        <div style="display: flex; gap: 12px; margin-top: 18px;">
+            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); margin-top: 0;" onclick="cancelWarningOrder()">아니오</button>
+            <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 0;" onclick="confirmOrder()">네, 확인했습니다 (예약 완료)</button>
         </div>
     </div>
 </div>
 
 <div id="lockedModal" class="modal">
     <div class="modal-content">
-        <h3 style="color:#d32f2f;">예약 변경 불가 안내</h3>
-        <p style="font-size:17px; line-height:1.6; text-align:left; color:#333;">
+        <h3 style="color:var(--text-main);">예약 변경 불가 안내</h3>
+        <p style="font-size:16.5px; line-height:1.7; text-align:left; color:var(--text-sub);">
             장날 삼촌이 예약 확인을 완료처리하여 메뉴나 시간 변경이 불가능합니다.<br><br>
             변경을 원하시면 카톡 1:1 문의 주세요!
         </p>
@@ -564,69 +785,75 @@
     </div>
 </div>
 
+<!-- 수정 모달 -->
 <div id="searchModal" class="modal">
     <div class="modal-content" style="position: relative; display: flex; flex-direction: column; max-height: 85vh;">
-        <h3 style="color:#00897b; flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
+        <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
         
-        <div id="modalLoadingBox" class="unified-loading-box" style="margin: 20px 0;">
-            <div class="hourglass-spinning" style="font-size: 36px; margin-bottom: 12px;">⏳</div>
-            <p style="font-size: 19px; font-weight: bold; color: #2e7d32; margin: 0 0 6px 0;">예약 정보를 불러오는 중입니다.</p>
-            <p style="font-size: 15px; color: #666; margin: 0;">잠시만 기다려주세요.</p>
+        <!-- 수정 모달 내부의 스켈레톤 UI 로딩 박스 -->
+        <div id="modalLoadingBox" class="menu-grid" style="margin: 15px 0; text-align: left;">
+            <div class="skeleton-card" style="padding: 14px;">
+                <div style="display: flex; gap: 14px; align-items: center;">
+                    <div class="skeleton-shimmer" style="width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                        <div class="skeleton-shimmer" style="width: 70%; height: 14px;"></div>
+                        <div class="skeleton-shimmer" style="width: 40%; height: 14px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-shimmer" style="width: 100%; height: 36px; border-radius: 8px;"></div>
+            </div>
         </div>
 
-        <!-- 스크롤이 되는 내부 영역 -->
-        <div id="searchResultArea" style="margin-top:15px; text-align:left; background:#f9f9f9; padding:15px; border-radius:10px; border:1.5px solid #ddd; display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 30px;">
-            
-            <div style="background: linear-gradient(135deg, #fffbf0, #fff5e6); border: 1.5px solid #ffe0b2; padding: 12px 14px; border-radius: 10px; font-size: 14px; color: #d84315; text-align: center; margin-bottom: 15px; line-height: 1.4;">
+        <div id="searchResultArea" style="margin-top:15px; text-align:left; background:#FAFAF9; padding:18px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 30px;">
+            <div style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 14px 16px; border-radius: var(--radius-sm); font-size: 14.5px; color: #8C6D1F; text-align: center; margin-bottom: 18px; line-height: 1.5; font-weight: 500;">
                 💡 <b>돈가스 소스는 기본 1개만 제공 됩니다.</b><br>(추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
             </div>
 
-            <div class="form-group" style="margin-bottom:15px;">
-                <span style="font-size:15px; display:block; margin-bottom:8px; font-weight:bold;">조리 방식 변경</span>
+            <div class="form-group" style="margin-bottom:18px;">
+                <span style="font-size:15.5px; display:block; margin-bottom:10px; font-weight:700; color:var(--text-main);">조리 방식 변경</span>
                 <div class="radio-group">
                     <div class="radio-btn">
                         <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장">
-                        <label for="editCook1" style="font-size:14.5px; min-height:48px;">튀겨서 포장</label>
+                        <label for="editCook1" style="font-size:15px; min-height:50px;">튀겨서 포장</label>
                     </div>
                     <div class="radio-btn">
                         <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)">
-                        <label for="editCook2" style="font-size:14.5px; min-height:48px;">생고기(반죽+빵가루)</label>
+                        <label for="editCook2" style="font-size:15px; min-height:50px;">생고기(반죽+빵가루)</label>
                     </div>
                 </div>
             </div>
 
-            <div class="form-group" style="margin-top:10px; margin-bottom:10px;">
-                <span style="font-size:15px; display:block; margin-bottom:8px; font-weight:bold;">메뉴별 수량 변경</span>
+            <div class="form-group" style="margin-top:10px; margin-bottom:14px;">
+                <span style="font-size:15.5px; display:block; margin-bottom:10px; font-weight:700; color:var(--text-main);">메뉴별 수량 변경</span>
                 <div id="editMenuCardContainer" class="menu-grid"></div>
             </div>
 
-            <div class="form-group" style="margin-top:10px; margin-bottom:15px;">
-                <span style="font-size:15px; display:block; margin-bottom:8px; font-weight:bold;">추가 소스 변경</span>
+            <div class="form-group" style="margin-top:10px; margin-bottom:18px;">
+                <span style="font-size:15.5px; display:block; margin-bottom:10px; font-weight:700; color:var(--text-main);">추가 소스 변경</span>
                 <div id="editSauceCardContainer" class="sauce-grid"></div>
 
-                <div class="selected-summary-box" style="margin-top:12px;">
-                    <div style="font-weight:bold; margin-bottom:5px; color:#444;">변경할 주문 내역:</div>
+                <div class="selected-summary-box" style="margin-top:16px;">
+                    <div style="font-weight:700; margin-bottom:6px; color:var(--text-main);">변경할 주문 내역:</div>
                     <div id="editSelectedSummary">선택된 메뉴가 없습니다.</div>
                 </div>
 
-                <div class="total-price-box" style="font-size:17px; padding:12px;">
-                    변경할 총 금액: <span id="editTotalPrice">0</span>원
+                <div class="total-price-box" style="font-size:17px; padding:16px; margin-top:14px;">
+                    변경할 총 금액 <span id="editTotalPrice">0</span>원
                 </div>
             </div>
 
-            <p style="margin:5px 0; font-size:15px;"><b>현재 픽업 시간:</b> <span id="resTime" style="color:#333; font-weight:bold;"></span></p>
+            <p style="margin:12px 0; font-size:15.5px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime" style="color:var(--text-main); font-weight:700;"></span></p>
 
             <div class="form-group" style="margin-top:10px; margin-bottom:5px;" id="editPickupFormGroup">
-                <span style="font-size:15px; display:block; margin-bottom:5px; font-weight:bold;">변경할 픽업 시간 선택</span>
-                <select id="newPickupTime" style="padding:10px; font-size:16px;" onchange="handleTimeChange(this, 'editBusyInfoBox')"></select>
+                <span style="font-size:15.5px; display:block; margin-bottom:8px; font-weight:700; color:var(--text-main);">변경할 픽업 시간 선택</span>
+                <select id="newPickupTime" style="padding:14px; font-size:16px;" onchange="handleTimeChange(this, 'editBusyInfoBox')"></select>
                 <div id="editBusyInfoBox" class="busy-info-box"></div>
             </div>
         </div>
 
-        <!-- 💡 버튼 영역을 검색 결과 영역 바깥(모달 콘텐츠 최하단)으로 빼서 아래 내용이 절대 비치지 않게 완벽 차단 -->
-        <div id="searchModalActionBtns" style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 12px; border-top: 1px solid #eee; margin-top: 10px;">
-            <button id="updateBtn" class="modal-btn" style="background-color:#2e7d32; margin-top:0; padding:14px; margin-bottom:8px;" onclick="updateReservation()">변경된 내용 저장하기</button>
-            <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:14px; background-color:#6c757d; color:#fff;" onclick="closeSearchModal()">닫기</button>
+        <div id="searchModalActionBtns" style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 16px; border-top: 1px solid var(--border-color); margin-top: 12px;">
+            <button id="updateBtn" class="modal-btn" style="background-color:var(--accent-dark); margin-top:0; padding:16px; margin-bottom:10px;" onclick="updateReservation()">변경된 내용 저장하기</button>
+            <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:16px;" onclick="closeSearchModal()">닫기</button>
         </div>
     </div>
 </div>
@@ -667,6 +894,34 @@
     const quickPickupSelect = document.getElementById('quickPickupTime');
     const newPickupSelect = document.getElementById('newPickupTime');
 
+    // 🌟 모든 팝업(모달)을 부드러운 페이드인 애니메이션과 함께 여는 공통 헬퍼 함수
+    function showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.style.display = 'flex';
+        // 강제 브라우저 리플로우 후 active 클래스 추가하여 트랜지션 트리거
+        modal.offsetHeight;
+        modal.classList.add('active');
+        if (modalId === 'imageModal' || modalId === 'searchModal') {
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    // 🌟 모든 팝업(모달)을 부드러운 페이드아웃 애니메이션과 함께 닫는 공통 헬퍼 함수
+    function hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.remove('active');
+        setTimeout(() => {
+            if (!modal.classList.contains('active')) {
+                modal.style.display = 'none';
+            }
+        }, 350); // CSS 트랜지션 시간(0.35초)과 일치시킴
+        if (modalId === 'imageModal' || modalId === 'searchModal') {
+            document.body.style.overflow = '';
+        }
+    }
+
     window.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('out')) {
@@ -683,31 +938,29 @@
 
         checkAndRenderState();
     });
-    // 🎵 가볍고 청량한 '딸깍' 효과음 재생 함수 (별도 파일 필요 없음)
+
+    // 🌟 고급스러운 인터랙티브 버튼 터치 사운드 (우아한 마그네틱 우드/글래스 팝 사운드)
     function playClickSound() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
 
-            // 부드럽고 맑은 주파수 설정 (딸깍 / 톡 소리)
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTyme || audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.04);
+            osc.frequency.setValueAtTime(820, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(340, audioCtx.currentTime + 0.04);
 
-            // 소리가 짧고 깔끔하게 사라지도록 볼륨 제어 (Envelope)
-            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
 
             osc.connect(gainNode);
             gainNode.connect(audioCtx.destination);
 
             osc.start();
             osc.stop(audioCtx.currentTime + 0.05);
-        } catch (e) {
-            // 브라우저 정책상 오디오 차단 등의 상황에서도 에러 없이 방어
-        }
+        } catch (e) {}
     }
+
     function openAdminAuthPrompt() {
         const input = prompt("관리자 긴급코드를 입력하세요:");
         
@@ -741,11 +994,11 @@
     }
 
     function openNoticeModal() {
-        document.getElementById('noticeModal').style.display = 'flex';
+        showModal('noticeModal');
     }
 
     function closeNoticeModal() {
-        document.getElementById('noticeModal').style.display = 'none';
+        hideModal('noticeModal');
     }
 
     function openPwaGuideModal() {
@@ -770,11 +1023,11 @@
                 3. 안내창이 뜨면 <b>[설치]</b> 또는 <b>[추가]</b>를 누르면 끝입니다!
             `;
         }
-        modal.style.display = 'flex';
+        showModal('pwaGuideModal');
     }
 
     function closePwaGuideModal() {
-        document.getElementById('pwaGuideModal').style.display = 'none';
+        hideModal('pwaGuideModal');
     }
 
     function openFortuneCookie() {
@@ -846,15 +1099,15 @@
             let html = `
                 <div class="order-info-row">
                     <span class="order-info-label">주문 메뉴</span>
-                    <div class="order-info-value" style="color:#d32f2f;">${formattedMenuLines}</div>
+                    <div class="order-info-value" style="color:var(--text-main);">${formattedMenuLines}</div>
                 </div>
                 <div class="order-info-row">
                     <span class="order-info-label">선택 소스</span>
-                    <div class="order-info-value" style="color:#0277bd;">${formattedSauceLines}</div>
+                    <div class="order-info-value" style="color:var(--text-sub);">${formattedSauceLines}</div>
                 </div>
-                <div class="order-info-row" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; border: 1.5px solid #e9ecef; margin-top: 4px;">
-                    <span class="order-info-label" style="color:#333;">총 결제 금액</span>
-                    <span class="order-info-value" style="color:#c62828; font-size:18px; font-weight:800;">${lastPrice}</span>
+                <div class="order-info-row" style="background: var(--accent-dark); padding: 12px 14px; border-radius: 8px; border: none; margin-top: 6px;">
+                    <span class="order-info-label" style="color:#9CA3AF;">총 결제 금액</span>
+                    <span class="order-info-value" style="color:#E6C584; font-size:18px; font-weight:800;">${lastPrice}</span>
                 </div>
             `;
             document.getElementById('quickReorderSummaryCard').innerHTML = html;
@@ -977,13 +1230,18 @@
         document.getElementById('topNoticeBox').style.display = 'none';
 
         const quickBox = document.getElementById('quickReorderBox');
-        quickBox.className = "unified-loading-box";
-        quickBox.style.display = "block";
         quickBox.innerHTML = `
-            <div class="hourglass-spinning" style="font-size: 36px; margin-bottom: 12px;">⏳</div>
-            <p style="font-size: 19px; font-weight: bold; color: #2e7d32; margin: 0 0 6px 0;">3초 재주문 접수 중입니다.</p>
-            <p style="font-size: 15px; color: #666; margin: 0;">잠시만 기다려주세요.</p>
+            <div class="skeleton-card" style="margin: 0;">
+                <div style="display: flex; gap: 14px; align-items: center;">
+                    <div class="skeleton-shimmer" style="width: 48px; height: 48px; border-radius: 10px; flex-shrink: 0;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                        <div class="skeleton-shimmer" style="width: 60%; height: 15px;"></div>
+                        <div class="skeleton-shimmer" style="width: 40%; height: 14px;"></div>
+                    </div>
+                </div>
+            </div>
         `;
+        quickBox.style.display = "block";
 
         fetch(WEB_APP_URL, {
             method: 'POST',
@@ -1013,7 +1271,7 @@
                 openEventWinModal(data.eventMenuList);
             } else {
                 quickBox.style.display = 'none';
-                document.getElementById('successModal').style.display = 'flex';
+                showModal('successModal');
             }
         })
         .catch(err => {
@@ -1066,11 +1324,11 @@
         document.getElementById('customAlertTitle').textContent = title;
         document.getElementById('customAlertMessage').innerHTML = message;
         isCanceledOrNotFound = isCanceled;
-        document.getElementById('customAlertModal').style.display = 'flex';
+        showModal('customAlertModal');
     }
 
     function closeCustomAlert() {
-        document.getElementById('customAlertModal').style.display = 'none';
+        hideModal('customAlertModal');
         if (isCanceledOrNotFound) {
             localStorage.removeItem('savedNickname');
             localStorage.removeItem('lastOrderSummary');
@@ -1084,7 +1342,7 @@
     }
 
     function reloadAfterSuccess() {
-        document.getElementById('successModal').style.display = 'none';
+        hideModal('successModal');
         document.getElementById('pageLoadingOverlay').style.display = 'flex';
         document.getElementById('alreadyOrderedNotice').style.display = 'none';
         document.getElementById('orderForm').style.display = 'none';
@@ -1181,16 +1439,16 @@
                     if (!firstSelectableVal) firstSelectableVal = rawTimeStr;
                     
                     if (count >= 8) {
-                        option.style.backgroundColor = "#ffebee";
-                        option.style.color = "#c62828";
+                        option.style.backgroundColor = "#FFF1F2";
+                        option.style.color = "#BE123C";
                         option.style.fontWeight = "bold";
                     } else if (count >= 6) {
-                        option.style.backgroundColor = "#fff3e0";
-                        option.style.color = "#ef6c00";
+                        option.style.backgroundColor = "#FFF7ED";
+                        option.style.color = "#C2410C";
                         option.style.fontWeight = "bold";
                     } else if (count >= 4) {
-                        option.style.backgroundColor = "#fffde7";
-                        option.style.color = "#f57f17";
+                        option.style.backgroundColor = "#FEFCE8";
+                        option.style.color = "#A16207";
                         option.style.fontWeight = "bold";
                     }
                 }
@@ -1206,7 +1464,7 @@
             option.textContent = originalExistingTime + " (현재 내 예약 시간)";
             option.disabled = false;
             option.style.fontWeight = "bold";
-            option.style.color = "#2e7d32";
+            option.style.color = "var(--accent-dark)";
             selectElem.insertBefore(option, selectElem.firstChild);
             selectElem.value = originalExistingTime;
         } else if (originalExistingTime && originalTimeIncluded) {
@@ -1215,7 +1473,7 @@
                     selectElem.options[i].disabled = false;
                     selectElem.options[i].textContent = originalExistingTime + " (현재 내 예약 시간)";
                     selectElem.options[i].style.fontWeight = "bold";
-                    selectElem.options[i].style.color = "#2e7d32";
+                    selectElem.options[i].style.color = "var(--accent-dark)";
                     break;
                 }
             }
@@ -1308,22 +1566,22 @@
             }
 
             const topFlexDiv = document.createElement('div');
-            topFlexDiv.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;";
+            topFlexDiv.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 8px; width: 100%;";
 
             if (safeUrl) {
                 const img = document.createElement('img');
-                img.src = safeUrl.split(',')[0].trim(); // 첫 번째 이미지 썸네일
-                img.style.cssText = "width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; cursor: pointer; flex-shrink: 0;";
+                img.src = safeUrl.split(',')[0].trim();
+                img.style.cssText = "width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); cursor: pointer; flex-shrink: 0;";
                 img.loading = 'eager';
                 img.onerror = function() {
                     this.onerror = null;
-                    this.src = "https://via.placeholder.com/36x36?text=이미지";
+                    this.src = "https://via.placeholder.com/40x40?text=이미지";
                 };
                 img.onclick = function() { openImageModal(sauce.imageUrl); };
                 topFlexDiv.appendChild(img);
             } else {
                 const noImg = document.createElement('div');
-                noImg.style.cssText = "width: 36px; height: 36px; border-radius: 50%; background: #f1f3f5; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888; flex-shrink: 0; border: 1px solid #ddd; font-weight: bold;";
+                noImg.style.cssText = "width: 40px; height: 40px; border-radius: 50%; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); flex-shrink: 0; border: 1px solid var(--border-color); font-weight: bold;";
                 noImg.textContent = "사진";
                 topFlexDiv.appendChild(noImg);
             }
@@ -1331,8 +1589,8 @@
             const textDiv = document.createElement('div');
             textDiv.style.cssText = "display: flex; flex-direction: column; flex: 1; min-width: 0; text-align: left; gap: 2px;";
             textDiv.innerHTML = `
-                <div style="font-weight: bold; font-size: 12px; color: #333; line-height: 1.2;">${sauce.name}</div>
-                <div style="font-size: 11px; color: #555; font-weight: bold;">${formattedPriceStr}</div>
+                <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); line-height: 1.3;">${sauce.name}</div>
+                <div style="font-size: 12.5px; color: var(--text-sub); font-weight: 600;">${formattedPriceStr}</div>
             `;
             topFlexDiv.appendChild(textDiv);
             card.appendChild(topFlexDiv);
@@ -1343,26 +1601,26 @@
             
             const qtyControl = document.createElement('div');
             qtyControl.classList.add('item-qty-control');
-            qtyControl.style.cssText = "display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 4px;";
+            qtyControl.style.cssText = "display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 6px;";
 
             const minusBtn = document.createElement('button');
             minusBtn.type = 'button';
             minusBtn.classList.add('item-q-btn');
             minusBtn.textContent = '-';
-            minusBtn.style.cssText = "flex: 1; height: 32px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: #f8f9fa; border-radius: 4px;";
+            minusBtn.style.cssText = "flex: 1; height: 34px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 8px;";
             minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
             minusBtn.onclick = function() { updateSauceQty(idx, -1); };
 
             const qtyLabel = document.createElement('div');
             qtyLabel.id = `qty_sauce_${idx}`;
-            qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 15px; font-weight: bold; color: #333;";
+            qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 16px; font-weight: 700; color: var(--text-main);";
             qtyLabel.textContent = currentQty;
 
             const plusBtn = document.createElement('button');
             plusBtn.type = 'button';
             plusBtn.classList.add('item-q-btn');
             plusBtn.textContent = '+';
-            plusBtn.style.cssText = "flex: 1; height: 32px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: #f8f9fa; border-radius: 4px;";
+            plusBtn.style.cssText = "flex: 1; height: 34px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 8px;";
             plusBtn.disabled = (isSoldOut && !alreadyReserved);
             plusBtn.onclick = function() { updateSauceQty(idx, 1); };
 
@@ -1373,7 +1631,7 @@
             card.appendChild(bottomDiv);
 
             if (isSoldOut && !alreadyReserved) {
-                card.style.borderColor = "#ffcdd2";
+                card.style.borderColor = "#FFCDD2";
             }
             if (sauceContainer) sauceContainer.appendChild(card);
 
@@ -1455,21 +1713,21 @@
             const imgElem = document.createElement('div');
             if (safeUrl) {
                 const img = document.createElement('img');
-                img.src = safeUrl.split(',')[0].trim(); // 첫 번째 이미지 썸네일
+                img.src = safeUrl.split(',')[0].trim();
                 img.classList.add('menu-thumb');
                 img.loading = 'eager';
                 img.onerror = function() {
                     this.onerror = null;
-                    this.src = "https://via.placeholder.com/70x70?text=이미지";
+                    this.src = "https://via.placeholder.com/76x76?text=이미지";
                 };
                 img.onclick = function() {
-                    openImageModal(item.imageUrl); // 전체 URL 스트링 전달로 다중 스크롤 모달 실행
+                    openImageModal(item.imageUrl);
                 };
                 imgElem.appendChild(img);
             } else {
                 const noImg = document.createElement('div');
                 noImg.classList.add('menu-thumb');
-                noImg.style.cssText = "background:#eee; display:flex; align-items:center; justify-content:center; font-size:11px; color:#888;";
+                noImg.style.cssText = "background:var(--surface-sub); display:flex; align-items:center; justify-content:center; font-size:11.5px; color:var(--text-muted); font-weight:600;";
                 noImg.textContent = "사진없음";
                 imgElem.appendChild(noImg);
             }
@@ -1483,30 +1741,30 @@
 
             const bottomDiv = document.createElement('div');
             bottomDiv.classList.add('menu-card-bottom');
-            bottomDiv.style.cssText = "display: flex; justify-content: center; width: 100%; margin-top: 8px;";
+            bottomDiv.style.cssText = "display: flex; justify-content: center; width: 100%; margin-top: 6px;";
             
             const qtyControl = document.createElement('div');
             qtyControl.classList.add('item-qty-control');
-            qtyControl.style.cssText = "display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 4px;";
+            qtyControl.style.cssText = "display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 8px;";
 
             const minusBtn = document.createElement('button');
             minusBtn.type = 'button';
             minusBtn.classList.add('item-q-btn');
             minusBtn.textContent = '-';
-            minusBtn.style.cssText = "flex: 1; height: 32px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: #f8f9fa; border-radius: 4px;";
+            minusBtn.style.cssText = "flex: 1; height: 38px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 10px;";
             minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
             minusBtn.onclick = function() { updateMainQty(idx, -1); };
 
             const qtyLabel = document.createElement('div');
             qtyLabel.id = `qty_main_${idx}`;
-            qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 15px; font-weight: bold; color: #333;";
+            qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 16.5px; font-weight: 700; color: var(--text-main);";
             qtyLabel.textContent = currentQty;
 
             const plusBtn = document.createElement('button');
             plusBtn.type = 'button';
             plusBtn.classList.add('item-q-btn');
             plusBtn.textContent = '+';
-            plusBtn.style.cssText = "flex: 1; height: 32px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: #f8f9fa; border-radius: 4px;";
+            plusBtn.style.cssText = "flex: 1; height: 38px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 10px;";
             plusBtn.disabled = (isSoldOut && !alreadyReserved);
             plusBtn.onclick = function() { updateMainQty(idx, 1); };
 
@@ -1517,7 +1775,7 @@
             card.appendChild(bottomDiv);
 
             if (isSoldOut && !alreadyReserved) {
-                card.style.borderColor = "#ffcdd2";
+                card.style.borderColor = "#FFCDD2";
             }
             if (mainContainer) mainContainer.appendChild(card);
 
@@ -1576,11 +1834,11 @@
 
     function tryReduceReservedItem(type, idx) {
         pendingReduceAction = { type: type, idx: idx };
-        document.getElementById('confirmReduceModal').style.display = 'flex';
+        showModal('confirmReduceModal');
     }
 
     function closeConfirmReduce(isYes) {
-        document.getElementById('confirmReduceModal').style.display = 'none';
+        hideModal('confirmReduceModal');
         if (isYes && pendingReduceAction) {
             let type = pendingReduceAction.type;
             let idx = pendingReduceAction.idx;
@@ -1701,7 +1959,7 @@
         });
         Object.keys(sauceObj).forEach(idx => {
             if (sauceObj[idx] > 0 && sauceList[idx]) {
-                lines.push(`<span class="summary-item-line" style="color:#0277bd;">• ${sauceList[idx].shortName} ${sauceObj[idx]}개</span>`);
+                lines.push(`<span class="summary-item-line" style="color:var(--accent-gold);">• ${sauceList[idx].shortName} ${sauceObj[idx]}개</span>`);
             }
         });
         if (lines.length === 0) return "선택된 메뉴가 없습니다.";
@@ -1716,8 +1974,7 @@
         document.getElementById('editSelectedSummary').innerHTML = buildVerticalSummaryHtml(editOrderItems, editSauceItems);
     }
 
-    // 💡 콤마(,)로 구분된 여러 장의 이미지를 분리해 가로 스크롤 슬라이더로 띄우는 모달 함수
-function openImageModal(urlStr) {
+    function openImageModal(urlStr) {
         var container = document.getElementById('modalImageContainer');
         container.innerHTML = ""; 
 
@@ -1741,26 +1998,18 @@ function openImageModal(urlStr) {
             }
         }
 
-        // 💡 핵심 수정: 모달을 띄운 직후, 브라우저 렌더링 타이밍에 맞춰 확실하게 스크롤을 맨 왼쪽으로 고정
-        document.getElementById('imageModal').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-
-        // 렌더링 직후 스크롤을 0으로 강제 초기화
+        showModal('imageModal');
         requestAnimationFrame(function() {
             container.scrollLeft = 0;
         });
         
-        // 만약 그래도 안 된다면 아래처럼 아주 짧은 타이머를 주면 100% 고정됩니다.
         setTimeout(function() {
             container.scrollLeft = 0;
         }, 10);
     }
 
     function closeImageModal() {
-        document.getElementById('imageModal').style.display = 'none';
-        
-        // 💡 모달이 닫힐 때 뒷 화면 스크롤 해제
-        document.body.style.overflow = '';
+        hideModal('imageModal');
     }
 
     function buildMenuSummary(itemsObj) {
@@ -1937,16 +2186,16 @@ function openImageModal(urlStr) {
                 const orderStatus = String(data.status || "").trim();
 
                 if (orderStatus === "확인") {
-                    statusBadgeBox.style.background = "#e3f2fd";
-                    statusBadgeBox.style.border = "1.5px solid #90caf9";
-                    statusBadgeBox.style.color = "#1565c0";
-                    statusBadgeBox.innerHTML = "삼촌이 내역 확인 완료<br><span style='font-size: 12px; font-weight: normal; color: #1565c0;'>(조리 대기중)</span>";
+                    statusBadgeBox.style.background = "#EFF6FF";
+                    statusBadgeBox.style.border = "1.5px solid #BFDBFE";
+                    statusBadgeBox.style.color = "#1D4ED8";
+                    statusBadgeBox.innerHTML = "삼촌이 내역 확인 완료<br><span style='font-size: 12.5px; font-weight: normal; color: #1D4ED8;'>(조리 대기중)</span>";
                     kakaoInquireBtn.style.display = "none";
                 } else {
-                    statusBadgeBox.style.background = "#fff5f5";
-                    statusBadgeBox.style.border = "1.5px solid #ffcdd2";
-                    statusBadgeBox.style.color = "#c62828";
-                    statusBadgeBox.innerHTML = "삼촌이 내역 확인 대기중<br><span style='font-size: 11.5px; font-weight: normal; color: #c62828;'>(확인 누락 시 1:1 문의 주세요)</span>";
+                    statusBadgeBox.style.background = "#FFF1F2";
+                    statusBadgeBox.style.border = "1.5px solid #FECDD3";
+                    statusBadgeBox.style.color = "#BE123C";
+                    statusBadgeBox.innerHTML = "삼촌이 내역 확인 대기중<br><span style='font-size: 12px; font-weight: normal; color: #BE123C;'>(확인 누락 시 1:1 문의 주세요)</span>";
                     kakaoInquireBtn.style.display = "block";
                 }
 
@@ -1999,12 +2248,15 @@ function openImageModal(urlStr) {
         document.getElementById('orderForm').style.display = 'block';
         checkQuickReorderData();
     }
+
+    // 전역 버튼 클릭 인터랙션 사운드 바인딩
     document.addEventListener('click', function(event) {
         const targetBtn = event.target.closest('button, .radio-btn, input[type="button"], input[type="submit"]');
         if (targetBtn) {
             playClickSound();
         }
     });
+
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -2033,18 +2285,18 @@ function openImageModal(urlStr) {
         }
 
         if (selectedTime.includes('오후 6:35') || selectedTime.includes('오후 6:4') || selectedTime.includes('오후 6:5') || selectedTime.includes('오후 7:') || selectedTime.includes('오후 8:')) {
-            document.getElementById('warningModal').style.display = 'flex';
+            showModal('warningModal');
         } else {
             confirmOrder();
         }
     });
 
     function cancelWarningOrder() {
-        document.getElementById('warningModal').style.display = 'none';
+        hideModal('warningModal');
     }
 
     function confirmOrder() {
-        document.getElementById('warningModal').style.display = 'none';
+        hideModal('warningModal');
 
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
@@ -2107,7 +2359,7 @@ function openImageModal(urlStr) {
                 submitBtn.textContent = "예약 완료하기";
                 openEventWinModal(data.eventMenuList);
             } else {
-                document.getElementById('successModal').style.display = 'flex';
+                showModal('successModal');
             }
         })
         .catch(err => {
@@ -2139,7 +2391,7 @@ function openImageModal(urlStr) {
         eventSubmitBtn.disabled = false;
         eventSubmitBtn.textContent = "선택 완료 및 확인";
 
-        document.getElementById('eventWinModal').style.display = 'flex';
+        showModal('eventWinModal');
     }
 
     function submitEventPrizeChoice() {
@@ -2162,29 +2414,26 @@ function openImageModal(urlStr) {
         })
         .then(res => res.text())
         .then(() => {
-            document.getElementById('eventWinModal').style.display = 'none';
+            hideModal('eventWinModal');
             showCustomAlert(`서프라이즈 이벤트 당첨을 축하드립니다!<br><b>[${prize}]</b>가 서비스로 제공됩니다.`, "이벤트 당첨 완료");
-            document.getElementById('successModal').style.display = 'flex';
+            showModal('successModal');
         })
         .catch(err => {
             console.error("이벤트 선택 에러:", err);
             eventSubmitBtn.disabled = false;
             eventSubmitBtn.textContent = "선택 완료 및 확인";
-            document.getElementById('eventWinModal').style.display = 'none';
-            document.getElementById('successModal').style.display = 'flex';
+            hideModal('eventWinModal');
+            showModal('successModal');
         });
     }
 
-function openSearchModal() {
+    function openSearchModal() {
         const savedNick = localStorage.getItem('savedNickname');
         if (!savedNick) return;
 
-        document.getElementById('searchModal').style.display = 'flex';
-        document.getElementById('modalLoadingBox').style.display = 'flex';
+        showModal('searchModal');
+        document.getElementById('modalLoadingBox').style.display = 'block';
         document.getElementById('searchResultArea').style.display = 'none';
-        
-        // 💡 팝업이 뜰 때 뒷배경(본문) 스크롤 고정
-        document.body.style.overflow = 'hidden';
 
         fetch(WEB_APP_URL, {
             method: 'POST',
@@ -2197,22 +2446,17 @@ function openSearchModal() {
             try { data = JSON.parse(text); } catch (e) { return; }
 
             if (data && data.result === "found") {
-                // 💡 1. '확인' 상태일 때는 기존처럼 카톡 문의 버튼이 있는 lockedModal을 띄움
                 if (data.status === "확인") {
                     closeSearchModal();
-                    document.getElementById('lockedModal').style.display = 'flex';
-                } 
-                // 💡 2. 이미 수령 '완료'된 상태일 때만 새 주문으로 유도하는 안내창 띄움
-                else if (data.status === "완료") {
+                    showModal('lockedModal');
+                } else if (data.status === "완료") {
                     closeSearchModal();
                     showCustomAlert(
                         "이미 수령 완료된 주문 내역이 있습니다.<br><br>새로운 예약을 진행해 주세요!", 
                         "예약 완료 안내", 
                         true 
                     );
-                } 
-                // 💡 3. 그 외('미확인') 상태일 때만 기존 예약 수정 페이지 로드
-                else {
+                } else {
                     currentFoundRowIndex = data.rowIndex;
                     
                     let cleanPickupTime = data.pickupTime || "";
@@ -2240,7 +2484,6 @@ function openSearchModal() {
                     document.getElementById('modalLoadingBox').style.display = 'none';
                     document.getElementById('searchResultArea').style.display = 'block';
                     
-                    // 💡 수정 폼이 정상적으로 열릴 때만 하단 고정 버튼 영역(저장/닫기)을 보이게 함
                     const actionBtns = document.getElementById('searchModalActionBtns');
                     if (actionBtns) actionBtns.style.display = 'block';
                 }
@@ -2261,18 +2504,13 @@ function openSearchModal() {
     }
 
     function closeSearchModal() {
-        document.getElementById('searchModal').style.display = 'none';
-        
-        // 💡 닫기 버튼을 누르거나 팝업이 꺼질 때 하단 고정 버튼 영역을 숨김
+        hideModal('searchModal');
         const actionBtns = document.getElementById('searchModalActionBtns');
         if (actionBtns) actionBtns.style.display = 'none';
-        
-        // 💡 뒷배경(본문) 스크롤 잠금 해제 (원래대로 돌려놓음)
-        document.body.style.overflow = 'auto';
     }
 
     function closeLockedModal() {
-        document.getElementById('lockedModal').style.display = 'none';
+        hideModal('lockedModal');
     }
 
     function updateReservation() {
@@ -2302,7 +2540,7 @@ function openSearchModal() {
         const closeBtn = document.getElementById('searchCloseBtn');
         if (closeBtn) {
             closeBtn.disabled = true;
-            closeBtn.style.backgroundColor = "#adb5bd";
+            closeBtn.style.backgroundColor = "#D1CFCD";
             closeBtn.style.cursor = "not-allowed";
         }
 
@@ -2328,7 +2566,7 @@ function openSearchModal() {
         .then(text => {
             if (closeBtn) {
                 closeBtn.disabled = false;
-                closeBtn.style.backgroundColor = "#6c757d";
+                closeBtn.style.backgroundColor = "var(--surface-sub)";
                 closeBtn.style.cursor = "pointer";
             }
 
@@ -2354,7 +2592,7 @@ function openSearchModal() {
 
             if (data && data.result === "locked") {
                 closeSearchModal();
-                document.getElementById('lockedModal').style.display = 'flex';
+                showModal('lockedModal');
                 updateBtn.disabled = false;
                 updateBtn.textContent = "변경된 내용 저장하기";
             } else {
@@ -2370,7 +2608,7 @@ function openSearchModal() {
         .catch(err => {
             if (closeBtn) {
                 closeBtn.disabled = false;
-                closeBtn.style.backgroundColor = "#6c757d";
+                closeBtn.style.backgroundColor = "var(--surface-sub)";
                 closeBtn.style.cursor = "pointer";
             }
 
