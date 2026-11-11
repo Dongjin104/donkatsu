@@ -61,7 +61,17 @@
         <h1>🍳 장날동천 주방 뷰</h1>
         <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ff5252; font-weight:bold;">0</span> / 총 <span id="totalCount">0</span></div>
     </header>
-
+    <!-- 💡 커스텀 확인 모달 팝업 -->
+<div id="custom-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; color: #fff;">
+        <h3 id="modal-title" style="margin: 0 0 12px 0; font-size: 18px; color: #ffc107;">수령 완료 처리</h3>
+        <p id="modal-desc" style="margin: 0 0 20px 0; font-size: 14px; color: #ccc; line-height: 1.5;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
+        <div style="display: flex; gap: 10px;">
+            <button id="modal-cancel-btn" style="flex: 1; padding: 10px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">취소</button>
+            <button id="modal-confirm-btn" style="flex: 1; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">확인</button>
+        </div>
+    </div>
+</div>
     <div id="orderContainer" class="order-list">
         <div style="text-align:center; padding: 20px; color:#888;">주문 목록을 불러오는 중...</div>
     </div>
@@ -195,17 +205,32 @@
         }
 
         function completeOrder(rowIndex) {
-            if (!confirm("고객에게 돈가스를 전달하고 수령 완료 처리하시겠습니까?")) return;
-            
-            // 1. 서버에 상태 변경 요청 전송 (에러 무시)
-            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function(res) {});
+            const modal = document.getElementById('custom-modal');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
 
-            // 2. 응답을 기다리지 않고 즉시 화면에서 해당 주문 요소를 찾아 삭제 처리
-            const listEl = document.getElementById('order-list');
-            if (listEl) {
-                // 즉시 화면 목록을 다시 불러와서 깔끔하게 갱신
+            // 모달 띄우기
+            modal.style.display = 'flex';
+
+            // 이벤트 중복 방지를 위한 클론 처리
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            // 확인 버튼을 눌렀을 때
+            newConfirmBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+                
+                // 서버에 상태 변경 요청 및 즉시 화면 갱신
+                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function(res) {});
                 fetchOrders();
-            }
+            });
+
+            // 취소 버튼을 눌렀을 때
+            newCancelBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
         }
 
         setInterval(fetchOrders, 5000);
