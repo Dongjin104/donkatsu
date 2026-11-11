@@ -9,46 +9,49 @@
         body { background-color: #121212; color: #ffffff; padding: 4px; }
 
         /* 상단 바 */
-        header { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; }
-        header h1 { font-size: 0.9rem; font-weight: bold; }
-        .status-badge { background: #333; padding: 2px 5px; border-radius: 3px; font-size: 0.7rem; }
+        header { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 5px 8px; border-radius: 4px; margin-bottom: 4px; }
+        header h1 { font-size: 0.85rem; font-weight: bold; }
+        .status-badge { background: #333; padding: 2px 4px; border-radius: 3px; font-size: 0.65rem; }
 
-        /* 주문 리스트 카드 */
-        .order-list { display: flex; flex-direction: column; gap: 4px; }
-        .order-item { display: flex; align-items: stretch; justify-content: space-between; background: #1e1e1e; border-left: 4px solid #888; border-radius: 4px; overflow: hidden; }
+        /* 주문 리스트 카드 (초압축 간격) */
+        .order-list { display: flex; flex-direction: column; gap: 3px; }
+        .order-item { display: flex; align-items: stretch; justify-content: space-between; background: #1e1e1e; border-left: 3px solid #888; border-radius: 3px; overflow: hidden; }
 
         .order-item.unconfirmed { border-left-color: #ff5252; background: #221515; }
         .order-item.confirmed { border-left-color: #4caf50; background: #1a221a; }
 
         /* 왼쪽 정보 영역 */
-        .order-info { flex: 1; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
+        .order-info { flex: 1; padding: 5px 7px; display: flex; flex-direction: column; gap: 1px; }
         
         .top-row { display: flex; align-items: center; justify-content: space-between; }
-        .time-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .time-group { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
         
-        .time-tag { font-size: 0.9rem; font-weight: 800; color: #ffeb3b; letter-spacing: -0.5px; }
-        .winner-badge { background: #e91e63; color: #fff; font-size: 0.55rem; padding: 1px 3px; border-radius: 2px; font-weight: bold; }
+        /* 폰트 크기를 더 미세하게 축소 */
+        .time-tag { font-size: 0.85rem; font-weight: 800; color: #ffeb3b; letter-spacing: -0.5px; }
+        .winner-badge { background: #e91e63; color: #fff; font-size: 0.5rem; padding: 1px 3px; border-radius: 2px; font-weight: bold; }
         
-        .cooking-badge { display: inline-block; background: #333; color: #ffffff; border: 1px solid #555; font-size: 0.6rem; font-weight: bold; padding: 1px 3px; border-radius: 2px; }
+        .cooking-badge { display: inline-block; background: #333; color: #ffffff; border: 1px solid #555; font-size: 0.55rem; font-weight: bold; padding: 1px 3px; border-radius: 2px; }
         .cooking-badge.special { background: #d32f2f; border-color: #f44336; color: #fff; }
 
-        /* 💰 총 가격 태그 스타일 명확하게 정의 */
-        .price-tag { font-size: 0.8rem; font-weight: bold; color: #4caf50; background: rgba(76, 175, 80, 0.15); padding: 1px 6px; border-radius: 2px; }
+        /* 가격 폰트 축소 */
+        .price-tag { font-size: 0.75rem; font-weight: bold; color: #4caf50; background: rgba(76, 175, 80, 0.15); padding: 1px 4px; border-radius: 2px; }
 
-        .menu-text { font-size: 0.85rem; font-weight: bold; color: #ffffff; line-height: 1.2; }
+        /* 메뉴 텍스트 압축 */
+        .menu-text { font-size: 0.8rem; font-weight: bold; color: #ffffff; line-height: 1.2; }
         
-        .sub-row { display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap; }
-        .sauce-text { font-size: 0.7rem; color: #ff9800; font-weight: bold; }
-        .nickname-text { font-size: 0.7rem; color: #aaa; }
+        /* 하단 서브 정보 (소스, 닉네임) */
+        .sub-row { display: flex; align-items: center; gap: 5px; margin-top: 1px; flex-wrap: wrap; }
+        .sauce-text { font-size: 0.65rem; color: #ff9800; font-weight: bold; }
+        .nickname-text { font-size: 0.65rem; color: #aaa; }
 
-        /* 오른쪽 버튼 그룹 */
-        .btn-group { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 4px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
+        /* 오른쪽 버튼 그룹 컴팩트화 */
+        .btn-group { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 3px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
         
-        .btn-status { width: 56px; height: 30px; font-size: 0.65rem; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+        .btn-status { width: 50px; height: 28px; font-size: 0.6rem; font-weight: bold; border: none; border-radius: 2px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
         .btn-status.unconfirmed { background: #d32f2f; }
         .btn-status.confirmed { background: #388e3c; }
 
-        .btn-done { width: 56px; height: 30px; font-size: 0.65rem; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; color: white; background: #1976d2; display: flex; align-items: center; justify-content: center; }
+        .btn-done { width: 50px; height: 28px; font-size: 0.6rem; font-weight: bold; border: none; border-radius: 2px; cursor: pointer; color: white; background: #1976d2; display: flex; align-items: center; justify-content: center; }
         .btn-done:active { background: #115293; }
     </style>
 </head>
