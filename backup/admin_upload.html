@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장날동천 메뉴 사진 간편 등록</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Apple SD Gothic Neo', '맑은 고딕', sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background: #f8f9fa; color: #222; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2 { color: #d32f2f; margin-top: 0; text-align: center; font-size: 24px; }
+        label { display: block; margin-top: 20px; font-weight: bold; font-size: 16px; color: #333; }
+        select, input[type="file"] { width: 100%; padding: 14px; margin-top: 8px; font-size: 16px; border: 1.5px solid #ddd; border-radius: 10px; background-color: #fafafa; }
+        button { width: 100%; background: #2e7d32; color: white; border: none; padding: 16px; font-size: 18px; font-weight: bold; border-radius: 12px; margin-top: 25px; cursor: pointer; box-shadow: 0 4px 10px rgba(46,125,50,0.2); }
+        button:disabled { background: #adb5bd; cursor: not-allowed; box-shadow: none; }
+        #previewContainer { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; justify-content: center; }
+        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+        #status { margin-top: 20px; text-align: center; font-weight: bold; font-size: 15px; line-height: 1.5; }
+
+        /* 💡 깔끔한 커스텀 모달 스타일 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; padding: 20px; z-index: 9999; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 400px; text-align: center; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .modal-content h3 { font-size: 22px; margin-top: 0; color: #2e7d32; }
+        .modal-btn { background-color: #2e7d32; color: white; border: none; padding: 14px; font-size: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>📸 메뉴 사진 다중 등록</h2>
+    
+    <label for="targetMenuSelect">1. 사진을 등록할 메뉴 선택</label>
+    <select id="targetMenuSelect">
+        <option value="">메뉴 목록을 불러오는 중...</option>
+    </select>
+
+    <label for="imageInput">2. 폰에서 사진 여러 장 선택 (다중 선택 가능)</label>
+    <input type="file" id="imageInput" multiple accept="image/*" onchange="previewImages(event)">
+    <div id="previewContainer"></div>
+
+    <button id="uploadBtn" onclick="uploadImages()">📤 선택한 사진 일괄 등록 및 반영하기</button>
+
+    <div id="status"></div>
+</div>
+
+<!-- 💡 지저분한 시스템 알림 대신 깔끔하게 뜨는 커스텀 모달 창 -->
+<div id="customAlertModal" class="modal">
+    <div class="modal-content">
+        <h3 id="customAlertTitle">알림</h3>
+        <p id="customAlertMessage" style="font-size: 16px; line-height: 1.6; color: #333; margin: 15px 0; word-break: keep-all;"></p>
+        <button class="modal-btn" onclick="closeCustomAlert()">확인</button>
+    </div>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
+
+    window.onload = function() {
+        loadMenuList();
+    };
+
+    function loadMenuList() {
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'getSettings' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('targetMenuSelect');
+            select.innerHTML = '<option value="">-- 메뉴를 선택하세요 --</option>';
+            
+            if (data.menuList) {
+                data.menuList.forEach(m => {
+                    let opt = document.createElement('option');
+                    opt.value = m.name;
+                    opt.textContent = `[메뉴] ${m.name}`;
+                    select.appendChild(opt);
+                });
+            }
+            if (data.sauceList) {
+                data.sauceList.forEach(s => {
+                    let opt = document.createElement('option');
+                    opt.value = s.name;
+                    opt.textContent = `[소스] ${s.name}`;
+                    select.appendChild(opt);
+                });
+            }
+        })
+        .catch(err => {
+            document.getElementById('targetMenuSelect').innerHTML = '<option value="">목록 불러오기 실패</option>';
+        });
+    }
+
+    function showCustomAlert(title, message) {
+        document.getElementById('customAlertTitle').textContent = title;
+        document.getElementById('customAlertMessage').innerHTML = message;
+        document.getElementById('customAlertModal').style.display = 'flex';
+    }
+
+    function closeCustomAlert() {
+        document.getElementById('customAlertModal').style.display = 'none';
+        // 확인 버튼을 누르면 다음 사진을 바로 등록할 수 있도록 상태 초기화
+        resetUploadForm();
+    }
+
+    function resetUploadForm() {
+        document.getElementById('imageInput').value = "";
+        document.getElementById('previewContainer').innerHTML = "";
+        document.getElementById('status').textContent = "";
+        const btn = document.getElementById('uploadBtn');
+        btn.disabled = false;
+        btn.textContent = "📤 선택한 사진 일괄 등록 및 반영하기";
+    }
+
+    // 여러 장 선택 시 미리보기 썸네일 생성
+    function previewImages(event) {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = "";
+        const files = event.target.files;
+        
+        if (files) {
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-img';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(files[i]);
+            }
+        }
+    }
+
+    // 이미지를 압축하여 Base64로 변환하는 Promise 함수
+    function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // 최대 가로 크기 제한
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // JPEG 화질 0.7 압축
+                    const base64Data = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve(base64Data);
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // 선택한 여러 장의 사진을 순차적으로 압축 및 업로드
+    async function uploadImages() {
+        const select = document.getElementById('targetMenuSelect');
+        const fileInput = document.getElementById('imageInput');
+        const status = document.getElementById('status');
+        const btn = document.getElementById('uploadBtn');
+
+        const targetName = select.value;
+        const files = fileInput.files;
+
+        if (!targetName) { 
+            showCustomAlert("선택 오류", "사진을 등록할 메뉴를 먼저 선택해 주세요!"); 
+            return; 
+        }
+        if (files.length === 0) { 
+            showCustomAlert("선택 오류", "업로드할 사진을 선택해 주세요!"); 
+            return; 
+        }
+
+        btn.disabled = true;
+        status.style.color = "#d84315";
+        
+        try {
+            for (let i = 0; i < files.length; i++) {
+                btn.textContent = `[${i + 1}/${files.length}] 사진 최적화 및 업로드 중...`;
+                status.textContent = `⏳ 총 ${files.length}장의 사진 중 ${i + 1}번째 사진을 업로드하고 있습니다...`;
+
+                // 이미지 압축
+                const base64Data = await compressImage(files[i]);
+
+                // 서버 전송
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'uploadMenuImage',
+                        targetName: targetName,
+                        fileName: `${targetName}_${Date.now()}_${i}.jpg`,
+                        base64Data: base64Data
+                    })
+                });
+
+                const res = await response.json();
+                if (res.result !== "success") {
+                    throw new Error(res.message || "업로드 실패");
+                }
+            }
+
+            status.style.color = "#2e7d32";
+            status.textContent = "🎉 모든 사진 등록 완료! 메뉴판 시트 D열에 콤마로 쏙 누적되었습니다.";
+            
+            // 💡 지저분한 alert 대신 깔끔한 모달 창 띄우기
+            showCustomAlert("업로드 완료!", "모든 사진이 성공적으로 등록되었습니다.<br>이어서 다른 메뉴 사진도 등록하실 수 있습니다.");
+
+        } catch (err) {
+            btn.disabled = false;
+            btn.textContent = "📤 선택한 사진 일괄 등록 및 반영하기";
+            status.style.color = "#d32f2f";
+            status.textContent = "❌ 오류 발생: " + err.toString();
+            showCustomAlert("오류 발생", "업로드 중 오류가 발생했습니다: " + err.toString());
+        }
+    }
+</script>
+
+</body>
+</html>

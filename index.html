@@ -131,6 +131,39 @@
             box-shadow: 0 12px 35px -5px rgba(28, 27, 24, 0.07);
         }
         
+        .menu-item-card.sold-out {
+            background-color: #FAFAF9;
+            border-color: #E6E3DA;
+        }
+        .menu-item-card.sold-out .menu-card-top {
+            opacity: 0.38;
+            filter: grayscale(30%);
+        }
+        .sold-out-badge-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .sold-out-badge-text {
+            background: rgba(28, 27, 24, 0.85);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 0.08em;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            text-transform: uppercase;
+        }
+
         .sauce-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -152,6 +185,14 @@
             gap: 12px;
             transition: all 0.2s ease;
         }
+        .sauce-item-card.sold-out {
+            background-color: #F3F1EC;
+        }
+        .sauce-item-card.sold-out > div:not(.sold-out-badge-overlay) {
+            opacity: 0.38;
+            filter: grayscale(30%);
+        }
+
         .sauce-info { display: flex; flex-direction: column; gap: 3px; flex: 1; z-index: 1; }
         .sauce-title { font-weight: 700; font-size: 15px; color: var(--text-main); }
         .sauce-price { font-size: 14px; color: var(--text-sub); font-weight: 600; }
@@ -180,7 +221,6 @@
         }
         .item-q-btn:hover:not(:disabled) { background-color: #EBE8E1; border-color: #D1CFCD; }
         .item-q-btn:disabled { background-color: #F5F4F0 !important; color: #C5C2BA !important; cursor: not-allowed !important; border-color: #EFEFEF !important; }
-        .item-q-input { width: 48px !important; text-align: center; font-size: 17px !important; font-weight: 700; padding: 4px !important; margin: 0 !important; }
 
         .selected-summary-box { background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 20px; border-radius: var(--radius-sm); margin-top: 20px; font-size: 15.5px; color: var(--text-main); line-height: 1.7; text-align: left; }
         .summary-item-line { display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-main); }
@@ -221,7 +261,6 @@
         .submit-btn:active { transform: translateY(0); }
         .submit-btn:disabled, .modal-btn:disabled { background-color: #D1CFCD !important; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* 🌟 부드러운 페이드인 애니메이션 모달 클래스 스타일 */
         .modal { 
             display: none; 
             position: fixed; 
@@ -361,7 +400,6 @@
             overflow-wrap: break-word;
         }
 
-        /* Skeleton UI Shimmer Animation & Styles */
         @keyframes skeletonPulse {
             0% { background-color: #EBE8E1; }
             50% { background-color: #D1CFCD; }
@@ -450,7 +488,6 @@
 </head>
 <body>
 
-<!-- 🎨 시스템 점검 중 화면 -->
 <div id="maintenanceOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--bg-color); z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; text-align: center;">
     <div style="background: #ffffff; border-radius: var(--radius-lg); padding: 48px 28px; max-width: 440px; width: 100%; box-shadow: var(--shadow-float); border: 1px solid var(--border-color);">
         <div style="font-size: 52px; margin-bottom: 18px;">🛠️</div>
@@ -474,7 +511,6 @@
         <div class="subtitle">정성을 다해 준비하는 프리미엄 수제 돈가스</div>
     </div>
 
-    <!-- 첫 예약 페이지 진입 시 나타나는 깔끔한 스켈레톤 로딩 UI -->
     <div id="pageLoadingOverlay" class="menu-grid">
         <div class="skeleton-card">
             <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -500,7 +536,6 @@
         </div>
     </div>
 
-    <!-- 영업 시간 외 안내 및 하단 버튼 박스 -->
     <div id="closedNotice">
         <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-bottom: 14px; line-height: 1.4;">
             ⏰ 현재는 예약 가능 시간이 아닙니다
@@ -622,8 +657,18 @@
             <div id="quickBusyInfoBox" class="busy-info-box"></div>
         </div>
 
+        <div style="margin-bottom: 18px; text-align: left; background: #fff8e1; border: 1.5px dashed #ffa726; padding: 16px; border-radius: 12px;">
+            <label for="quickSecretCodeInput" style="font-size: 15px; color: #e65100; margin-bottom: 6px; font-weight: 700;">
+                🎁 톡방 시크릿 이벤트 코드 (선택)
+            </label>
+            <input type="text" id="quickSecretCodeInput" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!" style="background: #ffffff; border-color: #ffb74d;">
+            <div style="font-size: 12.5px; color: #af601a; margin-top: 6px; line-height: 1.4;">
+                💡 톡방 공지의 암호를 입력하고 주문을 누르면 무료 서비스 추첨 룰렛이 작동합니다!
+            </div>
+        </div>
+
         <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button type="button" onclick="executeQuickReorder()" style="background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 16.5px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; box-shadow: 0 8px 20px rgba(28, 27, 24, 0.12);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
+            <button type="button" id="quickSubmitBtn" onclick="executeQuickReorder()" style="background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 16.5px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; box-shadow: 0 8px 20px rgba(28, 27, 24, 0.12);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
             <button type="button" onclick="loadPreviousToForm()" style="background-color: var(--surface-sub); color: var(--text-main); border: 1.5px solid var(--border-color); padding: 16px; font-size: 16px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap;">✏️ 직전 메뉴 불러와서 수정하기</button>
         </div>
     </div>
@@ -644,11 +689,22 @@
         </div>
 
         <div class="form-group">
-            <label for="nickname">2. 카톡 닉네임+전화번호 뒷자리 *</label>
+            <label>2. 카톡 닉네임+전화번호 뒷자리 *</label>
             <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
             <div style="margin-top: 12px; font-size: 14px; color: #B45309; background: var(--accent-gold-bg); padding: 14px 16px; border-radius: var(--radius-sm); border: 1.5px solid #F3E6C8; line-height: 1.6; font-weight: 500;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
                 꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라질 수 있으니 변경하지 말고 쭉 유지해 주세요!
+            </div>
+        </div>
+
+        <!-- 🎁 시크릿 코드 입력란을 단골 꿀팁 바로 아래, 3번 메뉴 선택 바로 위 황금 자리에 배치 -->
+        <div class="form-group" style="background: #fff8e1; border: 1.5px dashed #ffa726; padding: 20px; border-radius: 12px;">
+            <label for="secretCodeInput" style="font-size: 16px; color: #e65100; margin-bottom: 8px; font-weight: 700;">
+                🎁 톡방 시크릿 이벤트 코드 입력 (선택)
+            </label>
+            <input type="text" id="secretCodeInput" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!" style="background: #ffffff; border-color: #ffb74d;">
+            <div style="font-size: 13.5px; color: #af601a; margin-top: 8px; line-height: 1.5;">
+                💡 톡방 공지의 암호를 입력하고 주문을 누르면 무료 서비스 추첨 룰렛이 작동합니다!
             </div>
         </div>
 
@@ -683,6 +739,23 @@
         </div>
     </form>
 </div>
+
+<!-- 🎰 룰렛 추첨 중 애니메이션 모달 -->
+<div id="rouletteModal" class="modal" style="z-index: 10040;">
+    <div class="modal-content" style="padding: 40px 20px;">
+        <div style="font-size: 48px; margin-bottom: 15px; animation: bounce 0.6s infinite alternate;">🎰</div>
+        <h3 style="color: #e65100; font-size: 22px; margin-bottom: 10px;">시크릿 추첨 룰렛 돌리는 중...</h3>
+        <p id="rouletteStatusText" style="font-size: 16px; color: #666; margin-bottom: 20px; font-weight: bold;">당첨 여부를 확인하고 있습니다! 둑구둑구...</p>
+        <div class="skeleton-shimmer" style="height: 12px; width: 80%; margin: 0 auto; border-radius: 6px;"></div>
+    </div>
+</div>
+
+<style>
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+}
+</style>
 
 <!-- 모달들 -->
 <div id="noticeModal" class="modal" style="z-index: 10035;">
@@ -726,7 +799,7 @@
 <div id="confirmReduceModal" class="modal" style="z-index: 10015;">
     <div class="modal-content">
         <h3 style="color:var(--text-main); margin-top:0;">수량 변경 안내</h3>
-        <p style="font-size:16.5px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 20px 0;">
+        <p id="confirmReduceText" style="font-size:16.5px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 20px 0;">
             현재 재고가 <b>품절 상태</b>라 수량을 빼면 다시 선택이 불가능할 수 있습니다. 변경하시겠습니까?
         </p>
         <div style="display: flex; gap: 12px;">
@@ -746,12 +819,25 @@
     </div>
 </div>
 
+<!-- 🎁 꽝 안내 팝업 -->
+<div id="eventFailModal" class="modal" style="z-index: 10005;">
+    <div class="modal-content">
+        <div style="font-size: 40px; margin-bottom: 10px;">😢</div>
+        <h3 style="color: var(--text-main); margin-top:0;">아쉽게도 이번 룰렛 꽝입니다!</h3>
+        <p style="font-size:15.5px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 15px 0;">
+            입력하신 시크릿 코드가 올바르지만 이번 추첨에 당첨되지 않았습니다.<br><br>하지만 <b>맛있는 예약은 정상적으로 완료</b>되었습니다! 다음 기회에 또 도전해 주세요!
+        </p>
+        <button class="modal-btn" style="background-color:var(--accent-dark);" onclick="closeEventFailModal()">확인</button>
+    </div>
+</div>
+
+<!-- 🎁 당첨 선택 팝업 -->
 <div id="eventWinModal" class="modal" style="z-index: 10000;">
     <div class="modal-content" style="background: linear-gradient(135deg, #FFFCF7 0%, #FFFFFF 100%); border: 2px solid var(--accent-gold);">
         <div style="font-size: 2.8rem; margin-bottom: 8px;">🎉</div>
-        <h3 style="color: #B45309; margin-bottom: 12px;">서프라이즈 이벤트 당첨</h3>
+        <h3 style="color: #B45309; margin-bottom: 12px;">서프라이즈 이벤트 당첨!</h3>
         <p style="font-size: 15.5px; color: var(--text-sub); line-height: 1.6; margin-bottom: 24px;">
-            예약을 완료하신 고객님께 드리는 특별 선물!<br>원하시는 서비스 메뉴를 선택해 주세요.
+            시크릿 코드 추첨에 당첨되셨습니다!<br>원하시는 서비스 메뉴를 선택해 주세요.
         </p>
         <div id="eventOptionsContainer" style="text-align: left; background: #fff; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 24px;">
         </div>
@@ -785,12 +871,26 @@
     </div>
 </div>
 
-<!-- 수정 모달 -->
+<!-- 🔑 시크릿 코드 확인 팝업 -->
+<div id="secretCodeConfirmModal" class="modal" style="z-index: 10030;">
+    <div class="modal-content">
+        <div style="font-size: 40px; margin-bottom: 10px;">❓</div>
+        <h3 style="color:var(--text-main); margin-top:0;">시크릿 코드 확인</h3>
+        <p style="font-size:16px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 20px 0;">
+            입력하신 시크릿 코드가 올바르지 않습니다.<br><br>
+            <b>룰렛 추첨 없이 일반 예약</b>으로 진행하시겠습니까?
+        </p>
+        <div style="display: flex; gap: 12px;">
+            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-main); border: 1.5px solid var(--border-color); margin-top:0;" onclick="handleSecretCodeChoice(false)">코드 수정하기</button>
+            <button class="modal-btn" style="background-color: var(--accent-dark); margin-top:0;" onclick="handleSecretCodeChoice(true)">일반 예약 진행</button>
+        </div>
+    </div>
+</div>
+
 <div id="searchModal" class="modal">
     <div class="modal-content" style="position: relative; display: flex; flex-direction: column; max-height: 85vh;">
         <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
         
-        <!-- 수정 모달 내부의 스켈레톤 UI 로딩 박스 -->
         <div id="modalLoadingBox" class="menu-grid" style="margin: 15px 0; text-align: left;">
             <div class="skeleton-card" style="padding: 14px;">
                 <div style="display: flex; gap: 14px; align-items: center;">
@@ -862,6 +962,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
     
     let serverMaintenanceCode = "5333";
+    let serverSecretCode = ""; 
 
     let menuList = [];
     let sauceList = [];
@@ -869,6 +970,8 @@
     let sauceItems = {};    
     let editOrderItems = {};  
     let editSauceItems = {};  
+    let originalReservedItems = {}; 
+    let editAlreadyReserved = false;
     
     let globalPickupStartHour = 15;
     let globalPickupStartMin = 0;
@@ -889,17 +992,16 @@
     let isCanceledOrNotFound = false;
 
     let pendingReduceAction = null;
+    let pendingOrderPayload = null; 
 
     const pickupSelect = document.getElementById('pickupTime');
     const quickPickupSelect = document.getElementById('quickPickupTime');
     const newPickupSelect = document.getElementById('newPickupTime');
 
-    // 🌟 모든 팝업(모달)을 부드러운 페이드인 애니메이션과 함께 여는 공통 헬퍼 함수
     function showModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.style.display = 'flex';
-        // 강제 브라우저 리플로우 후 active 클래스 추가하여 트랜지션 트리거
         modal.offsetHeight;
         modal.classList.add('active');
         if (modalId === 'imageModal' || modalId === 'searchModal') {
@@ -907,7 +1009,6 @@
         }
     }
 
-    // 🌟 모든 팝업(모달)을 부드러운 페이드아웃 애니메이션과 함께 닫는 공통 헬퍼 함수
     function hideModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -916,7 +1017,7 @@
             if (!modal.classList.contains('active')) {
                 modal.style.display = 'none';
             }
-        }, 350); // CSS 트랜지션 시간(0.35초)과 일치시킴
+        }, 350);
         if (modalId === 'imageModal' || modalId === 'searchModal') {
             document.body.style.overflow = '';
         }
@@ -939,10 +1040,7 @@
         checkAndRenderState();
     });
 
-    // 🌟 고급스러운 인터랙티브 버튼 터치 사운드 (우아한 마그네틱 우드/글래스 팝 사운드)
-    // AudioContext를 전역으로 관리
     let audioCtx = null;
-
     function getAudioContext() {
         if (!audioCtx) {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -950,7 +1048,6 @@
                 audioCtx = new AudioContextClass();
             }
         }
-        // 브라우저 정책상 잠겨있는 상태(suspended)라면 사용자 인터랙션 때 풀어줌
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
@@ -961,20 +1058,15 @@
         try {
             const ctx = getAudioContext();
             if (!ctx) return;
-
             const osc = ctx.createOscillator();
             const gainNode = ctx.createGain();
-
             osc.type = 'sine';
             osc.frequency.setValueAtTime(820, ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(340, ctx.currentTime + 0.04);
-
             gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
-
             osc.connect(gainNode);
             gainNode.connect(ctx.destination);
-
             osc.start();
             osc.stop(ctx.currentTime + 0.05);
         } catch (e) {}
@@ -982,12 +1074,10 @@
 
     function openAdminAuthPrompt() {
         const input = prompt("관리자 긴급코드를 입력하세요:");
-        
         if (!serverMaintenanceCode || serverMaintenanceCode.trim() === "") {
             alert("⚠️ 구글 시트 B10 셀에 긴급코드가 설정되어 있지 않습니다. 시트를 확인해 주세요!");
             return;
         }
-
         if (input && input.trim() === serverMaintenanceCode.trim()) {
             localStorage.setItem("isDonkatsuAdmin", "true");
             alert("🔓 사장님 인증 완료! 점검 중 상태여도 자유롭게 테스트 가능합니다.");
@@ -1000,10 +1090,7 @@
 
     function getTodayDateString() {
         const d = new Date();
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function formatPriceText(priceStr) {
@@ -1012,42 +1099,23 @@
         return cleanNum.toLocaleString() + '원';
     }
 
-    function openNoticeModal() {
-        showModal('noticeModal');
-    }
-
-    function closeNoticeModal() {
-        hideModal('noticeModal');
-    }
+    function openNoticeModal() { showModal('noticeModal'); }
+    function closeNoticeModal() { hideModal('noticeModal'); }
 
     function openPwaGuideModal() {
         const modal = document.getElementById('pwaGuideModal');
         const content = document.getElementById('pwaGuideContent');
         const userAgent = navigator.userAgent.toLowerCase();
-
         let isIOS = /iphone|ipad|ipod/.test(userAgent);
 
         if (isIOS) {
-            content.innerHTML = `
-                아이폰 홈 화면에 추가하면 <b>일반 앱처럼 편하게</b> 사용하실 수 있습니다!<br><br>
-                1. 화면 아래쪽 중앙의 <b>[공유하기 아이콘(사각형에 위 화살표 ⬆️)]</b>을 누르세요.<br>
-                2. 메뉴가 나타나면 아래로 살짝 내려서 <b>[홈 화면에 추가 ➕]</b>를 선택하세요.<br>
-                3. 우측 상단의 <b>[추가]</b>를 누르면 바탕화면에 아이콘이 쏙 들어갑니다!
-            `;
+            content.innerHTML = `아이폰 홈 화면에 추가하면 <b>일반 앱처럼 편하게</b> 사용하실 수 있습니다!<br><br>1. 화면 아래쪽 중앙의 <b>[공유하기 아이콘(사각형에 위 화살표 ⬆️)]</b>을 누르세요.<br>2. 메뉴가 나타나면 아래로 살짝 내려서 <b>[홈 화면에 추가 ➕]</b>를 선택하세요.<br>3. 우측 상단의 <b>[추가]</b>를 누르면 바탕화면에 아이콘이 쏙 들어갑니다!`;
         } else {
-            content.innerHTML = `
-                스마트폰 홈 화면에 추가해 두시면 매번 카톡 링크를 찾을 필요 없이 <b>1초 만에 바로 접속</b>할 수 있습니다!<br><br>
-                1. 우측 상단의 <b>[점 3개 메뉴 버튼(⋮)]</b>을 누르세요.<br>
-                2. 메뉴 목록에서 <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 누르세요.<br>
-                3. 안내창이 뜨면 <b>[설치]</b> 또는 <b>[추가]</b>를 누르면 끝입니다!
-            `;
+            content.innerHTML = `스마트폰 홈 화면에 추가해 두시면 매번 카톡 링크를 찾을 필요 없이 <b>1초 만에 바로 접속</b>할 수 있습니다!<br><br>1. 우측 상단의 <b>[점 3개 메뉴 버튼(⋮)]</b>을 누르세요.<br>2. 메뉴 목록에서 <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 누르세요.<br>3. 안내창이 뜨면 <b>[설치]</b> 또는 <b>[추가]</b>를 누르면 끝입니다!`;
         }
         showModal('pwaGuideModal');
     }
-
-    function closePwaGuideModal() {
-        hideModal('pwaGuideModal');
-    }
+    function closePwaGuideModal() { hideModal('pwaGuideModal'); }
 
     function openFortuneCookie() {
         const btn = document.getElementById('fortuneOpenBtn');
@@ -1063,35 +1131,26 @@
 
         btn.style.display = 'none';
         card.style.display = 'block';
-        
         setTimeout(() => {
             card.style.transform = 'scale(1)';
             card.style.opacity = '1';
         }, 50);
-
-        const todayStr = getTodayDateString();
-        localStorage.setItem('openedFortuneDate', todayStr);
+        localStorage.setItem('openedFortuneDate', getTodayDateString());
     }
 
     function checkAndShowFortuneSection() {
         const section = document.getElementById('fortuneSection');
         const btn = document.getElementById('fortuneOpenBtn');
         const card = document.getElementById('fortuneCard');
-
         if (!section) return;
 
         const isTestingMode = (typeof globalFortuneEnabled !== 'undefined' && globalFortuneEnabled === false);
-
         if (!isTestingMode) {
-            const todayStr = getTodayDateString();
-            const lastOpenedDate = localStorage.getItem('openedFortuneDate');
-
-            if (lastOpenedDate === todayStr) {
+            if (localStorage.getItem('openedFortuneDate') === getTodayDateString()) {
                 section.style.display = 'none';
                 return;
             }
         }
-
         section.style.display = 'block';
         if (btn) btn.style.display = 'block';
         if (card) {
@@ -1109,7 +1168,6 @@
 
         if (lastOrderStr) {
             let formattedMenuLines = lastOrderStr.split(',').map(item => `• ${item.trim()}`).join('<br>');
-            
             let formattedSauceLines = "없음";
             if (lastSauce !== "없음" && lastSauce.trim() !== "") {
                 formattedSauceLines = lastSauce.split(',').map(s => `• ${s.trim()}`).join('<br>');
@@ -1131,6 +1189,10 @@
             `;
             document.getElementById('quickReorderSummaryCard').innerHTML = html;
             document.getElementById('quickReorderBox').style.display = 'block';
+            
+            // 직전 내역이 있을 때는 일반 메뉴들과 예약 버튼 영역 등을 모두 히든 처리
+            document.getElementById('topNoticeBox').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
 
             let isValidTime = false;
             if (lastPickupTime) {
@@ -1171,9 +1233,7 @@
         parseSauceStringToObj(lastSauce, sauceItems);
 
         renderMenuCards();
-        if (typeof renderSauceCards === 'function') {
-            renderSauceCards();
-        }
+        if (typeof renderSauceCards === 'function') renderSauceCards();
 
         if (lastPickupTime) {
             const now = new Date();
@@ -1192,24 +1252,112 @@
             }
         }
 
+        // 직전 메뉴 불러와서 수정하기 버튼을 눌렀을 때만: 3초 주문 영역은 숨기고, 일반 메뉴들과 예약하기 버튼 영역 등이 스크롤을 따라다니며 표시됨
         document.getElementById('quickReorderBox').style.display = 'none';
         document.getElementById('topNoticeBox').style.display = 'block';
         const orderForm = document.getElementById('orderForm');
         orderForm.style.display = 'block';
-        orderForm.scrollIntoView({ behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function processOrderSubmission(orderData, secretCode) {
+        const rouletteModal = document.getElementById('rouletteModal');
+        const statusText = document.getElementById('rouletteStatusText');
+        rouletteModal.style.display = 'flex';
+        rouletteModal.offsetHeight;
+        rouletteModal.classList.add('active');
+        statusText.textContent = "시크릿 코드 검증 및 룰렛 추첨 중입니다... 🎰";
+
+        setTimeout(() => {
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(orderData)
+            })
+            .then(res => res.text())
+            .then(text => {
+                let data;
+                try { data = JSON.parse(text); } catch(e) {}
+                
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "예약 완료하기";
+                }
+                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+                if (quickSubmitBtn) {
+                    quickSubmitBtn.disabled = false;
+                    quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+                }
+                const quickBox = document.getElementById('quickReorderBox');
+                if (quickBox) quickBox.style.display = 'none';
+                hideModal('rouletteModal');
+
+                if (data && data.result === "closed") {
+                    showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
+                    return;
+                }
+
+                if (data && data.result === "out_of_stock") {
+                    showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
+                    checkAndRenderState();
+                    return;
+                }
+
+                if (secretCode && secretCode.trim() !== "") {
+                    if (data && data.isWinner) {
+                        openEventWinModal(data.eventMenuList);
+                    } else {
+                        showModal('eventFailModal');
+                    }
+                } else {
+                    showModal('successModal');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "예약 완료하기";
+                }
+                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+                if (quickSubmitBtn) {
+                    quickSubmitBtn.disabled = false;
+                    quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+                }
+                hideModal('rouletteModal');
+                showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
+            });
+        }, 1200);
     }
 
     function executeQuickReorder() {
+        const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+        if (quickSubmitBtn) {
+            quickSubmitBtn.disabled = true;
+            quickSubmitBtn.textContent = "주문 처리 중...";
+        }
+
         const nickname = document.getElementById('nickname').value.trim();
         const selectedTime = quickPickupSelect.value;
+        const secretCode = document.getElementById('quickSecretCodeInput') ? document.getElementById('quickSecretCodeInput').value.trim() : "";
 
         if (!nickname) {
             showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
+            if (quickSubmitBtn) {
+                quickSubmitBtn.disabled = false;
+                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+            }
             return;
         }
 
         if (!selectedTime || selectedTime.includes("선택") || selectedTime.includes("없습니다")) {
             showCustomAlert('픽업 시간을 먼저 선택해 주세요!', '픽업 시간 선택 필요');
+            if (quickSubmitBtn) {
+                quickSubmitBtn.disabled = false;
+                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+            }
             return;
         }
 
@@ -1221,6 +1369,10 @@
         if (selectedMinCheck < limitMinCheck) {
             showCustomAlert('선택하신 시간대는 지연 시간(준비중)에 포함되어 예약할 수 없습니다. 픽업 시간을 다시 확인해 주세요!', '시간 선택 오류');
             initPickupOptions(quickPickupSelect, 'quickReorderBox');
+            if (quickSubmitBtn) {
+                quickSubmitBtn.disabled = false;
+                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+            }
             return;
         }
 
@@ -1238,71 +1390,39 @@
             menuSummary: lastOrderStr,
             sauce: lastSauce,
             pickupTime: selectedTime,
-            totalPrice: lastPrice
+            totalPrice: lastPrice,
+            secretCode: secretCode
         };
 
         globalUserNickname = nickname;
         localStorage.setItem('savedNickname', nickname);
         localStorage.setItem('lastOrderPickupTime', selectedTime);
 
-        document.getElementById('orderForm').style.display = 'none';
-        document.getElementById('topNoticeBox').style.display = 'none';
-
-        const quickBox = document.getElementById('quickReorderBox');
-        quickBox.innerHTML = `
-            <div class="skeleton-card" style="margin: 0;">
-                <div style="display: flex; gap: 14px; align-items: center;">
-                    <div class="skeleton-shimmer" style="width: 48px; height: 48px; border-radius: 10px; flex-shrink: 0;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
-                        <div class="skeleton-shimmer" style="width: 60%; height: 15px;"></div>
-                        <div class="skeleton-shimmer" style="width: 40%; height: 14px;"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-        quickBox.style.display = "block";
-
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(orderData)
-        })
-        .then(res => res.text())
-        .then(text => {
-            let data;
-            try { data = JSON.parse(text); } catch(e) {}
-            
-            if (data && data.result === "closed") {
-                showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
-                quickBox.style.display = 'none';
-                return;
+        if (secretCode !== "" && serverSecretCode && secretCode !== serverSecretCode) {
+            if (quickSubmitBtn) {
+                quickSubmitBtn.disabled = false;
+                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
             }
+            pendingOrderPayload = { orderData: orderData, secretCode: secretCode };
+            showModal('secretCodeConfirmModal');
+            return;
+        }
 
-            if (data && data.result === "out_of_stock") {
-                showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
-                quickBox.style.display = 'none';
-                checkAndRenderState();
-                return;
-            }
+        processOrderSubmission(orderData, secretCode);
+    }
 
-            if (data && data.isWinner) {
-                quickBox.style.display = 'none';
-                openEventWinModal(data.eventMenuList);
-            } else {
-                quickBox.style.display = 'none';
-                showModal('successModal');
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
-            quickBox.style.display = 'none';
-        });
+    function handleSecretCodeChoice(isProceedGeneral) {
+        hideModal('secretCodeConfirmModal');
+        if (isProceedGeneral && pendingOrderPayload) {
+            pendingOrderPayload.orderData.secretCode = "";
+            pendingOrderPayload.secretCode = "";
+            processOrderSubmission(pendingOrderPayload.orderData, "");
+        }
+        pendingOrderPayload = null;
     }
 
     function shareStoreLink() {
-        const shareUrl = "https://donkatsu-booking.onrender.com"; 
-        
+        const shareUrl = window.location.href.split('?')[0];
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(shareUrl).then(() => {
                 showCustomAlert("예약 링크가 복사되었습니다!<br>친구에게 카카오톡으로 붙여넣어 주세요.", "링크 복사 완료");
@@ -1369,6 +1489,11 @@
         checkAndRenderState();
     }
 
+    function closeEventFailModal() {
+        hideModal('eventFailModal');
+        showModal('successModal');
+    }
+
     function parseTimeToMinutes(timeStr) {
         try {
             let isPM = timeStr.includes("오후");
@@ -1421,10 +1546,7 @@
             for (let m = mStart; m <= mEnd; m += 5) {
                 const slotTotalMin = h * 60 + m;
                 if (slotTotalMin > closeTotalMin) break; 
-                
-                if (slotTotalMin < currentTotalMin) {
-                    continue;
-                }
+                if (slotTotalMin < currentTotalMin) continue;
 
                 const ampm = h < 12 ? "오전" : "오후";
                 const displayHour = h === 0 ? 12 : (h > 12 ? h - 12 : h);
@@ -1435,15 +1557,10 @@
                 }
 
                 const count = getCombinedCountForSlot(slotTotalMin);
-
                 let statusBadge = "";
-                if (count >= 8) {
-                    statusBadge = ` (🔥 주문 폭주)`;
-                } else if (count >= 6) {
-                    statusBadge = ` (🔴 몰림)`;
-                } else if (count >= 4) {
-                    statusBadge = ` (🟠 혼잡)`;
-                }
+                if (count >= 8) statusBadge = ` (🔥 주문 폭주)`;
+                else if (count >= 6) statusBadge = ` (🔴 몰림)`;
+                else if (count >= 4) statusBadge = ` (🟠 혼잡)`;
 
                 const option = document.createElement('option');
                 option.value = rawTimeStr;
@@ -1556,7 +1673,6 @@
 
         if (sauceContainer) sauceContainer.innerHTML = '';
         if (editSauceContainer) editSauceContainer.innerHTML = '';
-
         if (typeof sauceList === 'undefined' || !sauceList) return;
 
         sauceList.forEach((sauce, idx) => {
@@ -1578,9 +1694,7 @@
                 safeUrl = sauce.imageUrl;
                 if (safeUrl.includes("drive.google.com/uc") || safeUrl.includes("drive.google.com/file/d/")) {
                     let match = safeUrl.match(/id=([a-zA-Z0-9_-]+)/) || safeUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                    if (match && match[1]) {
-                        safeUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
-                    }
+                    if (match && match[1]) safeUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
                 }
             }
 
@@ -1591,11 +1705,7 @@
                 const img = document.createElement('img');
                 img.src = safeUrl.split(',')[0].trim();
                 img.style.cssText = "width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); cursor: pointer; flex-shrink: 0;";
-                img.loading = 'eager';
-                img.onerror = function() {
-                    this.onerror = null;
-                    this.src = "https://via.placeholder.com/40x40?text=이미지";
-                };
+                img.onerror = function() { this.onerror = null; this.src = "https://via.placeholder.com/40x40?text=이미지"; };
                 img.onclick = function() { openImageModal(sauce.imageUrl); };
                 topFlexDiv.appendChild(img);
             } else {
@@ -1650,13 +1760,16 @@
             card.appendChild(bottomDiv);
 
             if (isSoldOut && !alreadyReserved) {
-                card.style.borderColor = "#FFCDD2";
+                card.classList.add('sold-out');
+                const badgeOverlay = document.createElement('div');
+                badgeOverlay.classList.add('sold-out-badge-overlay');
+                badgeOverlay.innerHTML = `<div class="sold-out-badge-text">SOLD OUT</div>`;
+                card.appendChild(badgeOverlay);
             }
             if (sauceContainer) sauceContainer.appendChild(card);
 
             const editCard = card.cloneNode(true);
-            let editQty = (typeof editSauceItems !== 'undefined' && editSauceItems[idx]) ? editSauceItems[idx] : 
-                        ((typeof editSauceOrderItems !== 'undefined' && editSauceOrderItems[idx]) ? editSauceOrderItems[idx] : 0);
+            let editQty = (typeof editSauceItems !== 'undefined' && editSauceItems[idx]) ? editSauceItems[idx] : 0;
             
             let editLabel = editCard.querySelector(`#qty_sauce_${idx}`);
             if (editLabel) {
@@ -1666,16 +1779,15 @@
 
             if (safeUrl) {
                 let editImg = editCard.querySelector('img');
-                if (editImg) {
-                    editImg.onclick = function() { openImageModal(sauce.imageUrl); };
-                }
+                if (editImg) editImg.onclick = function() { openImageModal(sauce.imageUrl); };
             }
 
             let editBtns = editCard.querySelectorAll('.item-q-btn');
             if (editBtns[0]) {
-                editBtns[0].disabled = (editQty <= 0 || (isSoldOut && !alreadyReserved));
+                editBtns[0].disabled = (editQty <= 0);
                 editBtns[0].onclick = function() {
-                    if (typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved && isSoldOut) {
+                    let origQty = (originalReservedItems['sauce_' + idx] || 0);
+                    if (editAlreadyReserved && isSoldOut && editQty === origQty) {
                         tryReduceReservedItem('sauce', idx);
                     } else {
                         updateEditSauceQty(idx, -1);
@@ -1683,16 +1795,15 @@
                 };
             }
             if (editBtns[1]) {
-                editBtns[1].disabled = (isSoldOut && !alreadyReserved);
+                editBtns[1].disabled = (isSoldOut && (!editAlreadyReserved || editQty >= (originalReservedItems['sauce_' + idx] || 0)));
                 editBtns[1].onclick = function() {
-                    if (typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved && isSoldOut) {
+                    if (editAlreadyReserved && isSoldOut && editQty >= (originalReservedItems['sauce_' + idx] || 0)) {
                         handleSoldOutClick(sauce.name);
                     } else {
                         updateEditSauceQty(idx, 1);
                     }
                 };
             }
-
             if (editSauceContainer) editSauceContainer.appendChild(editCard);
         });
     }
@@ -1703,7 +1814,6 @@
 
         if (mainContainer) mainContainer.innerHTML = '';
         if (editContainer) editContainer.innerHTML = '';
-
         if (typeof menuList === 'undefined' || !menuList) return;
 
         menuList.forEach((item, idx) => {
@@ -1715,9 +1825,7 @@
                 safeUrl = item.imageUrl;
                 if (safeUrl.includes("drive.google.com/uc") || safeUrl.includes("drive.google.com/file/d/")) {
                     let match = safeUrl.match(/id=([a-zA-Z0-9_-]+)/) || safeUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                    if (match && match[1]) {
-                        safeUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
-                    }
+                    if (match && match[1]) safeUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
                 }
             }
 
@@ -1735,13 +1843,8 @@
                 img.src = safeUrl.split(',')[0].trim();
                 img.classList.add('menu-thumb');
                 img.loading = 'eager';
-                img.onerror = function() {
-                    this.onerror = null;
-                    this.src = "https://via.placeholder.com/76x76?text=이미지";
-                };
-                img.onclick = function() {
-                    openImageModal(item.imageUrl);
-                };
+                img.onerror = function() { this.onerror = null; this.src = "https://via.placeholder.com/76x76?text=이미지"; };
+                img.onclick = function() { openImageModal(item.imageUrl); };
                 imgElem.appendChild(img);
             } else {
                 const noImg = document.createElement('div');
@@ -1794,7 +1897,11 @@
             card.appendChild(bottomDiv);
 
             if (isSoldOut && !alreadyReserved) {
-                card.style.borderColor = "#FFCDD2";
+                card.classList.add('sold-out');
+                const badgeOverlay = document.createElement('div');
+                badgeOverlay.classList.add('sold-out-badge-overlay');
+                badgeOverlay.innerHTML = `<div class="sold-out-badge-text">SOLD OUT</div>`;
+                card.appendChild(badgeOverlay);
             }
             if (mainContainer) mainContainer.appendChild(card);
 
@@ -1809,17 +1916,15 @@
 
             if (safeUrl) {
                 let editImg = editCard.querySelector('img');
-                if (editImg) {
-                    editImg.onclick = function() { openImageModal(item.imageUrl); };
-                }
+                if (editImg) editImg.onclick = function() { openImageModal(item.imageUrl); };
             }
 
             let editBtns = editCard.querySelectorAll('.item-q-btn');
             if (editBtns[0]) {
                 editBtns[0].disabled = (editQty <= 0);
                 editBtns[0].onclick = function() {
-                    let isAlreadyRes = (typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved);
-                    if (isAlreadyRes && isSoldOut) {
+                    let origQty = (originalReservedItems['menu_' + idx] || 0);
+                    if (editAlreadyReserved && isSoldOut && editQty === origQty) {
                         tryReduceReservedItem('menu', idx);
                     } else {
                         updateEditQty(idx, -1);
@@ -1827,22 +1932,20 @@
                 };
             }
             if (editBtns[1]) {
+                editBtns[1].disabled = (isSoldOut && (!editAlreadyReserved || editQty >= (originalReservedItems['menu_' + idx] || 0)));
                 editBtns[1].onclick = function() {
-                    let isAlreadyRes = (typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved);
-                    if (isAlreadyRes && isSoldOut) {
+                    let origQty = (originalReservedItems['menu_' + idx] || 0);
+                    if (editAlreadyReserved && isSoldOut && editQty >= origQty) {
                         handleSoldOutClick(item.name);
                     } else {
                         updateEditQty(idx, 1);
                     }
                 };
             }
-
             if (editContainer) editContainer.appendChild(editCard);
         });
 
-        if (typeof renderSauceCards === 'function') {
-            renderSauceCards();
-        }
+        if (typeof renderSauceCards === 'function') renderSauceCards();
         if (typeof updateMainTotalPrice === 'function') updateMainTotalPrice();
         if (typeof updateEditTotalPrice === 'function') updateEditTotalPrice();
     }
@@ -1853,6 +1956,14 @@
 
     function tryReduceReservedItem(type, idx) {
         pendingReduceAction = { type: type, idx: idx };
+        let itemName = "";
+        if (type === 'menu') itemName = menuList[idx] ? menuList[idx].shortName : "메뉴";
+        else itemName = sauceList[idx] ? sauceList[idx].shortName : "소스";
+
+        document.getElementById('confirmReduceText').innerHTML = `
+            현재 재고가 <b>품절 상태</b>인 메뉴(<b>${itemName}</b>)입니다.<br><br>
+            수량을 0으로 내리면 다시 선택하실 수 없습니다. 정말 변경하시겠습니까?
+        `;
         showModal('confirmReduceModal');
     }
 
@@ -1861,11 +1972,8 @@
         if (isYes && pendingReduceAction) {
             let type = pendingReduceAction.type;
             let idx = pendingReduceAction.idx;
-            if (type === 'menu') {
-                updateEditQty(idx, -1);
-            } else if (type === 'sauce') {
-                updateEditSauceQty(idx, -1);
-            }
+            if (type === 'menu') updateEditQty(idx, -1);
+            else if (type === 'sauce') updateEditSauceQty(idx, -1);
         }
         pendingReduceAction = null;
     }
@@ -1923,7 +2031,6 @@
         orderItems[idx] += delta;
         if (orderItems[idx] < 0) orderItems[idx] = 0;
         if (orderItems[idx] === 0) delete orderItems[idx];
-        
         renderMenuCards();
     }
 
@@ -1932,18 +2039,15 @@
         editOrderItems[idx] += delta;
         if (editOrderItems[idx] < 0) editOrderItems[idx] = 0;
         if (editOrderItems[idx] === 0) delete editOrderItems[idx];
-        
         renderMenuCards();
     }
 
     function updateSauceQty(idx, delta) {
         if (typeof sauceOrderItems === 'undefined') sauceOrderItems = {};
         if (typeof sauceItems === 'undefined') sauceItems = {};
-        
         let current = sauceOrderItems[idx] || sauceItems[idx] || 0;
         current += delta;
         if (current < 0) current = 0;
-        
         if (current === 0) {
             delete sauceOrderItems[idx];
             delete sauceItems[idx];
@@ -1951,12 +2055,8 @@
             sauceOrderItems[idx] = current;
             sauceItems[idx] = current;
         }
-
         renderSauceCards();
-        
-        if (typeof updateMainTotalPrice === 'function') {
-            updateMainTotalPrice();
-        }
+        if (typeof updateMainTotalPrice === 'function') updateMainTotalPrice();
     }
 
     function updateEditSauceQty(idx, delta) {
@@ -1964,7 +2064,6 @@
         editSauceItems[idx] += delta;
         if (editSauceItems[idx] < 0) editSauceItems[idx] = 0;
         if (editSauceItems[idx] === 0) delete editSauceItems[idx];
-
         renderSauceCards();
         updateEditTotalPrice();
     }
@@ -1996,7 +2095,6 @@
     function openImageModal(urlStr) {
         var container = document.getElementById('modalImageContainer');
         container.innerHTML = ""; 
-
         if (!urlStr || urlStr.trim() === "" || urlStr === "undefined") {
             container.innerHTML = "<div style='color:#fff; padding:20px;'>등록된 상세 이미지가 없습니다.</div>";
         } else {
@@ -2006,9 +2104,7 @@
                 if (imgUrl !== "") {
                     if (imgUrl.includes("drive.google.com/uc") || imgUrl.includes("drive.google.com/file/d/")) {
                         let match = imgUrl.match(/id=([a-zA-Z0-9_-]+)/) || imgUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                        if (match && match[1]) {
-                            imgUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
-                        }
+                        if (match && match[1]) imgUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
                     }
                     var imgTag = document.createElement('img');
                     imgTag.src = imgUrl;
@@ -2016,27 +2112,17 @@
                 }
             }
         }
-
         showModal('imageModal');
-        requestAnimationFrame(function() {
-            container.scrollLeft = 0;
-        });
-        
-        setTimeout(function() {
-            container.scrollLeft = 0;
-        }, 10);
+        requestAnimationFrame(() => { container.scrollLeft = 0; });
+        setTimeout(() => { container.scrollLeft = 0; }, 10);
     }
 
-    function closeImageModal() {
-        hideModal('imageModal');
-    }
+    function closeImageModal() { hideModal('imageModal'); }
 
     function buildMenuSummary(itemsObj) {
         let summaryList = [];
         Object.keys(itemsObj).forEach(idx => {
-            if (itemsObj[idx] > 0 && menuList[idx]) {
-                summaryList.push(`${menuList[idx].shortName} ${itemsObj[idx]}개`);
-            }
+            if (itemsObj[idx] > 0 && menuList[idx]) summaryList.push(`${menuList[idx].shortName} ${itemsObj[idx]}개`);
         });
         return summaryList.join(', ');
     }
@@ -2044,9 +2130,7 @@
     function buildSauceSummary(sauceObj) {
         let summaryList = [];
         Object.keys(sauceObj).forEach(idx => {
-            if (sauceObj[idx] > 0 && sauceList[idx]) {
-                summaryList.push(`${sauceList[idx].shortName} ${sauceObj[idx]}개`);
-            }
+            if (sauceObj[idx] > 0 && sauceList[idx]) summaryList.push(`${sauceList[idx].shortName} ${sauceObj[idx]}개`);
         });
         return summaryList.length > 0 ? summaryList.join(', ') : "없음";
     }
@@ -2054,15 +2138,13 @@
     function parseMenuStringToObj(menuStr, itemsObj) {
         for (let key in itemsObj) delete itemsObj[key]; 
         if (!menuStr) return;
-
         let parts = menuStr.split(',');
         parts.forEach(part => {
             part = part.trim();
             menuList.forEach((menu, idx) => {
                 if (part.startsWith(menu.shortName)) {
                     let qtyStr = part.replace(menu.shortName, '').replace('개', '').trim(); 
-                    let qty = parseInt(qtyStr) || 1;
-                    itemsObj[idx] = qty;
+                    itemsObj[idx] = parseInt(qtyStr) || 1;
                 }
             });
         });
@@ -2071,7 +2153,6 @@
     function parseSauceStringToObj(sauceStr, sauceObj) {
         for (let key in sauceObj) delete sauceObj[key];
         if (!sauceStr || sauceStr === "없음") return;
-
         let parts = sauceStr.split(',');
         parts.forEach(part => {
             part = part.trim();
@@ -2079,8 +2160,7 @@
                 let targetName = sauce.shortName || sauce.name;
                 if (part.startsWith(targetName) || part.startsWith(sauce.name)) {
                     let qtyStr = part.replace(targetName, '').replace(sauce.name, '').replace('개', '').trim();
-                    let qty = parseInt(qtyStr) || 1;
-                    sauceObj[idx] = qty;
+                    sauceObj[idx] = parseInt(qtyStr) || 1;
                 }
             });
         });
@@ -2088,7 +2168,6 @@
 
     function checkAndRenderState() {
         const savedNick = localStorage.getItem('savedNickname');
-
         document.getElementById('pageLoadingOverlay').style.display = 'flex';
         document.getElementById('topNoticeBox').style.display = 'none';
         document.getElementById('alreadyOrderedNotice').style.display = 'none';
@@ -2112,14 +2191,11 @@
         }
 
         Promise.all([settingsPromise, checkPromise]).then(([settingsText, vText]) => {
-            let settings = { openHour: 0, openMin: 0, closeHour: 4, closeMin: 0, prepMinutes: 0, menuList: [], sauceList: [], isMaintenance: false, maintenanceCode: "3808" };
-            try {
-                if (settingsText) settings = JSON.parse(settingsText);
-            } catch(e) {}
+            let settings = { openHour: 0, openMin: 0, closeHour: 4, closeMin: 0, prepMinutes: 0, menuList: [], sauceList: [], isMaintenance: false, maintenanceCode: "3808", secretCode: "" };
+            try { if (settingsText) settings = JSON.parse(settingsText); } catch(e) {}
 
-            if (settings.maintenanceCode) {
-                serverMaintenanceCode = String(settings.maintenanceCode).trim();
-            }
+            if (settings.maintenanceCode) serverMaintenanceCode = String(settings.maintenanceCode).trim();
+            if (settings.secretCode !== undefined) serverSecretCode = String(settings.secretCode).trim();
 
             const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
             if (settings.isMaintenance && !isAdminPassed) {
@@ -2131,7 +2207,6 @@
             }
 
             globalPrepMinutes = parseInt(settings.prepMinutes) || 0;
-            
             globalOpenHour = parseInt(settings.openHour) !== undefined ? parseInt(settings.openHour) : 0;
             globalOpenMin = parseInt(settings.openMin) !== undefined ? parseInt(settings.openMin) : 0;
             globalCloseHour = parseInt(settings.closeHour) !== undefined ? parseInt(settings.closeHour) : 4;
@@ -2141,7 +2216,6 @@
             globalPickupStartMin = parseInt(settings.pickupStartMin) !== undefined ? parseInt(settings.pickupStartMin) : 0;
             globalPickupCloseHour = parseInt(settings.pickupCloseHour) !== undefined ? parseInt(settings.pickupCloseHour) : 20;
             globalPickupCloseMin = parseInt(settings.pickupCloseMin) !== undefined ? parseInt(settings.pickupCloseMin) : 0;
-            
             globalFortuneEnabled = (settings.fortuneEnabled !== undefined) ? settings.fortuneEnabled : true;
             
             if (settings.pickupTimesList) globalPickupTimesList = settings.pickupTimesList;
@@ -2155,21 +2229,17 @@
             initPickupOptions(quickPickupSelect, 'quickReorderBox');
 
             let data = null;
-            if (vText) {
-                try { data = JSON.parse(vText); } catch(e) {}
-            }
+            if (vText) { try { data = JSON.parse(vText); } catch(e) {} }
 
             document.getElementById('pageLoadingOverlay').style.display = 'none';
 
             if (data && data.result === "found") {
                 globalUserNickname = data.nickname || savedNick;
-
                 document.getElementById('displayNick').textContent = globalUserNickname;
                 document.getElementById('displayCookType').textContent = formatCookType(data.cookType);
                 
                 let rawMenu = data.menu || "-";
-                let menuLines = rawMenu.split(',').map(item => `• ${item.trim()}`).join('<br>');
-                document.getElementById('displayMenu').innerHTML = menuLines;
+                document.getElementById('displayMenu').innerHTML = rawMenu.split(',').map(item => `• ${item.trim()}`).join('<br>');
 
                 let rawSauce = data.sauce || "없음";
                 let formattedSauce = "없음";
@@ -2197,8 +2267,7 @@
                 document.getElementById('displayPickupTime').textContent = cleanTime;
                 
                 let rawPrice = String(data.totalPrice || "0").replace(/[^0-9]/g, '');
-                let formattedPrice = Number(rawPrice).toLocaleString() + '원';
-                document.getElementById('displayTotalPrice').textContent = formattedPrice;
+                document.getElementById('displayTotalPrice').textContent = Number(rawPrice).toLocaleString() + '원';
 
                 const statusBadgeBox = document.getElementById('statusBadgeBox');
                 const kakaoInquireBtn = document.getElementById('kakaoInquireBtn');
@@ -2222,7 +2291,6 @@
                 document.getElementById('topNoticeBox').style.display = 'none';
                 document.getElementById('orderForm').style.display = 'none';
                 document.getElementById('quickReorderBox').style.display = 'none';
-                
                 checkAndShowFortuneSection();
             } else {
                 checkClosedTimeAndRender(settings);
@@ -2268,26 +2336,37 @@
         checkQuickReorderData();
     }
 
-    // 전역 버튼 클릭 인터랙션 사운드 바인딩
     document.addEventListener('click', function(event) {
         const targetBtn = event.target.closest('button, .radio-btn, input[type="button"], input[type="submit"]');
-        if (targetBtn) {
-            playClickSound();
-        }
+        if (targetBtn) playClickSound();
     });
 
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "예약 접수 중...";
+        }
+
         const nickname = document.getElementById('nickname').value.trim();
         if (!nickname) {
             showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "예약 완료하기";
+            }
             return;
         }
 
         let summary = buildMenuSummary(orderItems);
         if (!summary) {
             showCustomAlert('최소 1개 이상의 메뉴를 선택해주세요!', '메뉴 선택 필요');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "예약 완료하기";
+            }
             return;
         }
 
@@ -2300,34 +2379,20 @@
         if (selectedMinCheck < limitMinCheck) {
             showCustomAlert('선택하신 픽업 시간은 현재 지연 시간(준비중) 구간에 포함되어 예약하실 수 없습니다. 시간을 다시 선택해 주세요!', '시간 선택 오류');
             initPickupOptions(pickupSelect, 'pickupFormGroup');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "예약 완료하기";
+            }
             return;
         }
 
-        if (selectedTime.includes('오후 6:35') || selectedTime.includes('오후 6:4') || selectedTime.includes('오후 6:5') || selectedTime.includes('오후 7:') || selectedTime.includes('오후 8:')) {
-            showModal('warningModal');
-        } else {
-            confirmOrder();
-        }
-    });
-
-    function cancelWarningOrder() {
-        hideModal('warningModal');
-    }
-
-    function confirmOrder() {
-        hideModal('warningModal');
-
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = "예약 접수 중입니다...";
-
-        const nickname = document.getElementById('nickname').value.trim();
+        const secretCode = document.getElementById('secretCodeInput') ? document.getElementById('secretCodeInput').value.trim() : "";
         const cookTypeElem = document.querySelector('input[name="cookType"]:checked');
         const menuSummaryText = buildMenuSummary(orderItems);
         const sauceSummaryText = buildSauceSummary(sauceItems);
         const priceText = calculateMainTotal().toLocaleString() + '원';
         const finalPickupTime = document.getElementById('pickupTime').value;
-        
+
         const orderData = {
             action: 'create',
             time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
@@ -2337,7 +2402,8 @@
             menuSummary: menuSummaryText,
             sauce: sauceSummaryText,
             pickupTime: finalPickupTime,
-            totalPrice: priceText
+            totalPrice: priceText,
+            secretCode: secretCode
         };
 
         localStorage.setItem('savedNickname', nickname);
@@ -2345,49 +2411,22 @@
         localStorage.setItem('lastOrderSauce', sauceSummaryText);
         localStorage.setItem('lastOrderPrice', priceText);
         localStorage.setItem('lastOrderPickupTime', finalPickupTime);
-
         globalUserNickname = nickname;
 
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(orderData)
-        })
-        .then(res => res.text())
-        .then(text => {
-            let data;
-            try { data = JSON.parse(text); } catch(e) {}
-            
-            if (data && data.result === "closed") {
-                showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
+        if (secretCode !== "" && serverSecretCode && secretCode !== serverSecretCode) {
+            if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "예약 완료하기";
-                return;
             }
+            pendingOrderPayload = { orderData: orderData, secretCode: secretCode };
+            showModal('secretCodeConfirmModal');
+            return;
+        }
 
-            if (data && data.result === "out_of_stock") {
-                showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
-                submitBtn.disabled = false;
-                submitBtn.textContent = "예약 완료하기";
-                checkAndRenderState();
-                return;
-            }
+        processOrderSubmission(orderData, secretCode);
+    });
 
-            if (data && data.isWinner) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "예약 완료하기";
-                openEventWinModal(data.eventMenuList);
-            } else {
-                showModal('successModal');
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
-            submitBtn.disabled = false;
-            submitBtn.textContent = "예약 완료하기";
-        });
-    }
+    function cancelWarningOrder() { hideModal('warningModal'); }
 
     function openEventWinModal(menuList) {
         const container = document.getElementById('eventOptionsContainer');
@@ -2409,7 +2448,6 @@
         const eventSubmitBtn = document.getElementById('eventSubmitBtn');
         eventSubmitBtn.disabled = false;
         eventSubmitBtn.textContent = "선택 완료 및 확인";
-
         showModal('eventWinModal');
     }
 
@@ -2470,13 +2508,10 @@
                     showModal('lockedModal');
                 } else if (data.status === "완료") {
                     closeSearchModal();
-                    showCustomAlert(
-                        "이미 수령 완료된 주문 내역이 있습니다.<br><br>새로운 예약을 진행해 주세요!", 
-                        "예약 완료 안내", 
-                        true 
-                    );
+                    showCustomAlert("이미 수령 완료된 주문 내역이 있습니다.<br><br>새로운 예약을 진행해 주세요!", "예약 완료 안내", true);
                 } else {
                     currentFoundRowIndex = data.rowIndex;
+                    editAlreadyReserved = true;
                     
                     let cleanPickupTime = data.pickupTime || "";
                     if (cleanPickupTime.includes("GMT") || cleanPickupTime.length > 20) {
@@ -2494,25 +2529,22 @@
 
                     parseMenuStringToObj(data.menu, editOrderItems);
                     parseSauceStringToObj(data.sauce, editSauceItems);
-                    renderMenuCards();
-
-                    updateEditTotalPrice();
                     
+                    for (let k in editOrderItems) originalReservedItems['menu_' + k] = editOrderItems[k];
+                    for (let k in editSauceItems) originalReservedItems['sauce_' + k] = editSauceItems[k];
+
+                    renderMenuCards();
+                    updateEditTotalPrice();
                     initPickupOptions(newPickupSelect, 'editPickupFormGroup', cleanPickupTime);
 
                     document.getElementById('modalLoadingBox').style.display = 'none';
                     document.getElementById('searchResultArea').style.display = 'block';
-                    
                     const actionBtns = document.getElementById('searchModalActionBtns');
                     if (actionBtns) actionBtns.style.display = 'block';
                 }
             } else {
                 closeSearchModal();
-                showCustomAlert(
-                    "고객님의 예약 내역이 취소되었거나 존재하지 않습니다.<br><br>새로운 예약을 진행해 주세요!", 
-                    "예약 취소 안내", 
-                    true 
-                );
+                showCustomAlert("고객님의 예약 내역이 취소되었거나 존재하지 않습니다.<br><br>새로운 예약을 진행해 주세요!", "예약 취소 안내", true);
             }
         })
         .catch(err => {
@@ -2524,13 +2556,13 @@
 
     function closeSearchModal() {
         hideModal('searchModal');
+        editAlreadyReserved = false;
+        originalReservedItems = {};
         const actionBtns = document.getElementById('searchModalActionBtns');
         if (actionBtns) actionBtns.style.display = 'none';
     }
 
-    function closeLockedModal() {
-        hideModal('lockedModal');
-    }
+    function closeLockedModal() { hideModal('lockedModal'); }
 
     function updateReservation() {
         const newSummary = buildMenuSummary(editOrderItems);
@@ -2630,8 +2662,6 @@
                 closeBtn.style.backgroundColor = "var(--surface-sub)";
                 closeBtn.style.cursor = "pointer";
             }
-
-            console.log(err);
             showCustomAlert('예약 변경 중 통신 오류가 발생했습니다.', '통신 오류');
             updateBtn.disabled = false;
             updateBtn.textContent = "변경된 내용 저장하기";
