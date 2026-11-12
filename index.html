@@ -87,7 +87,7 @@
         input[type="text"], select { 
             width: 100%; 
             padding: 16px 20px; 
-            font-size: 11px; 
+            font-size: 16px; 
             border: 1.5px solid var(--border-color); 
             border-radius: var(--radius-sm); 
             background-color: #FAFAF9; 
@@ -649,6 +649,8 @@
     <div id="quickReorderBox">
         <h3 style="color: var(--text-main); margin-top: 0; font-size: 19px; margin-bottom: 12px; font-weight: 800;">직전에 주문하신 내역이 있어요</h3>
         
+        <div id="quickReorderSoldOutNotice" style="display: none; background: #FFF1F2; border: 1.5px solid #FECDD3; color: #BE123C; padding: 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; margin-bottom: 16px; line-height: 1.5; text-align: left; word-break: keep-all;"></div>
+
         <div id="quickReorderSummaryCard" class="order-info-card" style="margin-bottom: 18px;"></div>
         
         <div style="margin-bottom: 18px; text-align: left;">
@@ -668,7 +670,7 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button type="button" id="quickSubmitBtn" onclick="executeQuickReorder()" style="background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 16.5px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; box-shadow: 0 8px 20px rgba(28, 27, 24, 0.12);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
+            <button type="button" id="quickSubmitBtn" onclick="executeQuickReorder()" style="background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 15.5px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: normal; word-break: keep-all; line-height: 1.4; box-shadow: 0 8px 20px rgba(28, 27, 24, 0.12);">⚡ 3초 만에 직전 메뉴 그대로 주문하기</button>
             <button type="button" onclick="loadPreviousToForm()" style="background-color: var(--surface-sub); color: var(--text-main); border: 1.5px solid var(--border-color); padding: 16px; font-size: 16px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap;">✏️ 직전 메뉴 불러와서 수정하기</button>
         </div>
     </div>
@@ -689,7 +691,7 @@
         </div>
 
         <div class="form-group">
-            <label>2. 카톡 닉네임+전화번호 뒷자리 *</label>
+            <label for="nickname">2. 카톡 닉네임+전화번호 뒷자리 *</label>
             <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
             <div style="margin-top: 12px; font-size: 14px; color: #B45309; background: var(--accent-gold-bg); padding: 14px 16px; border-radius: var(--radius-sm); border: 1.5px solid #F3E6C8; line-height: 1.6; font-weight: 500;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
@@ -998,15 +1000,23 @@
     const quickPickupSelect = document.getElementById('quickPickupTime');
     const newPickupSelect = document.getElementById('newPickupTime');
 
+    let scrollPosition = 0;
+
     function showModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
+        
+        if (!document.body.classList.contains('modal-open')) {
+            scrollPosition = window.pageYOffset;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPosition}px`;
+            document.body.style.width = '100%';
+            document.body.classList.add('modal-open');
+        }
+
         modal.style.display = 'flex';
         modal.offsetHeight;
         modal.classList.add('active');
-        if (modalId === 'imageModal' || modalId === 'searchModal') {
-            document.body.style.overflow = 'hidden';
-        }
     }
 
     function hideModal(modalId) {
@@ -1018,9 +1028,17 @@
                 modal.style.display = 'none';
             }
         }, 350);
-        if (modalId === 'imageModal' || modalId === 'searchModal') {
-            document.body.style.overflow = '';
-        }
+
+        setTimeout(() => {
+            const activeModals = document.querySelectorAll('.modal.active, #imageModal.active');
+            if (activeModals.length === 0 && document.body.classList.contains('modal-open')) {
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.classList.remove('modal-open');
+                window.scrollTo(0, scrollPosition);
+            }
+        }, 360);
     }
 
     window.addEventListener('DOMContentLoaded', function() {
@@ -1160,6 +1178,56 @@
         }
     }
 
+    function validatePreviousOrderItems(lastOrderStr, lastSauceStr) {
+        let unavailableItems = [];
+
+        if (lastOrderStr) {
+            let parts = lastOrderStr.split(',');
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                let matchedMenu = null;
+                for (let i = 0; i < menuList.length; i++) {
+                    if (part.startsWith(menuList[i].shortName)) {
+                        matchedMenu = menuList[i];
+                        break;
+                    }
+                }
+                if (!matchedMenu) {
+                    let cleanName = part.replace(/\s*\d+개$/, '').trim();
+                    unavailableItems.push(`${cleanName}(판매종료)`);
+                } else if (matchedMenu.isSoldOut) {
+                    unavailableItems.push(`${matchedMenu.shortName}(품절)`);
+                }
+            });
+        }
+
+        if (lastSauceStr && lastSauceStr !== "없음" && lastSauceStr.trim() !== "") {
+            let parts = lastSauceStr.split(',');
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                let matchedSauce = null;
+                for (let i = 0; i < sauceList.length; i++) {
+                    let targetName = sauceList[i].shortName || sauceList[i].name;
+                    if (part.startsWith(targetName) || part.startsWith(sauceList[i].name)) {
+                        matchedSauce = sauceList[i];
+                        break;
+                    }
+                }
+                if (!matchedSauce) {
+                    let cleanName = part.replace(/\s*\d+개$/, '').trim();
+                    unavailableItems.push(`${cleanName}(판매종료)`);
+                } else if (matchedSauce.isSoldOut) {
+                    let targetName = matchedSauce.shortName || matchedSauce.name;
+                    unavailableItems.push(`${targetName}(품절)`);
+                }
+            });
+        }
+
+        return unavailableItems;
+    }
+
     function checkQuickReorderData() {
         const lastOrderStr = localStorage.getItem('lastOrderSummary');
         const lastSauce = localStorage.getItem('lastOrderSauce') || "없음";
@@ -1190,9 +1258,35 @@
             document.getElementById('quickReorderSummaryCard').innerHTML = html;
             document.getElementById('quickReorderBox').style.display = 'block';
             
-            // 직전 내역이 있을 때는 일반 메뉴들과 예약 버튼 영역 등을 모두 히든 처리
             document.getElementById('topNoticeBox').style.display = 'none';
             document.getElementById('orderForm').style.display = 'none';
+
+            const unavailableItems = validatePreviousOrderItems(lastOrderStr, lastSauce);
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            const soldOutNotice = document.getElementById('quickReorderSoldOutNotice');
+
+            if (unavailableItems.length > 0) {
+                if (soldOutNotice) {
+                    soldOutNotice.innerHTML = `⚠️ 직전 주문하신 <b>${unavailableItems.join(', ')}</b> 항목이 현재 주문 불가하여 3초 바로주문이 제한됩니다.<br>아래 <b>[직전 메뉴 불러와서 수정하기]</b>를 눌러 변경해 주세요!`;
+                    soldOutNotice.style.display = 'block';
+                }
+                if (quickSubmitBtn) {
+                    quickSubmitBtn.disabled = true;
+                    quickSubmitBtn.style.backgroundColor = "#D1CFCD";
+                    quickSubmitBtn.style.cursor = "not-allowed";
+                    quickSubmitBtn.style.boxShadow = "none";
+                    quickSubmitBtn.textContent = "🚫 품절 메뉴 포함 (수정 후 이용)";
+                }
+            } else {
+                if (soldOutNotice) soldOutNotice.style.display = 'none';
+                if (quickSubmitBtn) {
+                    quickSubmitBtn.disabled = false;
+                    quickSubmitBtn.style.backgroundColor = "var(--accent-dark)";
+                    quickSubmitBtn.style.cursor = "pointer";
+                    quickSubmitBtn.style.boxShadow = "0 8px 20px rgba(28, 27, 24, 0.12)";
+                    quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+                }
+            }
 
             let isValidTime = false;
             if (lastPickupTime) {
@@ -1229,8 +1323,25 @@
         const lastSauce = localStorage.getItem('lastOrderSauce') || "없음";
         const lastPickupTime = localStorage.getItem('lastOrderPickupTime');
 
+        const unavailableItems = validatePreviousOrderItems(lastOrderStr, lastSauce);
+
         parseMenuStringToObj(lastOrderStr, orderItems);
         parseSauceStringToObj(lastSauce, sauceItems);
+
+        Object.keys(orderItems).forEach(idx => {
+            if (!menuList[idx] || menuList[idx].isSoldOut) {
+                delete orderItems[idx];
+            }
+        });
+        Object.keys(sauceItems).forEach(idx => {
+            if (!sauceList[idx] || sauceList[idx].isSoldOut) {
+                delete sauceItems[idx];
+            }
+        });
+        if (typeof sauceOrderItems !== 'undefined') {
+            for (let key in sauceOrderItems) delete sauceOrderItems[key];
+            Object.keys(sauceItems).forEach(idx => { sauceOrderItems[idx] = sauceItems[idx]; });
+        }
 
         renderMenuCards();
         if (typeof renderSauceCards === 'function') renderSauceCards();
@@ -1252,83 +1363,112 @@
             }
         }
 
-        // 직전 메뉴 불러와서 수정하기 버튼을 눌렀을 때만: 3초 주문 영역은 숨기고, 일반 메뉴들과 예약하기 버튼 영역 등이 스크롤을 따라다니며 표시됨
         document.getElementById('quickReorderBox').style.display = 'none';
         document.getElementById('topNoticeBox').style.display = 'block';
         const orderForm = document.getElementById('orderForm');
         orderForm.style.display = 'block';
+        
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (unavailableItems.length > 0) {
+            showCustomAlert(`직전 주문하신 <b>${unavailableItems.join(', ')}</b> 항목은 현재 주문 불가하여 목록에서 자동으로 제외되었습니다.<br><br>다른 메뉴를 선택해 주세요!`, '주문 불가 메뉴 안내');
+        }
+    }
+
+    function sendOrderRequest(orderData, hasValidSecretCode) {
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(orderData)
+        })
+        .then(res => res.text())
+        .then(text => {
+            let data;
+            try { data = JSON.parse(text); } catch(e) {}
+            
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "예약 완료하기";
+            }
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            if (quickSubmitBtn) {
+                quickSubmitBtn.disabled = false;
+                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+            }
+            const quickBox = document.getElementById('quickReorderBox');
+            if (quickBox) quickBox.style.display = 'none';
+            
+            if (hasValidSecretCode) {
+                hideModal('rouletteModal');
+            }
+
+            if (data && data.result === "closed") {
+                showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
+                return;
+            }
+
+            if (data && data.result === "out_of_stock") {
+                showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
+                checkAndRenderState();
+                return;
+            }
+
+            if (hasValidSecretCode) {
+                if (data && data.isWinner) {
+                    openEventWinModal(data.eventMenuList);
+                } else {
+                    showModal('eventFailModal');
+                }
+            } else {
+                showModal('successModal');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "예약 완료하기";
+            }
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            if (quickSubmitBtn) {
+                quickSubmitBtn.disabled = false;
+                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
+            }
+            if (hasValidSecretCode) {
+                hideModal('rouletteModal');
+            }
+            showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
+        });
     }
 
     function processOrderSubmission(orderData, secretCode) {
+        const cleanCode = secretCode ? secretCode.trim() : "";
+
+        if (cleanCode === "") {
+            sendOrderRequest(orderData, false);
+            return;
+        }
+
         const rouletteModal = document.getElementById('rouletteModal');
         const statusText = document.getElementById('rouletteStatusText');
         rouletteModal.style.display = 'flex';
         rouletteModal.offsetHeight;
         rouletteModal.classList.add('active');
+        
+        if (!document.body.classList.contains('modal-open')) {
+            scrollPosition = window.pageYOffset;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPosition}px`;
+            document.body.style.width = '100%';
+            document.body.classList.add('modal-open');
+        }
+
         statusText.textContent = "시크릿 코드 검증 및 룰렛 추첨 중입니다... 🎰";
 
         setTimeout(() => {
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(orderData)
-            })
-            .then(res => res.text())
-            .then(text => {
-                let data;
-                try { data = JSON.parse(text); } catch(e) {}
-                
-                const submitBtn = document.getElementById('submitBtn');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "예약 완료하기";
-                }
-                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-                if (quickSubmitBtn) {
-                    quickSubmitBtn.disabled = false;
-                    quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
-                }
-                const quickBox = document.getElementById('quickReorderBox');
-                if (quickBox) quickBox.style.display = 'none';
-                hideModal('rouletteModal');
-
-                if (data && data.result === "closed") {
-                    showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
-                    return;
-                }
-
-                if (data && data.result === "out_of_stock") {
-                    showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
-                    checkAndRenderState();
-                    return;
-                }
-
-                if (secretCode && secretCode.trim() !== "") {
-                    if (data && data.isWinner) {
-                        openEventWinModal(data.eventMenuList);
-                    } else {
-                        showModal('eventFailModal');
-                    }
-                } else {
-                    showModal('successModal');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                const submitBtn = document.getElementById('submitBtn');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "예약 완료하기";
-                }
-                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-                if (quickSubmitBtn) {
-                    quickSubmitBtn.disabled = false;
-                    quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
-                }
-                hideModal('rouletteModal');
-                showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
-            });
+            sendOrderRequest(orderData, true);
         }, 1200);
     }
 
@@ -1337,6 +1477,15 @@
         if (quickSubmitBtn) {
             quickSubmitBtn.disabled = true;
             quickSubmitBtn.textContent = "주문 처리 중...";
+        }
+
+        const lastOrderStr = localStorage.getItem('lastOrderSummary');
+        const lastSauce = localStorage.getItem('lastOrderSauce') || "없음";
+        const unavailableItems = validatePreviousOrderItems(lastOrderStr, lastSauce);
+        if (unavailableItems.length > 0) {
+            showCustomAlert(`직전 주문하신 <b>${unavailableItems.join(', ')}</b> 항목이 현재 품절 또는 판매 종료되어 바로 주문할 수 없습니다.<br><br><b>[직전 메뉴 불러와서 수정하기]</b>를 눌러 변경해 주세요!`, '주문 불가 안내');
+            checkQuickReorderData();
+            return;
         }
 
         const nickname = document.getElementById('nickname').value.trim();
@@ -1376,8 +1525,6 @@
             return;
         }
 
-        const lastOrderStr = localStorage.getItem('lastOrderSummary');
-        const lastSauce = localStorage.getItem('lastOrderSauce') || "없음";
         const lastPrice = localStorage.getItem('lastOrderPrice') || "0원";
         const cookTypeElem = document.querySelector('input[name="cookType"]:checked');
 
@@ -1398,7 +1545,7 @@
         localStorage.setItem('savedNickname', nickname);
         localStorage.setItem('lastOrderPickupTime', selectedTime);
 
-        if (secretCode !== "" && serverSecretCode && secretCode !== serverSecretCode) {
+        if (secretCode !== "" && secretCode !== serverSecretCode) {
             if (quickSubmitBtn) {
                 quickSubmitBtn.disabled = false;
                 quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
@@ -1414,6 +1561,16 @@
     function handleSecretCodeChoice(isProceedGeneral) {
         hideModal('secretCodeConfirmModal');
         if (isProceedGeneral && pendingOrderPayload) {
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn && document.getElementById('orderForm').style.display !== 'none') {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "예약 접수 중...";
+            }
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            if (quickSubmitBtn && document.getElementById('quickReorderBox').style.display !== 'none') {
+                quickSubmitBtn.disabled = true;
+                quickSubmitBtn.textContent = "주문 처리 중...";
+            }
             pendingOrderPayload.orderData.secretCode = "";
             pendingOrderPayload.secretCode = "";
             processOrderSubmission(pendingOrderPayload.orderData, "");
@@ -2413,7 +2570,7 @@
         localStorage.setItem('lastOrderPickupTime', finalPickupTime);
         globalUserNickname = nickname;
 
-        if (secretCode !== "" && serverSecretCode && secretCode !== serverSecretCode) {
+        if (secretCode !== "" && secretCode !== serverSecretCode) {
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "예약 완료하기";
