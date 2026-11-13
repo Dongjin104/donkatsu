@@ -2876,24 +2876,31 @@
 </script>
 
 <script>
-    // 실시간 고객 감지 하트비트 스크립트
-    const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
+    // 🟢 스마트 고유 클라이언트 ID 생성 및 유지 (기기별 고정값 보장)
+    let persistentClientId = localStorage.getItem('donkatsu_client_id');
+    if (!persistentClientId) {
+        persistentClientId = 'client_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+        localStorage.setItem('donkatsu_client_id', persistentClientId);
+    }
+    const clientId = persistentClientId;
+
     let userNickname = '손님';
 
-    function sendHeartbeat(nickname) {
-        const nicknameInput = document.getElementById('nickname');
-        if (nicknameInput && nicknameInput.value.trim() !== '') {
-            userNickname = nicknameInput.value.trim();
+    function sendHeartbeat(nicknameInputVal) {
+        let currentNick = nicknameInputVal ? nicknameInputVal.trim() : '';
+        if (!currentNick) {
+            currentNick = `손님 (${clientId.slice(-4)})`;
         }
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: userNickname })
+            body: JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: currentNick })
         }).catch(err => console.log('Heartbeat err:', err));
     }
 
     setInterval(() => {
-        sendHeartbeat(userNickname);
+        const nickInput = document.getElementById('nickname');
+        sendHeartbeat(nickInput ? nickInput.value : '');
     }, 10000);
 
     window.addEventListener('beforeunload', () => {

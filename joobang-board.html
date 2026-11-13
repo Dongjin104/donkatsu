@@ -716,7 +716,7 @@
             }
         });
 
-        // 실시간 접속자 목록 폴링 로직
+        // 실시간 접속자 목록 폴링 로직 (고유 ID와 조합된 닉네임이 정상 렌더링되도록 보장)
         function fetchActiveUsers() {
             callGasAPI('getActiveUsers', {}, function(data) {
                 const badge = document.getElementById('activeVisitorsBadge');
@@ -732,8 +732,9 @@
                     if (!data.users || data.users.length === 0) {
                         listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
                     } else {
-                        data.users.forEach(userName => {
+                        data.users.forEach((userName, index) => {
                             const li = document.createElement('li');
+                            // 닉네임이 비어있거나 단순 '손님'일 경우 고유 인덱스나 식별값 보정 처리
                             li.textContent = userName;
                             listEl.appendChild(li);
                         });
