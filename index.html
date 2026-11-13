@@ -205,7 +205,7 @@
         }
 
         .menu-card-top { display: flex; align-items: flex-start; gap: 18px; width: 100%; }
-        .menu-thumb { width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer; border: 1px solid var(--border-color); flex-shrink: 0; transition: transform 0.2s; }
+        .menu-thumb { width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer; border: 1.5px solid var(--border-color); flex-shrink: 0; transition: transform 0.2s; }
         .menu-thumb:hover { transform: scale(1.03); }
         
         .menu-details { display: flex; flex-direction: column; flex: 1; min-width: 0; }
@@ -216,7 +216,7 @@
         .menu-card-bottom { display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; }
         .item-qty-control { display: flex; align-items: center; gap: 10px; z-index: 1; }
         .item-q-btn { 
-            width: 40px; height: 40px; font-size: 18px; font-weight: 700; background-color: var(--surface-sub); border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; color: var(--text-main);
+            width: 40px; height: 40px; font-size: 18px; font-weight: 700; background-color: var(--surface-sub); border: 1.5px solid var(--border-color); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; color: var(--text-main);
             transition: all 0.2s;
         }
         .item-q-btn:hover:not(:disabled) { background-color: #EBE8E1; border-color: #D1CFCD; }
@@ -307,7 +307,7 @@
         .modal-content h3 { font-size: 23px; margin-top: 0; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em; }
         .modal-btn { background-color: var(--accent-dark); color: white; border: none; padding: 16px; font-size: 17px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 18px; width: 100%; transition: background 0.2s, transform 0.15s; }
         .modal-btn:hover { background-color: #2F2D29; transform: translateY(-1px); }
-        .close-btn { background-color: var(--surface-sub) !important; color: var(--text-sub) !important; margin-top: 10px; border: 1px solid var(--border-color); }
+        .close-btn { background-color: var(--surface-sub) !important; color: var(--text-sub) !important; margin-top: 10px; border: 1.5px solid var(--border-color); }
         .close-btn:hover { background-color: #EBE8E1 !important; color: var(--text-main) !important; }
         
         #imageModal { 
@@ -665,7 +665,7 @@
             </label>
             <input type="text" id="quickSecretCodeInput" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!" style="background: #ffffff; border-color: #ffb74d;">
             <div style="font-size: 12.5px; color: #af601a; margin-top: 6px; line-height: 1.4;">
-                💡 톡방 공지의 암호를 입력하고 주문을 누르면 무료 서비스 추첨 룰렛이 작동합니다!
+                💡 톡방 공지의 암호를 입력하고 주문을 누르면 삼촌의 깜짝 선물 뽑기가 열립니다!
             </div>
         </div>
 
@@ -706,7 +706,7 @@
             </label>
             <input type="text" id="secretCodeInput" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!" style="background: #ffffff; border-color: #ffb74d;">
             <div style="font-size: 13.5px; color: #af601a; margin-top: 8px; line-height: 1.5;">
-                💡 톡방 공지의 암호를 입력하고 주문을 누르면 무료 서비스 추첨 룰렛이 작동합니다!
+                💡 톡방 공지의 암호를 입력하고 주문을 누르면 삼촌의 깜짝 선물 뽑기가 열립니다!
             </div>
         </div>
 
@@ -742,11 +742,11 @@
     </form>
 </div>
 
-<!-- 🎰 룰렛 추첨 중 애니메이션 모달 -->
+<!-- 🎁 행운의 선물 뽑기 중 애니메이션 모달 -->
 <div id="rouletteModal" class="modal" style="z-index: 10040;">
     <div class="modal-content" style="padding: 40px 20px;">
-        <div style="font-size: 48px; margin-bottom: 15px; animation: bounce 0.6s infinite alternate;">🎰</div>
-        <h3 style="color: #e65100; font-size: 22px; margin-bottom: 10px;">시크릿 추첨 룰렛 돌리는 중...</h3>
+        <div style="font-size: 48px; margin-bottom: 15px; animation: bounce 0.6s infinite alternate;">🎁</div>
+        <h3 style="color: #e65100; font-size: 22px; margin-bottom: 10px;">삼촌의 깜짝 선물 뽑기 상자 여는 중...</h3>
         <p id="rouletteStatusText" style="font-size: 16px; color: #666; margin-bottom: 20px; font-weight: bold;">당첨 여부를 확인하고 있습니다! 둑구둑구...</p>
         <div class="skeleton-shimmer" style="height: 12px; width: 80%; margin: 0 auto; border-radius: 6px;"></div>
     </div>
@@ -805,7 +805,7 @@
             현재 재고가 <b>품절 상태</b>라 수량을 빼면 다시 선택이 불가능할 수 있습니다. 변경하시겠습니까?
         </p>
         <div style="display: flex; gap: 12px;">
-            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); margin-top:0;" onclick="closeConfirmReduce(false)">아니오</button>
+            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-sub); border: 1.5px solid var(--border-color); margin-top:0;" onclick="closeConfirmReduce(false)">아니오</button>
             <button class="modal-btn" style="background-color: var(--accent-dark); margin-top:0;" onclick="closeConfirmReduce(true)">예 (수량 줄이기)</button>
         </div>
     </div>
@@ -825,7 +825,7 @@
 <div id="eventFailModal" class="modal" style="z-index: 10005;">
     <div class="modal-content">
         <div style="font-size: 40px; margin-bottom: 10px;">😢</div>
-        <h3 style="color: var(--text-main); margin-top:0;">아쉽게도 이번 룰렛 꽝입니다!</h3>
+        <h3 style="color: var(--text-main); margin-top:0;">아쉽게도 이번 선물 뽑기는 다음 기회에!</h3>
         <p style="font-size:15.5px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 15px 0;">
             입력하신 시크릿 코드가 올바르지만 이번 추첨에 당첨되지 않았습니다.<br><br>하지만 <b>맛있는 예약은 정상적으로 완료</b>되었습니다! 다음 기회에 또 도전해 주세요!
         </p>
@@ -841,7 +841,7 @@
         <p style="font-size: 15.5px; color: var(--text-sub); line-height: 1.6; margin-bottom: 24px;">
             시크릿 코드 추첨에 당첨되셨습니다!<br>원하시는 서비스 메뉴를 선택해 주세요.
         </p>
-        <div id="eventOptionsContainer" style="text-align: left; background: #fff; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 24px;">
+        <div id="eventOptionsContainer" style="text-align: left; background: #fff; padding: 18px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); margin-bottom: 24px;">
         </div>
         <button id="eventSubmitBtn" class="modal-btn" style="background-color: #B45309; margin-top: 0;" onclick="submitEventPrizeChoice()">선택 완료 및 확인</button>
     </div>
@@ -855,7 +855,7 @@
             픽업 시간이 늦으실 경우 <u>음식이 식을 수 있는 점</u> 양해 부탁드립니다!
         </p>
         <div style="display: flex; gap: 12px; margin-top: 18px;">
-            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); margin-top: 0;" onclick="cancelWarningOrder()">아니오</button>
+            <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-sub); border: 1.5px solid var(--border-color); margin-top: 0;" onclick="cancelWarningOrder()">아니오</button>
             <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 0;" onclick="confirmOrder()">네, 확인했습니다 (예약 완료)</button>
         </div>
     </div>
@@ -880,7 +880,7 @@
         <h3 style="color:var(--text-main); margin-top:0;">시크릿 코드 확인</h3>
         <p style="font-size:16px; line-height:1.7; text-align:center; color:var(--text-sub); margin: 20px 0;">
             입력하신 시크릿 코드가 올바르지 않습니다.<br><br>
-            <b>룰렛 추첨 없이 일반 예약</b>으로 진행하시겠습니까?
+            <b>깜짝 선물 뽑기 없이 일반 예약</b>으로 진행하시겠습니까?
         </p>
         <div style="display: flex; gap: 12px;">
             <button class="modal-btn" style="background-color: var(--surface-sub); color: var(--text-main); border: 1.5px solid var(--border-color); margin-top:0;" onclick="handleSecretCodeChoice(false)">코드 수정하기</button>
@@ -1234,6 +1234,10 @@
         const lastPrice = localStorage.getItem('lastOrderPrice') || "0원";
         const lastPickupTime = localStorage.getItem('lastOrderPickupTime');
 
+        const quickSecretInput = document.getElementById('quickSecretCodeInput');
+        if (quickSecretInput) quickSecretInput.value = "";
+        _quickWarningConfirmed = false;
+
         if (lastOrderStr) {
             let formattedMenuLines = lastOrderStr.split(',').map(item => `• ${item.trim()}`).join('<br>');
             let formattedSauceLines = "없음";
@@ -1465,19 +1469,18 @@
             document.body.classList.add('modal-open');
         }
 
-        statusText.textContent = "시크릿 코드 검증 및 룰렛 추첨 중입니다... 🎰";
+        statusText.textContent = "시크릿 코드 확인 및 행운의 선물 뽑기 중입니다... 🎁";
 
         setTimeout(() => {
             sendOrderRequest(orderData, true);
         }, 1200);
     }
 
+    let _warningMode = ""; 
+    let _warningConfirmed = false;
+
     function executeQuickReorder() {
         const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-        if (quickSubmitBtn) {
-            quickSubmitBtn.disabled = true;
-            quickSubmitBtn.textContent = "주문 처리 중...";
-        }
 
         const lastOrderStr = localStorage.getItem('lastOrderSummary');
         const lastSauce = localStorage.getItem('lastOrderSauce') || "없음";
@@ -1494,26 +1497,35 @@
 
         if (!nickname) {
             showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
-            if (quickSubmitBtn) {
-                quickSubmitBtn.disabled = false;
-                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
-            }
             return;
         }
 
         if (!selectedTime || selectedTime.includes("선택") || selectedTime.includes("없습니다")) {
             showCustomAlert('픽업 시간을 먼저 선택해 주세요!', '픽업 시간 선택 필요');
-            if (quickSubmitBtn) {
-                quickSubmitBtn.disabled = false;
-                quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
-            }
             return;
         }
+
+        const selectedMinCheck = parseTimeToMinutes(selectedTime);
+        const warningThresholdMin = 18 * 60 + 35;
+
+        if (selectedMinCheck >= warningThresholdMin && !_warningConfirmed) {
+            _warningMode = "quick";
+            hideModal('warningModal');
+            showModal('warningModal');
+            return;
+        }
+        _warningConfirmed = false;
+
+        if (quickSubmitBtn) {
+            quickSubmitBtn.disabled = true;
+            quickSubmitBtn.textContent = "주문 처리 중...";
+        }
+        const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
+        if (quickLoadBtn) quickLoadBtn.disabled = true;
 
         const nowCheck = new Date();
         const currentMinCheck = nowCheck.getHours() * 60 + nowCheck.getMinutes();
         const limitMinCheck = currentMinCheck + (globalPrepMinutes || 0);
-        const selectedMinCheck = parseTimeToMinutes(selectedTime);
 
         if (selectedMinCheck < limitMinCheck) {
             showCustomAlert('선택하신 시간대는 지연 시간(준비중)에 포함되어 예약할 수 없습니다. 픽업 시간을 다시 확인해 주세요!', '시간 선택 오류');
@@ -1522,6 +1534,7 @@
                 quickSubmitBtn.disabled = false;
                 quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 주문하기";
             }
+            if (quickLoadBtn) quickLoadBtn.disabled = false;
             return;
         }
 
@@ -1861,13 +1874,13 @@
             if (safeUrl) {
                 const img = document.createElement('img');
                 img.src = safeUrl.split(',')[0].trim();
-                img.style.cssText = "width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); cursor: pointer; flex-shrink: 0;";
+                img.style.cssText = "width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); cursor: pointer; flex-shrink: 0;";
                 img.onerror = function() { this.onerror = null; this.src = "https://via.placeholder.com/40x40?text=이미지"; };
                 img.onclick = function() { openImageModal(sauce.imageUrl); };
                 topFlexDiv.appendChild(img);
             } else {
                 const noImg = document.createElement('div');
-                noImg.style.cssText = "width: 40px; height: 40px; border-radius: 50%; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); flex-shrink: 0; border: 1px solid var(--border-color); font-weight: bold;";
+                noImg.style.cssText = "width: 40px; height: 40px; border-radius: 50%; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); flex-shrink: 0; border: 1.5px solid var(--border-color); font-weight: bold;";
                 noImg.textContent = "사진";
                 topFlexDiv.appendChild(noImg);
             }
@@ -1893,7 +1906,7 @@
             minusBtn.type = 'button';
             minusBtn.classList.add('item-q-btn');
             minusBtn.textContent = '-';
-            minusBtn.style.cssText = "flex: 1; height: 34px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 8px;";
+            minusBtn.style.cssText = "flex: 1; height: 34px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 8px;";
             minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
             minusBtn.onclick = function() { updateSauceQty(idx, -1); };
 
@@ -1906,7 +1919,7 @@
             plusBtn.type = 'button';
             plusBtn.classList.add('item-q-btn');
             plusBtn.textContent = '+';
-            plusBtn.style.cssText = "flex: 1; height: 34px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 8px;";
+            plusBtn.style.cssText = "flex: 1; height: 34px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 8px;";
             plusBtn.disabled = (isSoldOut && !alreadyReserved);
             plusBtn.onclick = function() { updateSauceQty(idx, 1); };
 
@@ -2030,7 +2043,7 @@
             minusBtn.type = 'button';
             minusBtn.classList.add('item-q-btn');
             minusBtn.textContent = '-';
-            minusBtn.style.cssText = "flex: 1; height: 38px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 10px;";
+            minusBtn.style.cssText = "flex: 1; height: 38px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 10px;";
             minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
             minusBtn.onclick = function() { updateMainQty(idx, -1); };
 
@@ -2043,7 +2056,7 @@
             plusBtn.type = 'button';
             plusBtn.classList.add('item-q-btn');
             plusBtn.textContent = '+';
-            plusBtn.style.cssText = "flex: 1; height: 38px; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: var(--surface-sub); border-radius: 10px;";
+            plusBtn.style.cssText = "flex: 1; height: 38px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 10px;";
             plusBtn.disabled = (isSoldOut && !alreadyReserved);
             plusBtn.onclick = function() { updateMainQty(idx, 1); };
 
@@ -2502,36 +2515,39 @@
         e.preventDefault();
         
         const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = "예약 접수 중...";
-        }
 
         const nickname = document.getElementById('nickname').value.trim();
         if (!nickname) {
             showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "예약 완료하기";
-            }
             return;
         }
 
         let summary = buildMenuSummary(orderItems);
         if (!summary) {
             showCustomAlert('최소 1개 이상의 메뉴를 선택해주세요!', '메뉴 선택 필요');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "예약 완료하기";
-            }
             return;
         }
 
         const selectedTime = pickupSelect.value;
+        const selectedMinCheck = parseTimeToMinutes(selectedTime);
+        const warningThresholdMin = 18 * 60 + 35;
+
+        if (selectedMinCheck >= warningThresholdMin && !_warningConfirmed) {
+            _warningMode = "main";
+            hideModal('warningModal');
+            showModal('warningModal');
+            return;
+        }
+        _warningConfirmed = false;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "예약 접수 중...";
+        }
+
         const nowCheck = new Date();
         const currentMinCheck = nowCheck.getHours() * 60 + nowCheck.getMinutes();
         const limitMinCheck = currentMinCheck + (globalPrepMinutes || 0);
-        const selectedMinCheck = parseTimeToMinutes(selectedTime);
 
         if (selectedMinCheck < limitMinCheck) {
             showCustomAlert('선택하신 픽업 시간은 현재 지연 시간(준비중) 구간에 포함되어 예약하실 수 없습니다. 시간을 다시 선택해 주세요!', '시간 선택 오류');
@@ -2583,7 +2599,30 @@
         processOrderSubmission(orderData, secretCode);
     });
 
-    function cancelWarningOrder() { hideModal('warningModal'); }
+    function cancelWarningOrder() {
+        _warningConfirmed = false;
+        _warningMode = "";
+        hideModal('warningModal');
+    }
+
+    function confirmOrder() {
+        hideModal('warningModal');
+        _warningConfirmed = true;
+        if (_warningMode === "quick") {
+            executeQuickReorder();
+        } else if (_warningMode === "edit") {
+            updateReservation();
+        } else {
+            const form = document.getElementById('orderForm');
+            if (form) {
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.dispatchEvent(new Event('submit', { cancelable: true }));
+                }
+            }
+        }
+    }
 
     function openEventWinModal(menuList) {
         const container = document.getElementById('eventOptionsContainer');
@@ -2730,10 +2769,20 @@
 
         const newTime = document.getElementById('newPickupTime').value;
         const cleanOriginalTime = document.getElementById('resTime').textContent.trim();
+        const selectedMinCheck = parseTimeToMinutes(newTime);
+        const warningThresholdMin = 18 * 60 + 35;
+
+        if (selectedMinCheck >= warningThresholdMin && !_warningConfirmed) {
+            _warningMode = "edit";
+            hideModal('warningModal');
+            showModal('warningModal');
+            return;
+        }
+        _warningConfirmed = false;
+
         const nowCheck = new Date();
         const currentMinCheck = nowCheck.getHours() * 60 + nowCheck.getMinutes();
         const limitMinCheck = currentMinCheck + (globalPrepMinutes || 0);
-        const selectedMinCheck = parseTimeToMinutes(newTime);
 
         if (newTime !== cleanOriginalTime && selectedMinCheck < limitMinCheck) {
             showCustomAlert('선택하신 픽업 시간은 지연 시간(준비중) 구간에 포함되어 변경할 수 없습니다. 시간을 다시 선택해 주세요!', '시간 선택 오류');
@@ -2826,5 +2875,30 @@
     }
 </script>
 
+<script>
+    // 실시간 고객 감지 하트비트 스크립트
+    const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
+    let userNickname = '손님';
+
+    function sendHeartbeat(nickname) {
+        const nicknameInput = document.getElementById('nickname');
+        if (nicknameInput && nicknameInput.value.trim() !== '') {
+            userNickname = nicknameInput.value.trim();
+        }
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: userNickname })
+        }).catch(err => console.log('Heartbeat err:', err));
+    }
+
+    setInterval(() => {
+        sendHeartbeat(userNickname);
+    }, 10000);
+
+    window.addEventListener('beforeunload', () => {
+        navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: 'EXIT' }));
+    });
+</script>
 </body>
 </html>

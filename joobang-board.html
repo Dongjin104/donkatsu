@@ -25,9 +25,10 @@
             justify-content: space-between;
             align-items: center;
             background: #1e1e1e;
-            padding: 5px 8px;
+            padding: 6px 10px;
             border-radius: 4px;
             margin-bottom: 4px;
+            position: relative;
         }
 
         header h1 {
@@ -37,9 +38,119 @@
 
         .status-badge {
             background: #333;
-            padding: 2px 4px;
+            padding: 2px 6px;
             border-radius: 3px;
             font-size: 0.65rem;
+        }
+
+        /* 🟢 접속 중 고객 드롭다운 뱃지 스타일 */
+        .online-status-container {
+            position: relative;
+            display: inline-block;
+            z-index: 100;
+        }
+
+        .online-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            padding: 3px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .online-badge:hover {
+            background-color: #333;
+            border-color: #555;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .badge-text {
+            font-size: 0.72rem;
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+
+        .arrow-icon {
+            font-size: 0.55rem;
+            color: #aaa;
+            transition: transform 0.2s;
+        }
+
+        .online-badge.active .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        /* 드롭다운 펼침 패널 */
+        .online-dropdown-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 200px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background-color: #262626;
+            border-bottom: 1px solid #333;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #aaa;
+        }
+
+        .online-user-list {
+            list-style: none;
+            margin: 0;
+            padding: 4px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .online-user-list li {
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            color: #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .online-user-list li:hover {
+            background-color: #2a2a2a;
+        }
+
+        .online-user-list li::before {
+            content: "•";
+            color: #22c55e;
+            font-weight: bold;
         }
 
         /* 주문 리스트 카드 (초압축 간격) */
@@ -91,7 +202,6 @@
             flex-wrap: wrap;
         }
 
-        /* 폰트 크기를 더 미세하게 축소 */
         .time-tag {
             font-size: 0.85rem;
             font-weight: 800;
@@ -125,7 +235,6 @@
             color: #fff;
         }
 
-        /* 가격 폰트 축소 */
         .price-tag {
             font-size: 0.75rem;
             font-weight: bold;
@@ -135,7 +244,6 @@
             border-radius: 2px;
         }
 
-        /* 메뉴 텍스트 압축 */
         .menu-text {
             font-size: 0.8rem;
             font-weight: bold;
@@ -143,7 +251,6 @@
             line-height: 1.2;
         }
 
-        /* 💡 이벤트 당첨 상품 상세 표시 텍스트 (메뉴와 소스 사이) */
         .event-detail-text {
             font-size: 0.72rem;
             color: #ff4081;
@@ -151,7 +258,6 @@
             margin-top: 1px;
         }
 
-        /* 하단 서브 정보 (소스, 닉네임) */
         .sub-row {
             display: flex;
             align-items: center;
@@ -229,9 +335,30 @@
 
     <header>
         <h1>🍳 장날동천 주방 뷰</h1>
+        
+        <!-- 🟢 2번 방식: 클릭 시 드롭다운되는 접속 중 고객 뱃지 영역 -->
+        <div class="online-status-container">
+            <button id="onlineBadgeBtn" class="online-badge" onclick="toggleOnlineDropdown()">
+                <span class="pulse-dot"></span>
+                <span id="activeVisitorsBadge" class="badge-text">접속 중: 0명</span>
+                <span class="arrow-icon">▼</span>
+            </button>
+
+            <div id="onlineDropdownPanel" class="online-dropdown-panel">
+                <div class="dropdown-header">
+                    <span>실시간 접속 목록</span>
+                    <span id="dropdownSubCount">총 0명</span>
+                </div>
+                <ul id="onlineUserList" class="online-user-list">
+                    <li style="color: #888; justify-content: center;">목록 로딩중...</li>
+                </ul>
+            </div>
+        </div>
+
         <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ff5252; font-weight:bold;">0</span> / 총
             <span id="totalCount">0</span></div>
     </header>
+
     <!-- 💡 커스텀 확인 모달 팝업 -->
     <div id="custom-modal"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
@@ -248,6 +375,7 @@
             </div>
         </div>
     </div>
+
     <div id="orderContainer" class="order-list">
         <div style="text-align:center; padding: 20px; color:#888;">주문 목록을 불러오는 중...</div>
     </div>
@@ -255,7 +383,7 @@
     <script>
         const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
         let previousTotalCount = 0;
-        let isInitialLoad = true; // 최초 로드 여부 체크 변수 추가
+        let isInitialLoad = true;
 
         // 🎵 AudioContext 전역 관리 및 브라우저 정책 대응
         let audioCtx = null;
@@ -336,13 +464,12 @@
                 return;
             }
 
-            // 첫 로드가 아닐 때, 이전 주문 수보다 현재 주문 수가 늘어났다면 새 주문 알림음 재생
             if (!isInitialLoad && orders.length > previousTotalCount) {
                 playNewOrderSound();
             }
 
             previousTotalCount = orders.length;
-            isInitialLoad = false; // 최초 로드 완료 처리
+            isInitialLoad = false;
 
             let unconfirmedCnt = 0;
             let html = '';
@@ -412,7 +539,6 @@
         }
 
         function toggleStatus(rowIndex, currentStatus) {
-            // 주방 뷰 화면을 터치/클릭하는 순간 AudioContext도 자동으로 활성화됩니다.
             getAudioContext(); 
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
@@ -444,10 +570,60 @@
             });
         }
 
-        // 페이지 어디든 최초 터치/클릭하는 순간 오디오 권한이 풀리도록 설정
+        // 🟢 드롭다운 토글 및 바깥쪽 클릭 시 닫기 스크립트
+        function toggleOnlineDropdown() {
+            const panel = document.getElementById('onlineDropdownPanel');
+            const badge = document.getElementById('onlineBadgeBtn');
+            
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+                badge.classList.add('active');
+            } else {
+                panel.style.display = 'none';
+                badge.classList.remove('active');
+            }
+        }
+
+        window.addEventListener('click', function(e) {
+            const container = document.querySelector('.online-status-container');
+            if (container && !container.contains(e.target)) {
+                document.getElementById('onlineDropdownPanel').style.display = 'none';
+                document.getElementById('onlineBadgeBtn').classList.remove('active');
+            }
+        });
+
+        // 페이지 최초 터치 시 오디오 활성화
         document.addEventListener('click', function() {
             getAudioContext();
         }, { once: true });
+
+        // 실시간 접속자 목록 폴링 로직
+        function fetchActiveUsers() {
+            callGasAPI('getActiveUsers', {}, function(data) {
+                const badge = document.getElementById('activeVisitorsBadge');
+                const subCount = document.getElementById('dropdownSubCount');
+                const listEl = document.getElementById('onlineUserList');
+                
+                const count = data.count || 0;
+                if(badge) badge.innerText = `접속 중: ${count}명`;
+                if(subCount) subCount.innerText = `총 ${count}명`;
+                
+                if(listEl) {
+                    listEl.innerHTML = '';
+                    if (!data.users || data.users.length === 0) {
+                        listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
+                    } else {
+                        data.users.forEach(userName => {
+                            const li = document.createElement('li');
+                            li.textContent = userName;
+                            listEl.appendChild(li);
+                        });
+                    }
+                }
+            });
+        }
+        setInterval(fetchActiveUsers, 5000);
+        setTimeout(fetchActiveUsers, 1000);
 
         setInterval(fetchOrders, 5000);
         window.onload = fetchOrders;
