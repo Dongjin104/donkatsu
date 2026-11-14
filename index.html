@@ -525,6 +525,9 @@
     </div>
 
     <div id="pageLoadingOverlay" class="menu-grid">
+        <div style="text-align: center; font-size: 14.5px; color: var(--text-sub); font-weight: 600; margin-bottom: 6px;">
+            ✨ 메뉴와 매장 현황을 빠르게 불러오고 있습니다...
+        </div>
         <div class="skeleton-card">
             <div style="display: flex; gap: 16px; align-items: flex-start;">
                 <div class="skeleton-shimmer" style="width: 76px; height: 76px; border-radius: 12px; flex-shrink: 0;"></div>
@@ -1541,8 +1544,8 @@
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
-                if (settings.result === "blocked") {
-                    enforceBlockedOverlay(settings.reason);
+                if (settings.result === "blocked" || settings.isBlocked) {
+                    enforceBlockedOverlay(settings.reason || settings.blockReason);
                     return;
                 }
                 if (settings.menuList && settings.menuList.length > 0) menuList = settings.menuList;
@@ -1572,7 +1575,7 @@
             try { data = JSON.parse(text); } catch(e) {}
 
             if (data && data.result === "blocked") {
-                enforceBlockedOverlay(data.reason);
+                enforceBlockedOverlay(data.reason || data.message);
                 return;
             }
 
@@ -1595,8 +1598,8 @@
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
-                if (settings.result === "blocked") {
-                    enforceBlockedOverlay(settings.reason);
+                if (settings.result === "blocked" || settings.isBlocked) {
+                    enforceBlockedOverlay(settings.reason || settings.blockReason);
                     return;
                 }
                 if (settings.secretCode !== undefined) {
@@ -1604,6 +1607,14 @@
                 }
                 if (settings.maintenanceCode) {
                     serverMaintenanceCode = String(settings.maintenanceCode).trim();
+                }
+                if (settings.menuList && settings.menuList.length > 0) {
+                    menuList = settings.menuList;
+                    renderMenuCards();
+                }
+                if (settings.sauceList && settings.sauceList.length > 0) {
+                    sauceList = settings.sauceList;
+                    if (typeof renderSauceCards === 'function') renderSauceCards();
                 }
             } catch(e) {}
         })
@@ -1620,8 +1631,8 @@
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
-                if (settings.result === "blocked") {
-                    enforceBlockedOverlay(settings.reason);
+                if (settings.result === "blocked" || settings.isBlocked) {
+                    enforceBlockedOverlay(settings.reason || settings.blockReason);
                     return;
                 }
                 if (settings.secretCode !== undefined) {
@@ -1671,7 +1682,7 @@
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
                     if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
                     if (quickLoadBtn) quickLoadBtn.disabled = false;
-                    enforceBlockedOverlay(data.reason);
+                    enforceBlockedOverlay(data.reason || data.message);
                     return;
                 }
 
@@ -2012,7 +2023,6 @@
         const pickupCloseHour = globalPickupCloseHour;
         const pickupCloseMin = globalPickupCloseMin;
 
-        const startTotalMin = pickupStartHour * 60 + pickupStartMin;
         const closeTotalMin = pickupCloseHour * 60 + pickupCloseMin;
         
         let availableCount = 0;
@@ -2646,8 +2656,9 @@
         });
     }
 
+    // 🚀 [최적화] 3개의 동시 요청(getSettings + checkSimple + heartbeat)을 단일 initAll 호출로 통합!
     function checkAndRenderState() {
-        const savedNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname');
+        const savedNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "";
         document.getElementById('pageLoadingOverlay').style.display = 'flex';
         document.getElementById('topNoticeBox').style.display = 'none';
         document.getElementById('alreadyOrderedNotice').style.display = 'none';
@@ -2655,30 +2666,25 @@
         document.getElementById('quickReorderBox').style.display = 'none';
         document.getElementById('closedNotice').style.display = 'none';
 
-        const settingsPromise = fetch(WEB_APP_URL, {
+        fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getSettings', clientId: clientId, nickname: savedNick || "" })
-        }).then(res => res.text()).catch(e => null);
+            body: JSON.stringify({
+                action: 'initAll',
+                clientId: clientId,
+                nickname: savedNick
+            })
+        })
+        .then(res => res.text())
+        .then(resText => {
+            let payload = null;
+            try { payload = JSON.parse(resText); } catch(e) {}
 
-        let checkPromise = Promise.resolve(null);
-        if (savedNick || clientId) {
-            checkPromise = fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'checkSimple', nickname: savedNick || "", clientId: clientId })
-            }).then(res => res.text()).catch(e => null);
-        }
+            let settings = (payload && payload.settings) ? payload.settings : { openHour: 13, openMin: 0, closeHour: 18, closeMin: 30, prepMinutes: 0, menuList: [], sauceList: [], isMaintenance: false, maintenanceCode: "3808", secretCode: "" };
+            let data = (payload && payload.reservation) ? payload.reservation : null;
 
-        Promise.all([settingsPromise, checkPromise]).then(([settingsText, vText]) => {
-            let settings = { openHour: 0, openMin: 0, closeHour: 4, closeMin: 0, prepMinutes: 0, menuList: [], sauceList: [], isMaintenance: false, maintenanceCode: "3808", secretCode: "" };
-            try { if (settingsText) settings = JSON.parse(settingsText); } catch(e) {}
-
-            let data = null;
-            if (vText) { try { data = JSON.parse(vText); } catch(e) {} }
-
-            if ((settings && settings.result === "blocked") || (data && data.result === "blocked")) {
-                const reasonMsg = (settings && settings.reason) ? settings.reason : (data ? data.reason : "");
+            if ((settings && (settings.result === "blocked" || settings.isBlocked)) || (data && data.result === "blocked")) {
+                const reasonMsg = (settings && (settings.reason || settings.blockReason)) ? (settings.reason || settings.blockReason) : (data ? (data.reason || data.message) : "");
                 enforceBlockedOverlay(reasonMsg);
                 return;
             }
@@ -2696,10 +2702,10 @@
             }
 
             globalPrepMinutes = parseInt(settings.prepMinutes) || 0;
-            globalOpenHour = parseInt(settings.openHour) !== undefined ? parseInt(settings.openHour) : 0;
+            globalOpenHour = parseInt(settings.openHour) !== undefined ? parseInt(settings.openHour) : 13;
             globalOpenMin = parseInt(settings.openMin) !== undefined ? parseInt(settings.openMin) : 0;
-            globalCloseHour = parseInt(settings.closeHour) !== undefined ? parseInt(settings.closeHour) : 4;
-            globalCloseMin = parseInt(settings.closeMin) !== undefined ? parseInt(settings.closeMin) : 0;
+            globalCloseHour = parseInt(settings.closeHour) !== undefined ? parseInt(settings.closeHour) : 18;
+            globalCloseMin = parseInt(settings.closeMin) !== undefined ? parseInt(settings.closeMin) : 30;
             
             globalPickupStartHour = parseInt(settings.pickupStartHour) !== undefined ? parseInt(settings.pickupStartHour) : 15;
             globalPickupStartMin = parseInt(settings.pickupStartMin) !== undefined ? parseInt(settings.pickupStartMin) : 0;
@@ -3036,7 +3042,7 @@
 
             if (data && data.result === "blocked") {
                 closeSearchModal();
-                enforceBlockedOverlay(data.reason);
+                enforceBlockedOverlay(data.reason || data.message);
                 return;
             }
 
@@ -3180,7 +3186,7 @@
             if (data && data.result === "blocked") {
                 hideModal('orderSubmittingModal');
                 closeSearchModal();
-                enforceBlockedOverlay(data.reason);
+                enforceBlockedOverlay(data.reason || data.message);
                 return;
             }
             
@@ -3238,48 +3244,19 @@
         });
     }
 
-    function sendHeartbeat(nicknameInputVal) {
-        let currentNick = nicknameInputVal ? nicknameInputVal.trim() : '';
-        if (!currentNick) {
-            currentNick = localStorage.getItem('savedNickname') || `손님 (${clientId.slice(-4)})`;
-        }
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: currentNick })
-        })
-        .then(res => res.text())
-        .then(text => {
-            try {
-                const data = JSON.parse(text);
-                if (data && data.result === "blocked") {
-                    enforceBlockedOverlay(data.reason);
-                }
-            } catch(e) {}
-        })
-        .catch(err => console.log('Heartbeat err:', err));
-    }
+    // 백그라운드 설정 및 품절 실시간 동기화 (30초 주기)
+    setInterval(() => {
+        fetchLatestSettingsInBackground();
+    }, 30000);
 
-setInterval(() => {
-    fetchLatestSettingsInBackground();
-}, 30000);
-
-// 1. 페이지가 처음 켜졌을 때 딱 1번 접속(하트비트) 체크 실행
-const initialNickInput = document.getElementById('nickname');
-sendHeartbeat(initialNickInput ? initialNickInput.value : '');
-
-// 2. 사용자가 페이지를 닫거나 다른 곳으로 이동할 때 딱 1번 'EXIT' 신호 전송
-window.addEventListener('beforeunload', () => {
-    navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ 
-        action: 'heartbeat', 
-        clientId: clientId, 
-        nickname: 'EXIT' 
-    }));
-});
-
-window.addEventListener('beforeunload', () => {
-    navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: 'EXIT' }));
-});
+    // 페이지 퇴장 시 딱 1번 EXIT 신호 전송 (중복 리스너 정리됨)
+    window.addEventListener('beforeunload', () => {
+        navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ 
+            action: 'heartbeat', 
+            clientId: clientId, 
+            nickname: 'EXIT' 
+        }));
+    });
 </script>
 </body>
 </html>
