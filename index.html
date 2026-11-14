@@ -2656,7 +2656,6 @@
         });
     }
 
-    // 🚀 [최적화] 3개의 동시 요청(getSettings + checkSimple + heartbeat)을 단일 initAll 호출로 통합!
     function checkAndRenderState() {
         const savedNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "";
         document.getElementById('pageLoadingOverlay').style.display = 'flex';
@@ -3244,12 +3243,35 @@
         });
     }
 
-    // 백그라운드 설정 및 품절 실시간 동기화 (30초 주기)
+    function sendActiveHeartbeat() {
+        if (document.hidden) return;
+        const nickInput = document.getElementById('nickname');
+        const currentNick = (nickInput && nickInput.value.trim()) ? nickInput.value.trim() : (localStorage.getItem('savedNickname') || globalUserNickname || '미입력고객');
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'heartbeat',
+                clientId: clientId,
+                nickname: currentNick
+            })
+        }).catch(() => {});
+    }
+
     setInterval(() => {
         fetchLatestSettingsInBackground();
     }, 30000);
 
-    // 페이지 퇴장 시 딱 1번 EXIT 신호 전송 (중복 리스너 정리됨)
+    setInterval(() => {
+        sendActiveHeartbeat();
+    }, 25000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            sendActiveHeartbeat();
+        }
+    });
+
     window.addEventListener('beforeunload', () => {
         navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ 
             action: 'heartbeat', 
