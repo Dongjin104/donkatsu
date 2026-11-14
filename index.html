@@ -3262,12 +3262,20 @@
 
 setInterval(() => {
     fetchLatestSettingsInBackground();
-}, 7000);
+}, 30000);
 
-setInterval(() => {
-    const nickInput = document.getElementById('nickname');
-    sendHeartbeat(nickInput ? nickInput.value : '');
-}, 10000);
+// 1. 페이지가 처음 켜졌을 때 딱 1번 접속(하트비트) 체크 실행
+const initialNickInput = document.getElementById('nickname');
+sendHeartbeat(initialNickInput ? initialNickInput.value : '');
+
+// 2. 사용자가 페이지를 닫거나 다른 곳으로 이동할 때 딱 1번 'EXIT' 신호 전송
+window.addEventListener('beforeunload', () => {
+    navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ 
+        action: 'heartbeat', 
+        clientId: clientId, 
+        nickname: 'EXIT' 
+    }));
+});
 
 window.addEventListener('beforeunload', () => {
     navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ action: 'heartbeat', clientId: clientId, nickname: 'EXIT' }));
