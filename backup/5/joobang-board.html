@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>장날동천 주방 대시보드</title>
+    <!-- Pretendard 폰트 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1a1a1a;
+            --surface-sub: #242424;
+            --border-color: #333333;
+            --text-main: #F8F7F4;
+            --text-sub: #9E9A90;
+            --accent-gold: #C5A059;
+            --accent-gold-bg: rgba(197, 160, 89, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard Variable', Pretendard, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 8px;
+            font-size: 15px;
+            overflow-x: hidden;
+        }
+
+        /* 👑 뒤가 은은하게 비치는 프리미엄 블러 오버레이 (화면 터치 시 해제) */
+        #blurOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(18, 18, 18, 0.45);
+            backdrop-filter: blur(2.5px);
+            -webkit-backdrop-filter: blur(2.5px);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            cursor: pointer;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        .blur-popup-card {
+            background: var(--surface-color);
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 20px;
+            padding: 44px 36px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            cursor: pointer;
+            animation: popupBounce 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popupBounce {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-badge {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            background: var(--accent-gold-bg);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-bottom: 18px;
+            display: inline-block;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+        }
+
+        .popup-title {
+            font-size: 21px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .popup-desc {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+
+        /* 상단 바 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface-color);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .status-badge {
+            background: var(--surface-sub);
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            color: var(--text-sub);
+        }
+
+        /* 🟢 접속 중 고객 드롭다운 뱃지 스타일 */
+        .online-status-container {
+            position: relative;
+            display: inline-block;
+            z-index: 100;
+        }
+
+        .online-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--surface-sub);
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .online-badge:hover {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .badge-text {
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+        }
+
+        .arrow-icon {
+            font-size: 0.6rem;
+            color: var(--text-sub);
+            transition: transform 0.2s;
+        }
+
+        .online-badge.active .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        /* 드롭다운 펼침 패널 */
+        .online-dropdown-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 210px;
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background-color: var(--surface-sub);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-sub);
+        }
+
+        .online-user-list {
+            list-style: none;
+            margin: 0;
+            padding: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .online-user-list li {
+            padding: 7px 10px;
+            font-size: 0.78rem;
+            color: var(--text-main);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-user-list li:hover {
+            background-color: var(--surface-sub);
+        }
+
+        .online-user-list li::before {
+            content: "•";
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        /* 주문 리스트 카드 (초압축 간격) */
+        .order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .order-item {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            background: var(--surface-color);
+            border-left: 3px solid #666;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-left-width: 4px;
+        }
+
+        .order-item.unconfirmed {
+            border-left-color: #ef4444;
+            background: #1c1515;
+        }
+
+        .order-item.confirmed {
+            border-left-color: #22c55e;
+            background: #141c14;
+        }
+
+        /* 왼쪽 정보 영역 */
+        .order-info {
+            flex: 1;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .time-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .time-tag {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            letter-spacing: -0.5px;
+        }
+
+        .winner-badge {
+            background: rgba(236, 72, 153, 0.15);
+            color: #f472b6;
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            font-size: 0.55rem;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .cooking-badge {
+            display: inline-block;
+            background: var(--surface-sub);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+
+        .cooking-badge.special {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .price-tag {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .menu-text {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.3;
+        }
+
+        .event-detail-text {
+            font-size: 0.75rem;
+            color: #f472b6;
+            font-weight: 700;
+            margin-top: 1px;
+        }
+
+        .sub-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .sauce-text {
+            font-size: 0.7rem;
+            color: #fb923c;
+            font-weight: 700;
+        }
+
+        .nickname-text {
+            font-size: 0.7rem;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        /* 오른쪽 버튼 그룹 컴팩트화 */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .btn-status {
+            width: 56px;
+            height: 30px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.2s;
+        }
+
+        .btn-status:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-status.unconfirmed {
+            background: #dc2626;
+        }
+
+        .btn-status.confirmed {
+            background: #16a34a;
+        }
+
+        .btn-done {
+            width: 56px;
+            height: 30px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            background: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.2s;
+        }
+
+        .btn-done:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-done:active {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 👑 뒤가 은은하게 비치는 프리미엄 블러 오버레이 팝업 (터치 시 바로 시작) -->
+    <div id="blurOverlay" onclick="startDashboard()">
+        <div class="blur-popup-card">
+            <div class="popup-badge">장날동천 시스템</div>
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">🍳</div>
+            <h2 class="popup-title">주방 뷰를 시작합니다</h2>
+            <p class="popup-desc">
+                실시간 주문 접수 시스템이 준비되었습니다.<br>화면을 터치하여 대시보드를 활성화하세요.
+            </p>
+        </div>
+    </div>
+
+    <header>
+        <h1>🍳 장날동천 주방 뷰</h1>
+        
+        <!-- 🟢 접속 중 고객 드롭다운 뱃지 영역 -->
+        <div class="online-status-container">
+            <button id="onlineBadgeBtn" class="online-badge" onclick="toggleOnlineDropdown()">
+                <span class="pulse-dot"></span>
+                <span id="activeVisitorsBadge" class="badge-text">접속 중: 0명</span>
+                <span class="arrow-icon">▼</span>
+            </button>
+
+            <div id="onlineDropdownPanel" class="online-dropdown-panel">
+                <div class="dropdown-header">
+                    <span>실시간 접속 목록</span>
+                    <span id="dropdownSubCount">총 0명</span>
+                </div>
+                <ul id="onlineUserList" class="online-user-list">
+                    <li style="color: #888; justify-content: center;">목록 로딩중...</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ef4444; font-weight:bold;">0</span> / 총
+            <span id="totalCount">0</span></div>
+    </header>
+
+    <!-- 💡 커스텀 확인 모달 팝업 -->
+    <div id="custom-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; justify-content: center; align-items: center;">
+        <div
+            style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; width: 340px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; color: #fff;">
+            <h3 id="modal-title" style="margin: 0 0 12px 0; font-size: 18px; font-weight: 800; color: var(--accent-gold);">수령 완료 처리</h3>
+            <p id="modal-desc" style="margin: 0 0 24px 0; font-size: 14.5px; color: var(--text-sub); line-height: 1.6;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
+            <div style="display: flex; gap: 10px;">
+                <button id="modal-cancel-btn"
+                    style="flex: 1; padding: 12px; background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 700;">취소</button>
+                <button id="modal-confirm-btn"
+                    style="flex: 1; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orderContainer" class="order-list">
+        <div style="text-align:center; padding: 30px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
+    </div>
+
+    <script>
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
+        let previousTotalCount = 0;
+        let isInitialLoad = true;
+
+        // 🎵 AudioContext 전역 관리 및 브라우저 정책 대응
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // 👑 [주방 뷰 시작하기] 블러 팝업 해제 함수 (화면 어디든 터치 시 실행)
+        function startDashboard() {
+            getAudioContext(); // 오디오 권한 해제
+            const overlay = document.getElementById('blurOverlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                overlay.style.visibility = 'hidden';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 400);
+            }
+            fetchOrders();
+        }
+
+        function playNewOrderSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.frequency.setValueAtTime(523.25, now);
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc1.connect(gain1); gain1.connect(ctx.destination);
+                osc1.start(now); osc1.stop(now + 0.3);
+
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.frequency.setValueAtTime(659.25, now + 0.15);
+                gain2.gain.setValueAtTime(0.3, now + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                osc2.connect(gain2); gain2.connect(ctx.destination);
+                osc2.start(now + 0.15); osc2.stop(now + 0.45);
+            } catch (e) { }
+        }
+
+        function callGasAPI(action, params = {}, callback) {
+            const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
+            window[callbackName] = function (data) {
+                delete window[callbackName];
+                if (script.parentNode) document.body.removeChild(script);
+                if (callback) callback(data);
+            };
+
+            let url = GAS_WEBAPP_URL + '?action=' + action + '&callback=' + callbackName;
+            for (let key in params) {
+                url += '&' + key + '=' + encodeURIComponent(params[key]);
+            }
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = function () {
+                delete window[callbackName];
+                if (script.parentNode) document.body.removeChild(script);
+                if (callback) callback({ success: true });
+            };
+            document.body.appendChild(script);
+        }
+
+        function fetchOrders() {
+            callGasAPI('getAdminOrderList', {}, function (data) {
+                renderOrders(data);
+            });
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById('orderContainer');
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 30px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
+                document.getElementById('unconfirmedCount').innerText = 0;
+                document.getElementById('totalCount').innerText = 0;
+                previousTotalCount = 0;
+                isInitialLoad = false;
+                return;
+            }
+
+            if (!isInitialLoad && orders.length > previousTotalCount) {
+                playNewOrderSound();
+            }
+
+            previousTotalCount = orders.length;
+            isInitialLoad = false;
+
+            let unconfirmedCnt = 0;
+            let html = '';
+
+            orders.forEach(item => {
+                const isUnconfirmed = (item.status === '미확인');
+                if (isUnconfirmed) unconfirmedCnt++;
+
+                const isSpecialCooking = item.cooking && item.cooking.includes('비튀김');
+
+                let priceDisplay = '';
+                if (item.totalPrice !== undefined && item.totalPrice !== '') {
+                    let num = Number(String(item.totalPrice).replace(/[^0-9]/g, ''));
+                    priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : item.totalPrice;
+                }
+
+                let eventText = item.eventWinner || item.eventPrize || item.event || '';
+                if (!eventText) {
+                    for (let key in item) {
+                        let val = String(item[key] || '');
+                        if (val.includes('당첨') || val.includes('새우') || val.includes('서비스')) {
+                            eventText = val;
+                            break;
+                        }
+                    }
+                }
+
+                let eventDetailHtml = '';
+                if (eventText) {
+                    eventDetailHtml = `<div class="event-detail-text">🎁 선물: ${eventText}</div>`;
+                }
+
+                html += `
+                    <div class="order-item ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}">
+                        <div class="order-info">
+                            <div class="top-row">
+                                <div class="time-group">
+                                    <span class="time-tag">⏰ ${item.pickupTime}</span>
+                                    <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
+                                    ${item.isEventWinner || eventText ? '<span class="winner-badge">🎁 이벤트 당첨</span>' : ''}
+                                </div>
+                                ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
+                            </div>
+                            <div class="menu-text">${item.menu}</div>
+                            ${eventDetailHtml}
+                            <div class="sub-row">
+                                ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + item.extraSauce + '</span>' : ''}
+                                <span class="nickname-text">👤 ${item.nickname}</span>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-status ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}" 
+                                    onclick="toggleStatus(${item.rowIndex}, '${item.status}')">
+                                ${isUnconfirmed ? '미확인🔴' : '확인완료🟢'}
+                            </button>
+                            <button class="btn-done" onclick="completeOrder(${item.rowIndex})">
+                                수령완료🏁
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('unconfirmedCount').innerText = unconfirmedCnt;
+            document.getElementById('totalCount').innerText = orders.length;
+        }
+
+        function toggleStatus(rowIndex, currentStatus) {
+            getAudioContext(); 
+            const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
+            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
+                fetchOrders();
+            });
+        }
+
+        function completeOrder(rowIndex) {
+            getAudioContext();
+            const modal = document.getElementById('custom-modal');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+
+            modal.style.display = 'flex';
+
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newConfirmBtn.addEventListener('click', function () {
+                modal.style.display = 'none';
+                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) { });
+                fetchOrders();
+            });
+
+            newCancelBtn.addEventListener('click', function () {
+                modal.style.display = 'none';
+            });
+        }
+
+        // 드롭다운 토글 및 바깥쪽 클릭 시 닫기 스크립트
+        function toggleOnlineDropdown() {
+            const panel = document.getElementById('onlineDropdownPanel');
+            const badge = document.getElementById('onlineBadgeBtn');
+            
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+                badge.classList.add('active');
+            } else {
+                panel.style.display = 'none';
+                badge.classList.remove('active');
+            }
+        }
+
+        window.addEventListener('click', function(e) {
+            const container = document.querySelector('.online-status-container');
+            if (container && !container.contains(e.target)) {
+                document.getElementById('onlineDropdownPanel').style.display = 'none';
+                document.getElementById('onlineBadgeBtn').classList.remove('active');
+            }
+        });
+
+        // 실시간 접속자 목록 폴링 로직 (고유 ID와 조합된 닉네임이 정상 렌더링되도록 보장)
+        function fetchActiveUsers() {
+            callGasAPI('getActiveUsers', {}, function(data) {
+                const badge = document.getElementById('activeVisitorsBadge');
+                const subCount = document.getElementById('dropdownSubCount');
+                const listEl = document.getElementById('onlineUserList');
+                
+                const count = data.count || 0;
+                if(badge) badge.innerText = `접속 중: ${count}명`;
+                if(subCount) subCount.innerText = `총 ${count}명`;
+                
+                if(listEl) {
+                    listEl.innerHTML = '';
+                    if (!data.users || data.users.length === 0) {
+                        listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
+                    } else {
+                        data.users.forEach((userName, index) => {
+                            const li = document.createElement('li');
+                            // 닉네임이 비어있거나 단순 '손님'일 경우 고유 인덱스나 식별값 보정 처리
+                            li.textContent = userName;
+                            listEl.appendChild(li);
+                        });
+                    }
+                }
+            });
+        }
+        setInterval(fetchActiveUsers, 5000);
+        setTimeout(fetchActiveUsers, 1000);
+
+        setInterval(fetchOrders, 5000);
+    </script>
+</body>
+
+</html>

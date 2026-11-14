@@ -95,7 +95,183 @@ function parseItemsToMap(str) {
 }
 
 // --------------------------------------------------------------------------
-// 📌 POST 요청 처리 (주방 뷰 및 예약 시스템 통신)
+// 📌 중복ID관리 시트 기반 엄격한 닉네임 중복 체크 함수
+// --------------------------------------------------------------------------
+function checkNicknameExistsInRegistry(nickname, clientId) {
+  if (!nickname) return false;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var idSheet = ss.getSheetByName("중복ID관리");
+  
+  // 1. 중복ID관리 시트 검사
+  if (idSheet) {
+    var lastRow = idSheet.getLastRow();
+    if (lastRow >= 1) {
+      var values = idSheet.getRange(1, 1, lastRow, 2).getValues();
+      for (var i = 0; i < values.length; i++) {
+        var regNick = String(values[i][0] || "").trim();
+        var regClient = String(values[i][1] || "").trim();
+        
+        if (regNick === nickname) {
+          // 동일한 닉네임이 존재할 때, 기기 고유 ID(clientId)가 정확히 일치하면 본인임 (중복 아님)
+          if (clientId && regClient && regClient === clientId) {
+            return false;
+          }
+          // 기기가 다르다면 다른 사람이 이미 사용하는 닉네임이므로 중복 차단!
+          return true;
+        }
+      }
+    }
+  }
+  
+  // 2. 만약 중복ID관리 시트에 없더라도 현재 시트1 또는 누적DB에 이미 사용 중인 활성 닉네임인지 2중 체크
+  return checkNicknameExistsFallback(nickname);
+}
+
+/**
+ * 닉네임 등록 또는 기존 본인 기기 갱신 처리
+ */
+function registerOrUpdateIdRegistry(nickname, clientId) {
+  if (!nickname) return clientId || "";
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var idSheet = ss.getSheetByName("중복ID관리");
+  if (!idSheet) {
+    idSheet = ss.insertSheet("중복ID관리");
+    idSheet.appendRow(["고객 ID", "고유 ID", "확정시간"]);
+  }
+  
+  var lastRow = idSheet.getLastRow();
+  var values = lastRow > 0 ? idSheet.getRange(1, 1, lastRow, 3).getValues() : [];
+  var foundRowByNick = -1;
+  var foundRowByClient = -1;
+  
+  for (var i = 0; i < values.length; i++) {
+    var regNick = String(values[i][0] || "").trim();
+    var regClient = String(values[i][1] || "").trim();
+    
+    if (regNick === nickname) {
+      foundRowByNick = i + 1;
+    }
+    if (clientId && regClient && regClient === clientId) {
+      foundRowByClient = i + 1;
+    }
+  }
+  
+  var now = new Date();
+
+  // 이미 내 기기(clientId)로 등록되어 있거나 닉네임이 일치하는 경우 갱신
+  if (foundRowByNick > 0) {
+    if (clientId) {
+      idSheet.getRange(foundRowByNick, 2).setValue(clientId);
+    }
+    idSheet.getRange(foundRowByNick, 3).setValue(now);
+    return clientId || String(values[foundRowByNick - 1][1] || "").trim();
+  }
+  
+  if (foundRowByClient > 0) {
+    idSheet.getRange(foundRowByClient, 1).setValue(nickname);
+    idSheet.getRange(foundRowByClient, 3).setValue(now);
+    return clientId;
+  }
+  
+  // 완전 신규 등록
+  idSheet.appendRow([nickname, clientId || "", now]);
+  return clientId || "";
+}
+
+/**
+ * clientId만으로 중복ID관리 시트에서 기존 고객 ID(닉네임+전화번호) 역추적 복구
+ */
+function findNicknameByClientId(clientId) {
+  if (!clientId) return "";
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var idSheet = ss.getSheetByName("중복ID관리");
+  if (!idSheet) return "";
+  
+  var lastRow = idSheet.getLastRow();
+  if (lastRow < 1) return "";
+  
+  var values = idSheet.getRange(1, 1, lastRow, 2).getValues();
+  for (var i = values.length - 1; i >= 0; i--) {
+    var regNick = String(values[i][0] || "").trim();
+    var regClient = String(values[i][1] || "").trim();
+    if (regClient === clientId && regNick !== "") {
+      return regNick;
+    }
+  }
+  return "";
+}
+
+function checkNicknameExistsFallback(nickname) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetsToCheck = ["시트1", "누적DB"];
+  for (var s = 0; s < sheetsToCheck.length; s++) {
+    var sheet = ss.getSheetByName(sheetsToCheck[s]);
+    if (!sheet) continue;
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) continue;
+    var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+    for (var i = 0; i < values.length; i++) {
+      var status = String(values[i][0] || "").trim();
+      if (status === "취소") continue;
+      var custCol = String(values[i][5] || "").trim();
+      if (custCol === nickname) return true;
+    }
+  }
+  return false;
+}
+
+// --------------------------------------------------------------------------
+// 📌 실시간 접속자 세션 관리 함수
+// --------------------------------------------------------------------------
+function recordUserHeartbeat(data) {
+  var cache = CacheService.getScriptCache();
+  var clientId = data.clientId;
+  var nickname = data.nickname ? String(data.nickname).trim() : "미입력고객";
+  if (!nickname) nickname = "미입력고객";
+  
+  var sessionsJson = cache.get("active_user_sessions");
+  var sessions = sessionsJson ? JSON.parse(sessionsJson) : {};
+  
+  var now = new Date().getTime();
+  if (clientId && nickname !== 'EXIT') {
+    sessions[clientId] = {
+      nickname: nickname,
+      lastActive: now
+    };
+  } else if (clientId && nickname === 'EXIT') {
+    delete sessions[clientId];
+  }
+  
+  var activeSessions = {};
+  for (var id in sessions) {
+    if (now - sessions[id].lastActive < 20000) {
+      activeSessions[id] = sessions[id];
+    }
+  }
+  
+  cache.put("active_user_sessions", JSON.stringify(activeSessions), 60);
+  return { success: true, count: Object.keys(activeSessions).length };
+}
+
+function getActiveUserList() {
+  var cache = CacheService.getScriptCache();
+  var sessionsJson = cache.get("active_user_sessions");
+  var sessions = sessionsJson ? JSON.parse(sessionsJson) : {};
+  
+  var now = new Date().getTime();
+  var userList = [];
+  
+  for (var id in sessions) {
+    if (now - sessions[id].lastActive < 20000) {
+      userList.push(sessions[id].nickname);
+    }
+  }
+  
+  return { count: userList.length, users: userList };
+}
+
+// --------------------------------------------------------------------------
+// 📌 POST 요청 처리
 // --------------------------------------------------------------------------
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -115,6 +291,18 @@ function doPost(e) {
     }
 
     var action = data.action;
+
+    if (action === 'heartbeat') {
+      var res = recordUserHeartbeat(data);
+      return ContentService.createTextOutput(JSON.stringify(res))
+                           .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'getActiveUsers') {
+      var res = getActiveUserList();
+      return ContentService.createTextOutput(JSON.stringify(res))
+                           .setMimeType(ContentService.MimeType.JSON);
+    }
 
     if (action === 'getAdminOrderList') {
       var adminOrders = getAdminOrderList();
@@ -221,6 +409,16 @@ function doPost(e) {
                              .setMimeType(ContentService.MimeType.JSON);
       }
 
+      var customerInfo = String(data.nickname || "").trim();
+      var clientIdVal = String(data.clientId || "").trim();
+
+      // [핵심 방어] 예약 생성 시점에 다른 사람이 이미 사용 중인 닉네임인지 엄격 재확인
+      if (checkNicknameExistsInRegistry(customerInfo, clientIdVal)) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "result": "duplicate_nickname"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       var menuText = data.menuSummary || data.menu || "";
       var sauceText = data.sauce || "없음";
 
@@ -258,14 +456,12 @@ function doPost(e) {
         shortCook = "비튀김";
       }
 
-      var customerInfo = String(data.nickname || "").trim();
       var receiptTime = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
       
       var totalPriceInput = data.totalPrice || "";
       var totalPriceVal = totalPriceInput.toString().replace(/[^0-9]/g, '');
       var finalPriceDisplay = totalPriceVal ? Number(totalPriceVal) : "";
 
-      // 💡 [시크릿 코드 검증 및 당첨 로직] E5 셀의 코드와 일치할 때만 확률 적용
       var isWinner = false;
       var userSecretCode = String(data.secretCode || "").trim();
       
@@ -301,6 +497,8 @@ function doPost(e) {
         isWinner ? "당첨 (선택대기)" : ""
       ]);
 
+      var syncedClientId = registerOrUpdateIdRegistry(customerInfo, clientIdVal);
+
       var lastRowIdx = sheet.getLastRow();
       if (totalPriceVal) {
         sheet.getRange(lastRowIdx, 8).setNumberFormat('#,##0"원"');
@@ -326,8 +524,17 @@ function doPost(e) {
         "result": "success",
         "isWinner": isWinner,
         "rowIndex": lastRowIdx,
-        "eventMenuList": settings.eventMenuList
+        "eventMenuList": settings.eventMenuList,
+        "syncedClientId": syncedClientId
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === "checkNickname") {
+      var checkNick = String(data.nickname || "").trim();
+      var checkClient = String(data.clientId || "").trim();
+      var isDup = checkNicknameExistsInRegistry(checkNick, checkClient);
+      return ContentService.createTextOutput(JSON.stringify({"result": isDup ? "duplicate" : "ok"}))
+                           .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "uploadMenuImage") {
@@ -414,6 +621,16 @@ function doPost(e) {
 
     if (action === "check" || action === "checkSimple") {
       var nickname = String(data.nickname || "").trim();
+      var clientIdCheck = String(data.clientId || "").trim();
+      var recoveredNickname = "";
+
+      if (!nickname && clientIdCheck) {
+        recoveredNickname = findNicknameByClientId(clientIdCheck);
+        if (recoveredNickname) {
+          nickname = recoveredNickname;
+        }
+      }
+
       var rows = sheet.getDataRange().getValues();
       
       for (var i = rows.length - 1; i >= 1; i--) {
@@ -421,13 +638,14 @@ function doPost(e) {
         if (status === "취소") continue;
 
         var custCol = String(rows[i][5] || "").trim();
-        if (custCol === nickname) {
+        if (nickname && custCol === nickname) {
           var cellValue = sheet.getRange(i + 1, 2).getDisplayValue();
           return ContentService.createTextOutput(JSON.stringify({
             "result": "found",
             "rowIndex": i + 1,
             "status": status,
             "nickname": custCol,
+            "recoveredNickname": recoveredNickname || custCol,
             "pickupTime": cellValue, 
             "cookType": String(rows[i][2] || "").trim(),
             "menu": rows[i][3] || "",
@@ -437,8 +655,10 @@ function doPost(e) {
           })).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({"result": "not_found"}))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({
+        "result": "not_found",
+        "recoveredNickname": recoveredNickname
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "update") {
@@ -581,6 +801,11 @@ function doGet(e) {
     return outputJsonP(data, callback);
   }
   
+  if (action === 'getActiveUsers') {
+    var data = getActiveUserList();
+    return outputJsonP(data, callback);
+  }
+
   if (action === 'updateOrderStatus') {
     var rowIndex = e.parameter.rowIndex;
     var status = e.parameter.status;
@@ -716,7 +941,7 @@ function getStoreSettings(ss) {
   var eventWinProbability = 5;
   var eventMenuList = ["돈까스 1개", "새우까스 1개", "안심까스 1개"];
   var isMaintenance = false;
-  var secretCode = ""; // 💡 E5 셀 시크릿코드 변수 추가[cite: 2]
+  var secretCode = "";
 
   if (settingSheet) {
     var openObj = parseTimeCell(settingSheet.getRange("B1"));
@@ -761,7 +986,6 @@ function getStoreSettings(ss) {
       isMaintenance = true;
     }
 
-    // 💡 설정 시트 E5 셀에서 시크릿코드 읽어오기[cite: 2]
     var codeCellVal = String(settingSheet.getRange("F5").getDisplayValue()).trim();
     if (codeCellVal !== "") {
       secretCode = codeCellVal;
@@ -840,7 +1064,7 @@ function getStoreSettings(ss) {
     eventMenuList: eventMenuList,
     isMaintenance: isMaintenance,
     maintenanceCode: maintCode,
-    secretCode: secretCode // 💡 프론트엔드로 전달
+    secretCode: secretCode
   };
 }
 
