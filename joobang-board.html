@@ -29,8 +29,8 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding: 8px;
-            font-size: 15px;
+            padding: 6px;
+            font-size: 14.5px;
             overflow-x: hidden;
         }
 
@@ -106,14 +106,14 @@
             justify-content: space-between;
             align-items: center;
             background: var(--surface-color);
-            padding: 10px 14px;
-            border-radius: 10px;
-            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
             border: 1px solid var(--border-color);
         }
 
         header h1 {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
@@ -121,8 +121,8 @@
         .status-badge {
             background: var(--surface-sub);
             border: 1px solid var(--border-color);
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 3px 7px;
+            border-radius: 5px;
             font-size: 0.7rem;
             color: var(--text-sub);
         }
@@ -140,8 +140,8 @@
             gap: 6px;
             background-color: var(--surface-sub);
             border: 1px solid var(--border-color);
-            padding: 5px 10px;
-            border-radius: 16px;
+            padding: 4px 9px;
+            border-radius: 14px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -152,8 +152,8 @@
         }
 
         .pulse-dot {
-            width: 7px;
-            height: 7px;
+            width: 6.5px;
+            height: 6.5px;
             background-color: #22c55e;
             border-radius: 50%;
             box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
@@ -167,13 +167,13 @@
         }
 
         .badge-text {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--accent-gold);
             font-weight: 700;
         }
 
         .arrow-icon {
-            font-size: 0.6rem;
+            font-size: 0.58rem;
             color: var(--text-sub);
             transition: transform 0.2s;
         }
@@ -185,12 +185,12 @@
         /* 드롭다운 펼침 패널 */
         .online-dropdown-panel {
             position: absolute;
-            top: calc(100% + 8px);
+            top: calc(100% + 6px);
             right: 0;
-            width: 210px;
+            width: 200px;
             background: var(--surface-color);
-            border-radius: 12px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
             border: 1px solid var(--border-color);
             overflow: hidden;
             display: none;
@@ -201,10 +201,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 12px;
+            padding: 8px 10px;
             background-color: var(--surface-sub);
             border-bottom: 1px solid var(--border-color);
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--text-sub);
         }
@@ -212,19 +212,19 @@
         .online-user-list {
             list-style: none;
             margin: 0;
-            padding: 6px;
-            max-height: 180px;
+            padding: 5px;
+            max-height: 160px;
             overflow-y: auto;
         }
 
         .online-user-list li {
-            padding: 7px 10px;
-            font-size: 0.78rem;
+            padding: 6px 8px;
+            font-size: 0.76rem;
             color: var(--text-main);
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .online-user-list li:hover {
@@ -237,11 +237,11 @@
             font-weight: bold;
         }
 
-        /* 주문 리스트 카드 (초압축 간격) */
+        /* 주문 리스트 카드 구조 */
         .order-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 5px;
         }
 
         .order-item {
@@ -249,11 +249,10 @@
             align-items: stretch;
             justify-content: space-between;
             background: var(--surface-color);
-            border-left: 3px solid #666;
             border-radius: 6px;
             overflow: hidden;
             border: 1px solid var(--border-color);
-            border-left-width: 4px;
+            border-left-width: 4.5px;
         }
 
         .order-item.unconfirmed {
@@ -269,10 +268,10 @@
         /* 왼쪽 정보 영역 */
         .order-info {
             flex: 1;
-            padding: 8px 10px;
+            padding: 7px 10px;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 5px;
         }
 
         .top-row {
@@ -289,31 +288,47 @@
         }
 
         .time-tag {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 800;
             color: var(--accent-gold);
             letter-spacing: -0.5px;
+        }
+
+        /* 🎫 예약번호 고급 배지 */
+        .reservation-no-badge {
+            background: linear-gradient(135deg, rgba(197, 160, 89, 0.25), rgba(197, 160, 89, 0.1));
+            color: #E6C584;
+            border: 1px solid rgba(197, 160, 89, 0.5);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
         }
 
         .winner-badge {
             background: rgba(236, 72, 153, 0.15);
             color: #f472b6;
             border: 1px solid rgba(236, 72, 153, 0.3);
-            font-size: 0.55rem;
-            padding: 1px 4px;
+            font-size: 0.6rem;
+            padding: 1px 5px;
             border-radius: 4px;
             font-weight: 700;
+            white-space: nowrap;
         }
 
+        /* 🍗 조리 방식 배지 (박스 제일 우측 상단 정렬) */
         .cooking-badge {
             display: inline-block;
             background: var(--surface-sub);
             color: var(--text-main);
             border: 1px solid var(--border-color);
-            font-size: 0.6rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            padding: 1px 5px;
+            padding: 2px 7px;
             border-radius: 4px;
+            white-space: nowrap;
         }
 
         .cooking-badge.special {
@@ -322,50 +337,55 @@
             color: #f87171;
         }
 
-        .price-tag {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #4ade80;
-            background: rgba(74, 222, 128, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
+        /* 📋 메뉴 영역 (2줄까지 쾌적하게 수용) */
         .menu-text {
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.88rem;
+            font-weight: 800;
             color: var(--text-main);
-            line-height: 1.3;
+            line-height: 1.35;
+            word-break: keep-all;
         }
 
-        .event-detail-text {
-            font-size: 0.75rem;
-            color: #f472b6;
-            font-weight: 700;
-            margin-top: 1px;
+        /* 👤 하단 정보 및 💰 가격 라인 (우측 제일 하단 일직선 정렬) */
+        .bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 2px;
         }
 
-        .sub-row {
+        .sub-info-group {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 2px;
             flex-wrap: wrap;
         }
 
         .sauce-text {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: #fb923c;
             font-weight: 700;
         }
 
         .nickname-text {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: var(--text-sub);
             font-weight: 600;
         }
 
-        /* 오른쪽 버튼 그룹 컴팩트화 */
+        .price-tag {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+            padding: 2px 7px;
+            border-radius: 5px;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+        }
+
+        /* 오른쪽 버튼 그룹 */
         .btn-group {
             display: flex;
             flex-direction: column;
@@ -378,8 +398,8 @@
         }
 
         .btn-status {
-            width: 56px;
-            height: 30px;
+            width: 55px;
+            height: 29px;
             font-size: 0.65rem;
             font-weight: 700;
             border: none;
@@ -405,8 +425,8 @@
         }
 
         .btn-done {
-            width: 56px;
-            height: 30px;
+            width: 55px;
+            height: 29px;
             font-size: 0.65rem;
             font-weight: 700;
             border: none;
@@ -432,7 +452,7 @@
 
 <body>
 
-    <!-- 👑 뒤가 은은하게 비치는 프리미엄 블러 오버레이 팝업 (터치 시 바로 시작) -->
+    <!-- 👑 뒤가 은은하게 비치는 프리미엄 블러 오버레이 팝업 (화면 터치 시 해제) -->
     <div id="blurOverlay" onclick="startDashboard()">
         <div class="blur-popup-card">
             <div class="popup-badge">장날동천 시스템</div>
@@ -474,20 +494,20 @@
     <div id="custom-modal"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; justify-content: center; align-items: center;">
         <div
-            style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; width: 340px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; color: #fff;">
-            <h3 id="modal-title" style="margin: 0 0 12px 0; font-size: 18px; font-weight: 800; color: var(--accent-gold);">수령 완료 처리</h3>
-            <p id="modal-desc" style="margin: 0 0 24px 0; font-size: 14.5px; color: var(--text-sub); line-height: 1.6;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
-            <div style="display: flex; gap: 10px;">
+            style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; width: 330px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; color: #fff;">
+            <h3 id="modal-title" style="margin: 0 0 10px 0; font-size: 17px; font-weight: 800; color: var(--accent-gold);">수령 완료 처리</h3>
+            <p id="modal-desc" style="margin: 0 0 22px 0; font-size: 14px; color: var(--text-sub); line-height: 1.5;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
+            <div style="display: flex; gap: 8px;">
                 <button id="modal-cancel-btn"
-                    style="flex: 1; padding: 12px; background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 700;">취소</button>
+                    style="flex: 1; padding: 11px; background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: 700;">취소</button>
                 <button id="modal-confirm-btn"
-                    style="flex: 1; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">확인</button>
+                    style="flex: 1; padding: 11px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700;">확인</button>
             </div>
         </div>
     </div>
 
     <div id="orderContainer" class="order-list">
-        <div style="text-align:center; padding: 30px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
+        <div style="text-align:center; padding: 25px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
     </div>
 
     <script>
@@ -495,7 +515,6 @@
         let previousTotalCount = 0;
         let isInitialLoad = true;
 
-        // 🎵 AudioContext 전역 관리 및 브라우저 정책 대응
         let audioCtx = null;
         function getAudioContext() {
             if (!audioCtx) {
@@ -510,9 +529,8 @@
             return audioCtx;
         }
 
-        // 👑 [주방 뷰 시작하기] 블러 팝업 해제 함수 (화면 어디든 터치 시 실행)
         function startDashboard() {
-            getAudioContext(); // 오디오 권한 해제
+            getAudioContext();
             const overlay = document.getElementById('blurOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
@@ -580,7 +598,7 @@
         function renderOrders(orders) {
             const container = document.getElementById('orderContainer');
             if (!orders || orders.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 30px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
+                container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
                 document.getElementById('unconfirmedCount').innerText = 0;
                 document.getElementById('totalCount').innerText = 0;
                 previousTotalCount = 0;
@@ -623,7 +641,15 @@
 
                 let eventDetailHtml = '';
                 if (eventText) {
-                    eventDetailHtml = `<div class="event-detail-text">🎁 선물: ${eventText}</div>`;
+                    eventDetailHtml = `<span class="winner-badge">🎁 ${eventText}</span>`;
+                }
+
+                let resNoDisplay = '';
+                if (item.reservationNo) {
+                    let cleanNo = String(item.reservationNo).trim();
+                    if (cleanNo !== '') {
+                        resNoDisplay = `<span class="reservation-no-badge">🎫 #${cleanNo}</span>`;
+                    }
                 }
 
                 html += `
@@ -632,16 +658,18 @@
                             <div class="top-row">
                                 <div class="time-group">
                                     <span class="time-tag">⏰ ${item.pickupTime}</span>
-                                    <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
-                                    ${item.isEventWinner || eventText ? '<span class="winner-badge">🎁 이벤트 당첨</span>' : ''}
+                                    ${resNoDisplay}
+                                    ${eventDetailHtml}
                                 </div>
-                                ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
+                                <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
                             </div>
                             <div class="menu-text">${item.menu}</div>
-                            ${eventDetailHtml}
-                            <div class="sub-row">
-                                ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + item.extraSauce + '</span>' : ''}
-                                <span class="nickname-text">👤 ${item.nickname}</span>
+                            <div class="bottom-row">
+                                <div class="sub-info-group">
+                                    ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + item.extraSauce + '</span>' : ''}
+                                    <span class="nickname-text">👤 ${item.nickname}</span>
+                                </div>
+                                ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
                             </div>
                         </div>
                         <div class="btn-group">
@@ -694,7 +722,6 @@
             });
         }
 
-        // 드롭다운 토글 및 바깥쪽 클릭 시 닫기 스크립트
         function toggleOnlineDropdown() {
             const panel = document.getElementById('onlineDropdownPanel');
             const badge = document.getElementById('onlineBadgeBtn');
@@ -716,7 +743,6 @@
             }
         });
 
-        // 실시간 접속자 목록 폴링 로직 (고유 ID와 조합된 닉네임이 정상 렌더링되도록 보장)
         function fetchActiveUsers() {
             callGasAPI('getActiveUsers', {}, function(data) {
                 const badge = document.getElementById('activeVisitorsBadge');
@@ -732,9 +758,8 @@
                     if (!data.users || data.users.length === 0) {
                         listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
                     } else {
-                        data.users.forEach((userName, index) => {
+                        data.users.forEach((userName) => {
                             const li = document.createElement('li');
-                            // 닉네임이 비어있거나 단순 '손님'일 경우 고유 인덱스나 식별값 보정 처리
                             li.textContent = userName;
                             listEl.appendChild(li);
                         });

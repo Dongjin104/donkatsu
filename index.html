@@ -222,7 +222,7 @@
         .item-q-btn:disabled { background-color: #F5F4F0 !important; color: #C5C2BA !important; cursor: not-allowed !important; border-color: #EFEFEF !important; }
 
         .selected-summary-box { background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 18px 20px; border-radius: var(--radius-sm); margin-top: 20px; font-size: 15px; color: var(--text-main); line-height: 1.7; text-align: left; }
-        .summary-item-line { display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-main); }
+        .summary-item-line { display: block; margin-bottom: 3px; font-weight: 600; color: var(--text-main); }
 
         .total-price-box { 
             background: var(--accent-dark); 
@@ -246,9 +246,9 @@
             background-color: var(--accent-dark); 
             color: white; 
             border: none; 
-            padding: 17px; 
+            padding: 16px; 
             border-radius: var(--radius-sm); 
-            font-size: 16.5px; 
+            font-size: 16px; 
             font-weight: 700; 
             cursor: pointer; 
             margin-top: 16px; 
@@ -364,7 +364,26 @@
         .notice-extra-btn:hover { background-color: #FAFAF9; border-color: #D1CFCD; transform: translateY(-1px); }
 
         #alreadyOrderedNotice { display: none; background: #FFFFFF; border: 1.5px solid var(--border-color); padding: 28px 22px; border-radius: var(--radius-md); text-align: center; margin-bottom: 24px; box-shadow: var(--shadow-card); }
-        #pickupCompletedNotice { display: none; background: #FFFFFF; border: 1.5px solid var(--border-color); padding: 36px 26px; border-radius: var(--radius-md); text-align: center; margin-bottom: 24px; box-shadow: var(--shadow-card); }
+        
+        /* 수령완료 페이지 어절 단위 자연스러운 줄바꿈 적용 */
+        #pickupCompletedNotice { 
+            display: none; 
+            background: #FFFFFF; 
+            border: 1.5px solid var(--border-color); 
+            padding: 36px 26px; 
+            border-radius: var(--radius-md); 
+            text-align: center; 
+            margin-bottom: 24px; 
+            box-shadow: var(--shadow-card);
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+        #pickupCompletedNotice p,
+        #pickupCompletedNotice div,
+        #pickupCompletedNotice h3 {
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
         
         #quickReorderBox { display: none; background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 28px 22px; border-radius: var(--radius-md); margin-bottom: 28px; box-shadow: var(--shadow-card); text-align: center; }
         #orderForm { display: none; }
@@ -472,15 +491,68 @@
         .sticky-submit-wrapper {
             position: sticky;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.94);
             backdrop-filter: blur(10px);
-            padding: 18px 0 12px 0;
+            padding: 14px 0 12px 0;
             margin-top: 28px;
             border-top: 1px solid var(--border-color);
             z-index: 99;
         }
+        .sticky-summary-bar {
+            background: #FAFAF9;
+            border: 1.5px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            font-size: 13.5px;
+            max-height: 85px;
+            overflow-y: auto;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(28, 27, 24, 0.04);
+        }
+        .sticky-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+            border-bottom: 1px dashed var(--border-color);
+        }
         .container {
-            padding-bottom: 110px !important; 
+            padding-bottom: 150px !important; 
+        }
+
+        /* 🎫 예약번호 전용 프리미엄 배지 스타일 */
+        .res-no-ticket-box {
+            background: linear-gradient(135deg, #1C1B18 0%, #2F2D29 100%);
+            border: 1.5px solid var(--accent-gold);
+            border-radius: var(--radius-md);
+            padding: 18px 16px;
+            margin-bottom: 18px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(28, 27, 24, 0.14);
+        }
+        .res-no-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #E6C584;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .res-no-number {
+            font-size: 36px;
+            font-weight: 900;
+            color: #FFFFFF;
+            letter-spacing: 0.08em;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+        .res-no-guide {
+            font-size: 12.5px;
+            color: #D1CFCD;
+            margin-top: 6px;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -586,13 +658,13 @@
     <div id="pickupCompletedNotice">
         <div style="width: 60px; height: 60px; background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 26px; box-shadow: 0 4px 15px rgba(197, 160, 89, 0.08);">✨</div>
         <h3 style="color: var(--text-main); font-size: 22px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.02em;">돈가스 수령이 완료되었습니다</h3>
-        <p style="font-size: 15px; color: var(--text-sub); margin-bottom: 24px; line-height: 1.6; word-break: keep-all;">
+        <p style="font-size: 15px; color: var(--text-sub); margin-bottom: 24px; line-height: 1.65;">
             오늘도 저희 장날동천을 찾아주셔서 진심으로 감사합니다.<br>맛있게 드시고 <b>행복 가득한 하루</b> 되시길 바랍니다! 💛
         </p>
 
         <div style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 18px 16px; border-radius: var(--radius-sm); margin-bottom: 24px; text-align: center; box-shadow: 0 4px 15px rgba(197, 160, 89, 0.05);">
-            <div style="font-size: 14px; font-weight: 700; color: #8C6D1F; margin-bottom: 6px;">✨ 단골 방문 횟수 정상 적립 완료 ✨</div>
-            <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.5;">닉네임과 전화번호가 안전하게 누적되었습니다.<br>다음 예약 때도 3초 만에 간편하게 만나보세요!</div>
+            <div style="font-size: 14.5px; font-weight: 700; color: #8C6D1F; margin-bottom: 6px;">✨ 단골 방문 횟수 정상 적립 완료 ✨</div>
+            <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.6;">닉네임과 전화번호가 안전하게 누적되었습니다.<br>다음 예약 때도 3초 만에 간편하게 만나보세요!</div>
         </div>
 
         <button type="button" class="submit-btn" style="margin-top: 0; background-color: var(--accent-dark);" onclick="resetToNewOrder()">
@@ -601,8 +673,14 @@
     </div>
 
     <div id="alreadyOrderedNotice">
-        <h3 style="color: var(--text-main); margin-top: 4px; font-size: 22px; margin-bottom: 8px; white-space: nowrap; font-weight: 800;">예약이 완료 되었습니다</h3>
+        <h3 style="color: var(--text-main); margin-top: 4px; font-size: 22px; margin-bottom: 14px; white-space: nowrap; font-weight: 800;">예약이 완료 되었습니다</h3>
         
+        <div id="resNoTicketBox" class="res-no-ticket-box" style="display: none;">
+            <div class="res-no-label">RESERVATION NUMBER</div>
+            <div class="res-no-number" id="displayResNo">#0000</div>
+            <div class="res-no-guide">픽업 시 위 <b>예약번호</b>를 말씀해 주세요!</div>
+        </div>
+
         <p style="font-size: 13.5px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; word-break: keep-all;">
             중복 예방을 위해 이 기기에서는 1개의 예약만 관리됩니다.
         </p>
@@ -747,15 +825,6 @@
         <div class="form-group">
             <label>4. 추가 소스 선택</label>
             <div id="sauceCardContainer" class="sauce-grid"></div>
-
-            <div id="mainSelectedSummaryBox" class="selected-summary-box" style="margin-top: 20px;">
-                <div style="font-weight:700; margin-bottom:8px; color:var(--text-main);">선택하신 예약 내역:</div>
-                <div id="mainSelectedSummaryList">선택된 메뉴가 없습니다.</div>
-            </div>
-
-            <div class="total-price-box">
-                총 예약 금액 <span id="mainTotalPrice">0</span>원
-            </div>
         </div>
 
         <div class="form-group" id="pickupFormGroup">
@@ -765,8 +834,16 @@
         </div>
 
         <div class="sticky-submit-wrapper">
+            <div id="mainSelectedSummaryBox" class="sticky-summary-bar">
+                <div class="sticky-summary-header">
+                    <span style="font-weight: 700; color: var(--text-sub); font-size: 13px;">선택하신 예약 내역</span>
+                    <span style="font-weight: 800; color: var(--accent-dark); font-size: 15px;">총 <span id="mainTotalPrice" style="color: #B45309;">0</span>원</span>
+                </div>
+                <div id="mainSelectedSummaryList" style="color: var(--text-main); line-height: 1.45;">선택된 메뉴가 없습니다.</div>
+            </div>
+
             <button type="submit" id="submitBtn" class="submit-btn" style="margin-top: 0;">예약 완료하기</button>
-            <button type="button" class="share-link-btn" style="margin-top: 12px;" onclick="shareStoreLink()">
+            <button type="button" class="share-link-btn" style="margin-top: 8px; padding: 11px; font-size: 14px;" onclick="shareStoreLink()">
                 📤 장날동천 돈가스 예약 링크 친구에게 공유하기
             </button>
         </div>
@@ -808,7 +885,7 @@
             • <b>온라인 예약 시간</b> <br>매일 오후1시부터 오후6시 30분까지 가능합니다.(주말&공휴일 제외)<br>
             • <b>돈가스 픽업 시간</b> <br>매일 오후3시부터 오후8시까지 가능합니다. <br>6시 30분에 모든 예약건을 만들어 놓기때문에 8시에 찾아가실 수는 있으나 음식이 식을 수 있습니다.<br>
             • <b>방문 횟수 적립</b> <br>최초 예약 닉네임과 전화번호를 그대로 유지하시면 단골 방문 횟수가 자동으로 쌓여 다양한 혜택을 드려요!<br>
-            • <b>픽업 안내</b> <br>예약 시간에 맞춰 오셔서 닉네임과 휴대폰 번호를 말씀해 주세요.<br>
+            • <b>픽업 안내</b> <br>예약 시간에 맞춰 오셔서 발급된 예약번호를 말씀해 주세요.<br>
             • <b>문의 사항</b> <br>영업 외 시간에도 카카오톡 1:1 문의를 남겨주시면 확인 후 답변드립니다!
         </div>
         <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 0;" onclick="closeNoticeModal()">확인했어요</button>
@@ -847,8 +924,12 @@
 <div id="successModal" class="modal">
     <div class="modal-content">
         <h3 style="color:var(--text-main); margin-top:0;">예약 완료</h3>
+        <div id="successModalResNoBox" style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; border-radius: 12px; padding: 14px; margin: 12px 0; text-align: center; display: none;">
+            <div style="font-size: 12px; font-weight: 700; color: #8C6D1F;">발급된 예약번호</div>
+            <div id="successModalResNo" style="font-size: 28px; font-weight: 900; color: var(--text-main); letter-spacing: 0.05em; margin-top: 2px;">#0000</div>
+        </div>
         <p style="font-size:15.5px; line-height:1.7; text-align:left; color:var(--text-sub);">
-            픽업 오셔서 <b>예약하신 닉네임/전화번호</b> 말씀해 주시고 <b>결제</b> 후 돈가스 받아가시면 됩니다!
+            픽업 오셔서 <b>예약번호</b> 말씀해 주시고 <b>결제</b> 후 돈가스 받아가시면 됩니다!
         </p>
         <button class="modal-btn" style="background-color:var(--accent-dark);" onclick="reloadAfterSuccess();">확인</button>
     </div>
@@ -920,7 +1001,7 @@
 </div>
 
 <div id="searchModal" class="modal">
-    <div class="modal-content" style="position: relative; display: flex; flex-direction: column; max-height: 85vh;">
+    <div class="modal-content" style="position: relative; display: flex; flex-direction: column; max-height: 88vh; padding: 26px 20px;">
         <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
         
         <div id="modalLoadingBox" class="menu-grid" style="margin: 15px 0; text-align: left;">
@@ -936,7 +1017,7 @@
             </div>
         </div>
 
-        <div id="searchResultArea" style="margin-top:15px; text-align:left; background:#FAFAF9; padding:18px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 30px;">
+        <div id="searchResultArea" style="margin-top:12px; text-align:left; background:#FAFAF9; padding:16px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 24px;">
             <div style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 14px 16px; border-radius: var(--radius-sm); font-size: 14px; color: #8C6D1F; text-align: center; margin-bottom: 18px; line-height: 1.5; font-weight: 500;">
                 💡 <b>돈가스 소스는 기본 1개만 제공 됩니다.</b><br>(추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
             </div>
@@ -963,15 +1044,6 @@
             <div class="form-group" style="margin-top:10px; margin-bottom:18px;">
                 <span style="font-size:15px; display:block; margin-bottom:10px; font-weight:700; color:var(--text-main);">추가 소스 변경</span>
                 <div id="editSauceCardContainer" class="sauce-grid"></div>
-
-                <div class="selected-summary-box" style="margin-top:16px;">
-                    <div style="font-weight:700; margin-bottom:6px; color:var(--text-main);">변경할 예약 내역:</div>
-                    <div id="editSelectedSummary">선택된 메뉴가 없습니다.</div>
-                </div>
-
-                <div class="total-price-box" style="font-size:16.5px; padding:15px; margin-top:14px;">
-                    변경할 총 금액 <span id="editTotalPrice">0</span>원
-                </div>
             </div>
 
             <p style="margin:12px 0; font-size:15px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime" style="color:var(--text-main); font-weight:700;"></span></p>
@@ -983,9 +1055,17 @@
             </div>
         </div>
 
-        <div id="searchModalActionBtns" style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 16px; border-top: 1px solid var(--border-color); margin-top: 12px;">
-            <button id="updateBtn" class="modal-btn" style="background-color:var(--accent-dark); margin-top:0; padding:15px; margin-bottom:10px;" onclick="updateReservation()">변경된 내용 저장하기</button>
-            <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:15px;" onclick="closeSearchModal()">닫기</button>
+        <div id="searchModalActionBtns" style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 12px; border-top: 1px solid var(--border-color); margin-top: 8px;">
+            <div class="sticky-summary-bar" style="max-height: 80px; margin-bottom: 10px;">
+                <div class="sticky-summary-header">
+                    <span style="font-weight: 700; color: var(--text-sub); font-size: 13px;">변경할 예약 내역</span>
+                    <span style="font-weight: 800; color: var(--accent-dark); font-size: 15px;">총 <span id="editTotalPrice" style="color: #B45309;">0</span>원</span>
+                </div>
+                <div id="editSelectedSummary" style="color: var(--text-main); line-height: 1.45;">선택된 메뉴가 없습니다.</div>
+            </div>
+
+            <button id="updateBtn" class="modal-btn" style="background-color:var(--accent-dark); margin-top:0; padding:14px; margin-bottom:8px;" onclick="updateReservation()">변경된 내용 저장하기</button>
+            <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:12px;" onclick="closeSearchModal()">닫기</button>
         </div>
     </div>
 </div>
@@ -1809,6 +1889,18 @@
         });
     }
 
+    function showSuccessModalWithResNo(reservationNo) {
+        const resNoBox = document.getElementById('successModalResNoBox');
+        const resNoText = document.getElementById('successModalResNo');
+        if (reservationNo && resNoBox && resNoText) {
+            resNoText.textContent = `#${reservationNo}`;
+            resNoBox.style.display = 'block';
+        } else if (resNoBox) {
+            resNoBox.style.display = 'none';
+        }
+        showModal('successModal');
+    }
+
     function sendOrderRequest(orderData, hasValidSecretCode) {
         fetch(WEB_APP_URL, {
             method: 'POST',
@@ -1904,6 +1996,11 @@
                     TripleStorage.save('donkatsu_client_id', clientId);
                 }
 
+                const issuedResNo = (data && data.reservationNo) ? data.reservationNo : "";
+                if (issuedResNo) {
+                    TripleStorage.save('lastReservationNo', issuedResNo);
+                }
+
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
                 if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
                 if (quickLoadBtn) quickLoadBtn.disabled = false;
@@ -1916,7 +2013,7 @@
                         showModal('eventFailModal');
                     }
                 } else {
-                    showModal('successModal');
+                    showSuccessModalWithResNo(issuedResNo);
                 }
             })
             .catch(err => {
@@ -2177,7 +2274,8 @@
 
     function closeEventFailModal() {
         hideModal('eventFailModal');
-        showModal('successModal');
+        const savedResNo = localStorage.getItem('lastReservationNo') || TripleStorage.getCookie('lastReservationNo') || "";
+        showSuccessModalWithResNo(savedResNo);
     }
 
     function parseTimeToMinutes(timeStr) {
@@ -2950,6 +3048,17 @@
 
                 globalUserNickname = data.nickname || savedNick || data.recoveredNickname;
                 TripleStorage.save('savedNickname', globalUserNickname);
+
+                // 🎫 예약번호 배지 표시
+                const resNoTicketBox = document.getElementById('resNoTicketBox');
+                const displayResNo = document.getElementById('displayResNo');
+                if (data.reservationNo && resNoTicketBox && displayResNo) {
+                    displayResNo.textContent = `#${data.reservationNo}`;
+                    resNoTicketBox.style.display = 'block';
+                } else if (resNoTicketBox) {
+                    resNoTicketBox.style.display = 'none';
+                }
+
                 document.getElementById('displayNick').textContent = globalUserNickname;
                 document.getElementById('displayCookType').textContent = formatCookType(data.cookType);
                 
@@ -3227,14 +3336,16 @@
         .then(() => {
             hideModal('eventWinModal');
             showCustomAlert(`서프라이즈 이벤트 당첨을 축하드립니다!<br><b>[${prize}]</b>가 서비스로 제공됩니다.`, "이벤트 당첨 완료");
-            showModal('successModal');
+            const savedResNo = localStorage.getItem('lastReservationNo') || TripleStorage.getCookie('lastReservationNo') || "";
+            showSuccessModalWithResNo(savedResNo);
         })
         .catch(err => {
             console.error("이벤트 선택 에러:", err);
             eventSubmitBtn.disabled = false;
             eventSubmitBtn.textContent = "선택 완료 및 확인";
             hideModal('eventWinModal');
-            showModal('successModal');
+            const savedResNo = localStorage.getItem('lastReservationNo') || TripleStorage.getCookie('lastReservationNo') || "";
+            showSuccessModalWithResNo(savedResNo);
         });
     }
 
@@ -3501,5 +3612,6 @@
         }));
     });
 </script>
+
 </body>
 </html>
