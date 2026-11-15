@@ -365,7 +365,6 @@
 
         #alreadyOrderedNotice { display: none; background: #FFFFFF; border: 1.5px solid var(--border-color); padding: 28px 22px; border-radius: var(--radius-md); text-align: center; margin-bottom: 24px; box-shadow: var(--shadow-card); }
         
-        /* 수령완료 페이지 어절 단위 자연스러운 줄바꿈 적용 */
         #pickupCompletedNotice { 
             display: none; 
             background: #FFFFFF; 
@@ -522,7 +521,6 @@
             padding-bottom: 150px !important; 
         }
 
-        /* 🎫 예약번호 전용 프리미엄 배지 스타일 */
         .res-no-ticket-box {
             background: linear-gradient(135deg, #1C1B18 0%, #2F2D29 100%);
             border: 1.5px solid var(--accent-gold);
@@ -800,7 +798,7 @@
 
         <div class="form-group">
             <label for="nickname">2. 카톡 닉네임+전화번호 뒷자리 *</label>
-            <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required onblur="checkNicknameDuplication(this)">
+            <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
             <div style="margin-top: 12px; font-size: 13.5px; color: #B45309; background: var(--accent-gold-bg); padding: 14px 16px; border-radius: var(--radius-sm); border: 1.5px solid #F3E6C8; line-height: 1.6; font-weight: 500;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
                 꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라지수 있으니 변경하지 말고 쭉 유지해 주세요!
@@ -1305,6 +1303,7 @@
         await TripleStorage.load('lastOrderSauce');
         await TripleStorage.load('lastOrderPrice');
         await TripleStorage.load('lastOrderPickupTime');
+        await TripleStorage.load('lastOrderCookType');
 
         if (savedNick) {
             document.getElementById('nickname').value = savedNick;
@@ -1474,6 +1473,8 @@
         const lastSauce = localStorage.getItem('lastOrderSauce') || TripleStorage.getCookie('lastOrderSauce') || "없음";
         const lastPrice = localStorage.getItem('lastOrderPrice') || TripleStorage.getCookie('lastOrderPrice') || "0원";
         const lastPickupTime = localStorage.getItem('lastOrderPickupTime') || TripleStorage.getCookie('lastOrderPickupTime');
+        const lastNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || document.getElementById('nickname').value.trim() || "단골고객";
+        const lastCookType = localStorage.getItem('lastOrderCookType') || TripleStorage.getCookie('lastOrderCookType') || "🍗 튀겨서 포장";
 
         const quickSecretInput = document.getElementById('quickSecretCodeInput');
         if (quickSecretInput) quickSecretInput.value = "";
@@ -1487,6 +1488,14 @@
             }
 
             let html = `
+                <div class="order-info-row">
+                    <span class="order-info-label">닉네임</span>
+                    <span class="order-info-value" style="color:var(--text-main);">${lastNick}</span>
+                </div>
+                <div class="order-info-row">
+                    <span class="order-info-label">조리 방식</span>
+                    <span class="order-info-value" style="color:var(--text-main);">${formatCookType(lastCookType)}</span>
+                </div>
                 <div class="order-info-row">
                     <span class="order-info-label">예약 메뉴</span>
                     <div class="order-info-value" style="color:var(--text-main);">${formattedMenuLines}</div>
@@ -1567,11 +1576,20 @@
         const lastOrderStr = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
         const lastSauce = localStorage.getItem('lastOrderSauce') || TripleStorage.getCookie('lastOrderSauce') || "없음";
         const lastPickupTime = localStorage.getItem('lastOrderPickupTime') || TripleStorage.getCookie('lastOrderPickupTime');
+        const lastCookType = localStorage.getItem('lastOrderCookType') || TripleStorage.getCookie('lastOrderCookType') || "";
 
         const unavailableItems = validatePreviousOrderItems(lastOrderStr, lastSauce);
 
         parseMenuStringToObj(lastOrderStr, orderItems);
         parseSauceStringToObj(lastSauce, sauceItems);
+
+        if (lastCookType) {
+            if (lastCookType.includes("생고기") || lastCookType.includes("비튀김") || lastCookType.includes("안튀김")) {
+                document.getElementById('cook2').checked = true;
+            } else {
+                document.getElementById('cook1').checked = true;
+            }
+        }
 
         Object.keys(orderItems).forEach(idx => {
             if (!menuList[idx] || menuList[idx].isSoldOut) {
@@ -1657,32 +1675,6 @@
             } catch(e) {}
         })
         .catch(() => {});
-    }
-
-    function checkNicknameDuplication(inputElem) {
-        const nickname = inputElem.value.trim();
-        if (!nickname) return;
-
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'checkNickname', nickname: nickname, clientId: clientId })
-        })
-        .then(res => res.text())
-        .then(text => {
-            let data;
-            try { data = JSON.parse(text); } catch(e) {}
-
-            if (data && data.result === "blocked") {
-                enforceBlockedOverlay(data.reason || data.message);
-                return;
-            }
-
-            if (data && data.result === "duplicate") {
-                showCustomAlert('이미 다른 분이 사용 중이거나 등록된 닉네임입니다!<br>단골 혜택 구분을 위해 <b>전화번호 뒷자리</b>를 함께 적어주세요. (예: 장날삼촌5353)', '닉네임 중복 안내');
-            }
-        })
-        .catch(err => console.error("닉네임 중복 체크 오류:", err));
     }
 
     let isBgSyncing = false;
@@ -1974,14 +1966,6 @@
                     return;
                 }
 
-                if (data && data.result === "duplicate_nickname") {
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                    if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                    if (quickLoadBtn) quickLoadBtn.disabled = false;
-                    showCustomAlert('이미 다른 분이 사용 중이거나 등록된 단골 닉네임입니다!<br>본인의 닉네임이 맞으시다면 전화번호 뒷자리를 붙여서 고유하게 적어주세요. (예: 장날삼촌5353)', '닉네임 중복 차단');
-                    return;
-                }
-
                 if (data && data.result === "out_of_stock") {
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
                     if (quickLoadBtn) quickLoadBtn.disabled = false;
@@ -2082,9 +2066,10 @@
             return;
         }
 
-        const nickname = document.getElementById('nickname').value.trim();
+        const nickname = document.getElementById('nickname').value.trim() || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname');
         const selectedTime = quickPickupSelect.value;
         const secretCode = document.getElementById('quickSecretCodeInput') ? document.getElementById('quickSecretCodeInput').value.trim() : "";
+        const cookTypeElem = localStorage.getItem('lastOrderCookType') || "🍗 튀겨서 포장";
 
         if (!nickname) {
             showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
@@ -2118,12 +2103,11 @@
         }
 
         const lastPrice = localStorage.getItem('lastOrderPrice') || TripleStorage.getCookie('lastOrderPrice') || "0원";
-        const cookTypeElem = document.querySelector('input[name="cookType"]:checked');
 
         const orderData = {
             action: 'create',
             time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
-            cookType: cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장",
+            cookType: cookTypeElem,
             nickname: nickname,
             phone: "", 
             menuSummary: lastOrderStr,
@@ -2234,21 +2218,7 @@
     }
 
     function closeCustomAlert() {
-        const alertTitle = document.getElementById('customAlertTitle').textContent;
         hideModal('customAlertModal');
-
-        if (alertTitle === "닉네임 중복 안내" || alertTitle === "닉네임 중복 차단") {
-            const nickInput = document.getElementById('nickname');
-            if (nickInput) {
-                nickInput.value = "";
-                setTimeout(() => {
-                    nickInput.focus();
-                    nickInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 380);
-            }
-            return;
-        }
-
         if (isCanceledOrNotFound) {
             document.getElementById('alreadyOrderedNotice').style.display = 'none';
             document.getElementById('pickupCompletedNotice').style.display = 'none';
@@ -3049,7 +3019,6 @@
                 globalUserNickname = data.nickname || savedNick || data.recoveredNickname;
                 TripleStorage.save('savedNickname', globalUserNickname);
 
-                // 🎫 예약번호 배지 표시
                 const resNoTicketBox = document.getElementById('resNoTicketBox');
                 const displayResNo = document.getElementById('displayResNo');
                 if (data.reservationNo && resNoTicketBox && displayResNo) {
@@ -3218,6 +3187,7 @@
 
         const secretCode = document.getElementById('secretCodeInput') ? document.getElementById('secretCodeInput').value.trim() : "";
         const cookTypeElem = document.querySelector('input[name="cookType"]:checked');
+        const cookTypeValue = cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장";
         const menuSummaryText = buildMenuSummary(orderItems);
         const sauceSummaryText = buildSauceSummary(sauceItems);
         const priceText = calculateMainTotal().toLocaleString() + '원';
@@ -3226,7 +3196,7 @@
         const orderData = {
             action: 'create',
             time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
-            cookType: cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장",
+            cookType: cookTypeValue,
             nickname: nickname,
             phone: "", 
             menuSummary: menuSummaryText,
@@ -3242,6 +3212,7 @@
         TripleStorage.save('lastOrderSauce', sauceSummaryText);
         TripleStorage.save('lastOrderPrice', priceText);
         TripleStorage.save('lastOrderPickupTime', finalPickupTime);
+        TripleStorage.save('lastOrderCookType', cookTypeValue);
         TripleStorage.save('donkatsu_client_id', clientId);
         globalUserNickname = nickname;
 
@@ -3550,6 +3521,7 @@
                 TripleStorage.save('lastOrderSauce', newSauceSummary);
                 TripleStorage.save('lastOrderPrice', newTotalPrice);
                 TripleStorage.save('lastOrderPickupTime', newTime);
+                TripleStorage.save('lastOrderCookType', newCookType);
 
                 hideModal('orderSubmittingModal');
                 showCustomAlert('예약 내용이 성공적으로 변경되었습니다.', '변경 완료');
