@@ -1586,9 +1586,14 @@
         .catch(err => console.error("닉네임 중복 체크 오류:", err));
     }
 
+    let isBgSyncing = false;
     function fetchLatestSettingsInBackground() {
+        if (isBgSyncing || document.hidden) return;
+        isBgSyncing = true;
+
         const nickInput = document.getElementById('nickname');
-        const currentNick = (nickInput && nickInput.value.trim()) ? nickInput.value.trim() : (localStorage.getItem('savedNickname') || '');
+        const currentNick = (nickInput && nickInput.value.trim()) ? nickInput.value.trim() : (localStorage.getItem('savedNickname') || globalUserNickname || '');
+        
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
@@ -1598,27 +1603,190 @@
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
+                if (!settings) return;
+
                 if (settings.result === "blocked" || settings.isBlocked) {
                     enforceBlockedOverlay(settings.reason || settings.blockReason);
                     return;
                 }
+
                 if (settings.secretCode !== undefined) {
                     serverSecretCode = String(settings.secretCode).trim();
                 }
                 if (settings.maintenanceCode) {
                     serverMaintenanceCode = String(settings.maintenanceCode).trim();
                 }
-                if (settings.menuList && settings.menuList.length > 0) {
-                    menuList = settings.menuList;
-                    renderMenuCards();
+
+                const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
+                if (settings.isMaintenance && !isAdminPassed) {
+                    document.getElementById('maintenanceOverlay').style.display = 'flex';
+                    return;
+                } else {
+                    document.getElementById('maintenanceOverlay').style.display = 'none';
                 }
+
+                let timeChanged = false;
+                const newPrep = parseInt(settings.prepMinutes) || 0;
+                const newOpenH = parseInt(settings.openHour) !== undefined ? parseInt(settings.openHour) : 13;
+                const newOpenM = parseInt(settings.openMin) !== undefined ? parseInt(settings.openMin) : 0;
+                const newCloseH = parseInt(settings.closeHour) !== undefined ? parseInt(settings.closeHour) : 18;
+                const newCloseM = parseInt(settings.closeMin) !== undefined ? parseInt(settings.closeMin) : 30;
+                const newPStartH = parseInt(settings.pickupStartHour) !== undefined ? parseInt(settings.pickupStartHour) : 15;
+                const newPStartM = parseInt(settings.pickupStartMin) !== undefined ? parseInt(settings.pickupStartMin) : 0;
+                const newPCloseH = parseInt(settings.pickupCloseHour) !== undefined ? parseInt(settings.pickupCloseHour) : 20;
+                const newPCloseM = parseInt(settings.pickupCloseMin) !== undefined ? parseInt(settings.pickupCloseMin) : 0;
+
+                if (globalPrepMinutes !== newPrep || globalOpenHour !== newOpenH || globalOpenMin !== newOpenM ||
+                    globalCloseHour !== newCloseH || globalCloseMin !== newCloseM ||
+                    globalPickupStartHour !== newPStartH || globalPickupStartMin !== newPStartM ||
+                    globalPickupCloseHour !== newPCloseH || globalPickupCloseMin !== newPCloseM) {
+                    globalPrepMinutes = newPrep;
+                    globalOpenHour = newOpenH;
+                    globalOpenMin = newOpenM;
+                    globalCloseHour = newCloseH;
+                    globalCloseMin = newCloseM;
+                    globalPickupStartHour = newPStartH;
+                    globalPickupStartMin = newPStartM;
+                    globalPickupCloseHour = newPCloseH;
+                    globalPickupCloseMin = newPCloseM;
+                    timeChanged = true;
+                }
+
+                if (settings.pickupTimesList && JSON.stringify(globalPickupTimesList) !== JSON.stringify(settings.pickupTimesList)) {
+                    globalPickupTimesList = settings.pickupTimesList;
+                    timeChanged = true;
+                }
+                if (settings.fortuneList && settings.fortuneList.length > 0) globalFortuneList = settings.fortuneList;
+                if (settings.eventMenuList && settings.eventMenuList.length > 0) cachedEventMenuList = settings.eventMenuList;
+
+                let newlySoldOutNames = [];
+                let menuOrSauceChanged = false;
+
+                if (settings.menuList && settings.menuList.length > 0) {
+                    if (JSON.stringify(menuList) !== JSON.stringify(settings.menuList)) {
+                        menuOrSauceChanged = true;
+                    }
+                    settings.menuList.forEach((newItem, idx) => {
+                        const oldItem = menuList[idx];
+                        if (newItem.isSoldOut && (!oldItem || !oldItem.isSoldOut)) {
+                            const selectedQty = orderItems[idx] || 0;
+                            const editSelectedQty = editOrderItems[idx] || 0;
+                            if (selectedQty > 0) {
+                                delete orderItems[idx];
+                                newlySoldOutNames.push(newItem.shortName || newItem.name);
+                            } else if (editSelectedQty > (originalReservedItems['menu_' + idx] || 0)) {
+                                editOrderItems[idx] = originalReservedItems['menu_' + idx] || 0;
+                                if (editOrderItems[idx] === 0) delete editOrderItems[idx];
+                                newlySoldOutNames.push(newItem.shortName || newItem.name);
+                            }
+                        }
+                    });
+                    menuList = settings.menuList;
+                }
+
                 if (settings.sauceList && settings.sauceList.length > 0) {
+                    if (JSON.stringify(sauceList) !== JSON.stringify(settings.sauceList)) {
+                        menuOrSauceChanged = true;
+                    }
+                    settings.sauceList.forEach((newItem, idx) => {
+                        const oldItem = sauceList[idx];
+                        if (newItem.isSoldOut && (!oldItem || !oldItem.isSoldOut)) {
+                            const selectedQty = sauceItems[idx] || 0;
+                            const editSelectedQty = editSauceItems[idx] || 0;
+                            if (selectedQty > 0) {
+                                delete sauceItems[idx];
+                                if (typeof sauceOrderItems !== 'undefined') delete sauceOrderItems[idx];
+                                newlySoldOutNames.push(newItem.shortName || newItem.name);
+                            } else if (editSelectedQty > (originalReservedItems['sauce_' + idx] || 0)) {
+                                editSauceItems[idx] = originalReservedItems['sauce_' + idx] || 0;
+                                if (editSauceItems[idx] === 0) delete editSauceItems[idx];
+                                newlySoldOutNames.push(newItem.shortName || newItem.name);
+                            }
+                        }
+                    });
                     sauceList = settings.sauceList;
-                    if (typeof renderSauceCards === 'function') renderSauceCards();
+                }
+
+                if (menuOrSauceChanged || newlySoldOutNames.length > 0) {
+                    renderMenuCards();
+                    const quickBox = document.getElementById('quickReorderBox');
+                    if (quickBox && quickBox.style.display !== 'none') {
+                        checkQuickReorderData();
+                    }
+                }
+
+                if (timeChanged) {
+                    const prevMainVal = pickupSelect ? pickupSelect.value : "";
+                    initPickupOptions(pickupSelect, 'pickupFormGroup');
+                    if (prevMainVal && pickupSelect) {
+                        for (let i = 0; i < pickupSelect.options.length; i++) {
+                            if (pickupSelect.options[i].value === prevMainVal && !pickupSelect.options[i].disabled) {
+                                pickupSelect.value = prevMainVal;
+                                break;
+                            }
+                        }
+                    }
+
+                    const prevQuickVal = quickPickupSelect ? quickPickupSelect.value : "";
+                    initPickupOptions(quickPickupSelect, 'quickReorderBox');
+                    if (prevQuickVal && quickPickupSelect) {
+                        for (let i = 0; i < quickPickupSelect.options.length; i++) {
+                            if (quickPickupSelect.options[i].value === prevQuickVal && !quickPickupSelect.options[i].disabled) {
+                                quickPickupSelect.value = prevQuickVal;
+                                break;
+                            }
+                        }
+                    }
+
+                    const searchModal = document.getElementById('searchModal');
+                    if (searchModal && searchModal.classList.contains('active') && newPickupSelect) {
+                        const prevEditVal = newPickupSelect.value;
+                        const origTime = document.getElementById('resTime') ? document.getElementById('resTime').textContent.trim() : "";
+                        initPickupOptions(newPickupSelect, 'editPickupFormGroup', origTime);
+                        if (prevEditVal) {
+                            for (let i = 0; i < newPickupSelect.options.length; i++) {
+                                if (newPickupSelect.options[i].value === prevEditVal && !newPickupSelect.options[i].disabled) {
+                                    newPickupSelect.value = prevEditVal;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const alreadyNotice = document.getElementById('alreadyOrderedNotice');
+                if (!alreadyNotice || alreadyNotice.style.display === 'none') {
+                    const now = new Date();
+                    const currentTimeVal = now.getHours() * 60 + now.getMinutes();
+                    const openTimeVal = globalOpenHour * 60 + globalOpenMin;
+                    const closeTimeVal = globalCloseHour * 60 + globalCloseMin;
+                    const isClosed = (closeTimeVal < openTimeVal)
+                        ? (currentTimeVal > closeTimeVal && currentTimeVal < openTimeVal)
+                        : (currentTimeVal < openTimeVal || currentTimeVal > closeTimeVal);
+
+                    const closedNotice = document.getElementById('closedNotice');
+                    if (isClosed) {
+                        if (closedNotice && closedNotice.style.display === 'none') {
+                            checkClosedTimeAndRender(settings);
+                        }
+                    } else if (closedNotice && closedNotice.style.display !== 'none') {
+                        closedNotice.style.display = 'none';
+                        document.getElementById('topNoticeBox').style.display = 'block';
+                        document.getElementById('orderForm').style.display = 'block';
+                        checkQuickReorderData();
+                    }
+                }
+
+                if (newlySoldOutNames.length > 0) {
+                    const uniqueNames = [...new Set(newlySoldOutNames)];
+                    showCustomAlert(`방금 매장 재고 소진으로 <b>${uniqueNames.join(', ')}</b> 항목이 품절 처리되어 선택 목록에서 제외되었습니다!`, '품절 안내');
                 }
             } catch(e) {}
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+            isBgSyncing = false;
+        });
     }
 
     function sendOrderRequest(orderData, hasValidSecretCode) {
@@ -3260,7 +3428,7 @@
 
     setInterval(() => {
         fetchLatestSettingsInBackground();
-    }, 30000);
+    }, 7000);
 
     setInterval(() => {
         sendActiveHeartbeat();
@@ -3268,6 +3436,7 @@
 
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
+            fetchLatestSettingsInBackground();
             sendActiveHeartbeat();
         }
     });
