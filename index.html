@@ -1297,6 +1297,9 @@
     let pendingReduceAction = null;
     let pendingOrderPayload = null; 
 
+    let isSubmitting = false;
+    let isQuickSubmitting = false;
+
     const pickupSelect = document.getElementById('pickupTime');
     const quickPickupSelect = document.getElementById('quickPickupTime');
     const newPickupSelect = document.getElementById('newPickupTime');
@@ -1563,7 +1566,7 @@
 
         const quickSecretInput = document.getElementById('quickSecretCodeInput');
         if (quickSecretInput) quickSecretInput.value = "";
-        _quickWarningConfirmed = false;
+        _warningConfirmed = false;
 
         if (lastOrderStr) {
             let formattedMenuLines = lastOrderStr.split(',').map(item => `• ${item.trim()}`).join('<br>');
@@ -1762,210 +1765,6 @@
         .catch(() => {});
     }
 
-    let isBgSyncing = false;
-    function fetchLatestSettingsInBackground() {
-        if (isBgSyncing || document.hidden) return;
-        isBgSyncing = true;
-
-        const nickInput = document.getElementById('nickname');
-        const currentNick = (nickInput && nickInput.value.trim()) ? nickInput.value.trim() : (localStorage.getItem('savedNickname') || globalUserNickname || '');
-        
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getSettings', clientId: clientId, nickname: currentNick })
-        })
-        .then(res => res.text())
-        .then(settingsText => {
-            try {
-                const settings = JSON.parse(settingsText);
-                if (!settings) return;
-
-                if (settings.result === "blocked" || settings.isBlocked) {
-                    enforceBlockedOverlay(settings.reason || settings.blockReason);
-                    return;
-                }
-
-                if (settings.secretCode !== undefined) {
-                    serverSecretCode = String(settings.secretCode).trim();
-                }
-                if (settings.maintenanceCode) {
-                    serverMaintenanceCode = String(settings.maintenanceCode).trim();
-                }
-
-                const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
-                if (settings.isMaintenance && !isAdminPassed) {
-                    document.getElementById('maintenanceOverlay').style.display = 'flex';
-                    return;
-                } else {
-                    document.getElementById('maintenanceOverlay').style.display = 'none';
-                }
-
-                let timeChanged = false;
-                const newPrep = parseInt(settings.prepMinutes) || 0;
-                const newOpenH = parseInt(settings.openHour) !== undefined ? parseInt(settings.openHour) : 13;
-                const newOpenM = parseInt(settings.openMin) !== undefined ? parseInt(settings.openMin) : 0;
-                const newCloseH = parseInt(settings.closeHour) !== undefined ? parseInt(settings.closeHour) : 18;
-                const newCloseM = parseInt(settings.closeMin) !== undefined ? parseInt(settings.closeMin) : 30;
-                const newPStartH = parseInt(settings.pickupStartHour) !== undefined ? parseInt(settings.pickupStartHour) : 15;
-                const newPStartM = parseInt(settings.pickupStartMin) !== undefined ? parseInt(settings.pickupStartMin) : 0;
-                const newPCloseH = parseInt(settings.pickupCloseHour) !== undefined ? parseInt(settings.pickupCloseHour) : 20;
-                const newPCloseM = parseInt(settings.pickupCloseMin) !== undefined ? parseInt(settings.pickupCloseMin) : 0;
-
-                if (globalPrepMinutes !== newPrep || globalOpenHour !== newOpenH || globalOpenMin !== newOpenM ||
-                    globalCloseHour !== newCloseH || globalCloseMin !== newCloseM ||
-                    globalPickupStartHour !== newPStartH || globalPickupStartMin !== newPStartM ||
-                    globalPickupCloseHour !== newPCloseH || globalPickupCloseMin !== newPCloseM) {
-                    globalPrepMinutes = newPrep;
-                    globalOpenHour = newOpenH;
-                    globalOpenMin = newOpenM;
-                    globalCloseHour = newCloseH;
-                    globalCloseMin = newCloseM;
-                    globalPickupStartHour = newPStartH;
-                    globalPickupStartMin = newPStartM;
-                    globalPickupCloseHour = newPCloseH;
-                    globalPickupCloseMin = newPCloseM;
-                    timeChanged = true;
-                }
-
-                if (settings.pickupTimesList && JSON.stringify(globalPickupTimesList) !== JSON.stringify(settings.pickupTimesList)) {
-                    globalPickupTimesList = settings.pickupTimesList;
-                    timeChanged = true;
-                }
-                if (settings.fortuneList && settings.fortuneList.length > 0) globalFortuneList = settings.fortuneList;
-                if (settings.eventMenuList && settings.eventMenuList.length > 0) cachedEventMenuList = settings.eventMenuList;
-
-                let newlySoldOutNames = [];
-                let menuOrSauceChanged = false;
-
-                if (settings.menuList && settings.menuList.length > 0) {
-                    if (JSON.stringify(menuList) !== JSON.stringify(settings.menuList)) {
-                        menuOrSauceChanged = true;
-                    }
-                    settings.menuList.forEach((newItem, idx) => {
-                        const oldItem = menuList[idx];
-                        if (newItem.isSoldOut && (!oldItem || !oldItem.isSoldOut)) {
-                            const selectedQty = orderItems[idx] || 0;
-                            const editSelectedQty = editOrderItems[idx] || 0;
-                            if (selectedQty > 0) {
-                                delete orderItems[idx];
-                                newlySoldOutNames.push(newItem.shortName || newItem.name);
-                            } else if (editSelectedQty > (originalReservedItems['menu_' + idx] || 0)) {
-                                editOrderItems[idx] = originalReservedItems['menu_' + idx] || 0;
-                                if (editOrderItems[idx] === 0) delete editOrderItems[idx];
-                                newlySoldOutNames.push(newItem.shortName || newItem.name);
-                            }
-                        }
-                    });
-                    menuList = settings.menuList;
-                }
-
-                if (settings.sauceList && settings.sauceList.length > 0) {
-                    if (JSON.stringify(sauceList) !== JSON.stringify(settings.sauceList)) {
-                        menuOrSauceChanged = true;
-                    }
-                    settings.sauceList.forEach((newItem, idx) => {
-                        const oldItem = sauceList[idx];
-                        if (newItem.isSoldOut && (!oldItem || !oldItem.isSoldOut)) {
-                            const selectedQty = sauceItems[idx] || 0;
-                            const editSelectedQty = editSauceItems[idx] || 0;
-                            if (selectedQty > 0) {
-                                delete sauceItems[idx];
-                                if (typeof sauceOrderItems !== 'undefined') delete sauceOrderItems[idx];
-                                newlySoldOutNames.push(newItem.shortName || newItem.name);
-                            } else if (editSelectedQty > (originalReservedItems['sauce_' + idx] || 0)) {
-                                editSauceItems[idx] = originalReservedItems['sauce_' + idx] || 0;
-                                if (editSauceItems[idx] === 0) delete editSauceItems[idx];
-                                newlySoldOutNames.push(newItem.shortName || newItem.name);
-                            }
-                        }
-                    });
-                    sauceList = settings.sauceList;
-                }
-
-                if (menuOrSauceChanged || newlySoldOutNames.length > 0) {
-                    renderMenuCards();
-                    const quickBox = document.getElementById('quickReorderBox');
-                    if (quickBox && quickBox.style.display !== 'none') {
-                        checkQuickReorderData();
-                    }
-                }
-
-                if (timeChanged) {
-                    const prevMainVal = pickupSelect ? pickupSelect.value : "";
-                    initPickupOptions(pickupSelect, 'pickupFormGroup');
-                    if (prevMainVal && pickupSelect) {
-                        for (let i = 0; i < pickupSelect.options.length; i++) {
-                            if (pickupSelect.options[i].value === prevMainVal && !pickupSelect.options[i].disabled) {
-                                pickupSelect.value = prevMainVal;
-                                break;
-                            }
-                        }
-                    }
-
-                    const prevQuickVal = quickPickupSelect ? quickPickupSelect.value : "";
-                    initPickupOptions(quickPickupSelect, 'quickReorderBox');
-                    if (prevQuickVal && quickPickupSelect) {
-                        for (let i = 0; i < quickPickupSelect.options.length; i++) {
-                            if (quickPickupSelect.options[i].value === prevQuickVal && !quickPickupSelect.options[i].disabled) {
-                                quickPickupSelect.value = prevQuickVal;
-                                break;
-                            }
-                        }
-                    }
-
-                    const searchModal = document.getElementById('searchModal');
-                    if (searchModal && searchModal.classList.contains('active') && newPickupSelect) {
-                        const prevEditVal = newPickupSelect.value;
-                        const origTime = document.getElementById('resTime') ? document.getElementById('resTime').textContent.trim() : "";
-                        initPickupOptions(newPickupSelect, 'editPickupFormGroup', origTime);
-                        if (prevEditVal) {
-                            for (let i = 0; i < newPickupSelect.options.length; i++) {
-                                if (newPickupSelect.options[i].value === prevEditVal && !newPickupSelect.options[i].disabled) {
-                                    newPickupSelect.value = prevEditVal;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                const alreadyNotice = document.getElementById('alreadyOrderedNotice');
-                const completedNotice = document.getElementById('pickupCompletedNotice');
-                if ((!alreadyNotice || alreadyNotice.style.display === 'none') && (!completedNotice || completedNotice.style.display === 'none')) {
-                    const now = new Date();
-                    const currentTimeVal = now.getHours() * 60 + now.getMinutes();
-                    const openTimeVal = globalOpenHour * 60 + globalOpenMin;
-                    const closeTimeVal = globalCloseHour * 60 + globalCloseMin;
-                    const isClosed = (closeTimeVal < openTimeVal)
-                        ? (currentTimeVal > closeTimeVal && currentTimeVal < openTimeVal)
-                        : (currentTimeVal < openTimeVal || currentTimeVal > closeTimeVal);
-
-                    const closedNotice = document.getElementById('closedNotice');
-                    if (isClosed) {
-                        if (closedNotice && closedNotice.style.display === 'none') {
-                            checkClosedTimeAndRender(settings);
-                        }
-                    } else if (closedNotice && closedNotice.style.display !== 'none') {
-                        closedNotice.style.display = 'none';
-                        document.getElementById('topNoticeBox').style.display = 'block';
-                        document.getElementById('orderForm').style.display = 'block';
-                        checkQuickReorderData();
-                    }
-                }
-
-                if (newlySoldOutNames.length > 0) {
-                    const uniqueNames = [...new Set(newlySoldOutNames)];
-                    showCustomAlert(`방금 매장 재고 소진으로 <b>${uniqueNames.join(', ')}</b> 항목이 품절 처리되어 선택 목록에서 제외되었습니다!`, '품절 안내');
-                }
-            } catch(e) {}
-        })
-        .catch(() => {})
-        .finally(() => {
-            isBgSyncing = false;
-        });
-    }
-
     function showSuccessModalWithResNo(reservationNo) {
         const resNoBox = document.getElementById('successModalResNoBox');
         const resNoText = document.getElementById('successModalResNo');
@@ -2003,6 +1802,9 @@
             if (inputCode !== "" && !isReallyValid) {
                 hideModal('orderSubmittingModal');
                 hideModal('rouletteModal');
+                
+                isSubmitting = false;
+                isQuickSubmitting = false;
                 const submitBtn = document.getElementById('submitBtn');
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
                 const quickSubmitBtn = document.getElementById('quickSubmitBtn');
@@ -2034,6 +1836,9 @@
                 if (hasValidSecretCode || isReallyValid) {
                     hideModal('rouletteModal');
                 }
+
+                isSubmitting = false;
+                isQuickSubmitting = false;
 
                 if (data && data.result === "blocked") {
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
@@ -2087,6 +1892,9 @@
             })
             .catch(err => {
                 console.error(err);
+                isSubmitting = false;
+                isQuickSubmitting = false;
+
                 const submitBtn = document.getElementById('submitBtn');
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
                 const quickSubmitBtn = document.getElementById('quickSubmitBtn');
@@ -2101,6 +1909,8 @@
             });
         })
         .catch(() => {
+            isSubmitting = false;
+            isQuickSubmitting = false;
             hideModal('orderSubmittingModal');
             hideModal('rouletteModal');
             showCustomAlert('시크릿 코드 확인 중 통신 오류가 발생했습니다.', '통신 오류');
@@ -2140,6 +1950,8 @@
     let _warningConfirmed = false;
 
     function executeQuickReorder() {
+        if (isQuickSubmitting) return;
+
         const quickSubmitBtn = document.getElementById('quickSubmitBtn');
 
         const lastOrderStr = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
@@ -2214,18 +2026,20 @@
             return;
         }
 
+        isQuickSubmitting = true;
+        if (quickSubmitBtn) {
+            quickSubmitBtn.disabled = true;
+            quickSubmitBtn.textContent = "예약 접수 중...";
+        }
+        const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
+        if (quickLoadBtn) quickLoadBtn.disabled = true;
+
         if (secretCode === "") {
             showModal('orderSubmittingModal');
             const subTitle1 = document.getElementById('submittingModalTitle');
             const subDesc1 = document.getElementById('submittingModalDesc');
             if (subTitle1) subTitle1.textContent = "직전 메뉴로 바로예약을 접수하고 있어요";
             if (subDesc1) subDesc1.textContent = "잠시만 기다려 주세요. 3초 만에 빠르게 처리 중입니다!";
-            if (quickSubmitBtn) {
-                quickSubmitBtn.disabled = true;
-                quickSubmitBtn.textContent = "예약 접수 중...";
-            }
-            const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
-            if (quickLoadBtn) quickLoadBtn.disabled = true;
         }
 
         processOrderSubmission(orderData, secretCode);
@@ -2234,6 +2048,9 @@
     function handleSecretCodeChoice(isProceedGeneral) {
         hideModal('secretCodeConfirmModal');
         if (isProceedGeneral && pendingOrderPayload) {
+            isSubmitting = true;
+            isQuickSubmitting = true;
+
             const submitBtn = document.getElementById('submitBtn');
             if (submitBtn && document.getElementById('orderForm').style.display !== 'none') {
                 submitBtn.disabled = true;
@@ -3234,6 +3051,8 @@
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        if (isSubmitting) return;
+
         const submitBtn = document.getElementById('submitBtn');
 
         const nickname = document.getElementById('nickname').value.trim();
@@ -3307,16 +3126,18 @@
             return;
         }
 
+        isSubmitting = true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "예약 접수 중...";
+        }
+
         if (secretCode === "") {
             showModal('orderSubmittingModal');
             const subTitle2 = document.getElementById('submittingModalTitle');
             const subDesc2 = document.getElementById('submittingModalDesc');
             if (subTitle2) subTitle2.textContent = "예약을 안전하게 접수하고 있어요";
             if (subDesc2) subDesc2.textContent = "잠시만 기다려 주세요. 튀김기 현장으로 전달 중입니다!";
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = "예약 접수 중...";
-            }
         }
 
         processOrderSubmission(orderData, secretCode);
@@ -3610,7 +3431,7 @@
 
                 hideModal('orderSubmittingModal');
                 showCustomAlert('예약 내용이 성공적으로 변경되었습니다.', '변경 완료');
-                closeSearchOutput = closeSearchModal();
+                closeSearchModal();
                 updateBtn.disabled = false;
                 updateBtn.textContent = "변경된 내용 저장하기";
                 document.getElementById('pageLoadingOverlay').style.display = 'flex';
@@ -3630,44 +3451,6 @@
             updateBtn.textContent = "변경된 내용 저장하기";
         });
     }
-
-    function sendActiveHeartbeat() {
-        if (document.hidden) return;
-        const nickInput = document.getElementById('nickname');
-        const currentNick = (nickInput && nickInput.value.trim()) ? nickInput.value.trim() : (localStorage.getItem('savedNickname') || globalUserNickname || '미입력고객');
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'heartbeat',
-                clientId: clientId,
-                nickname: currentNick
-            })
-        }).catch(() => {});
-    }
-
-    setInterval(() => {
-        fetchLatestSettingsInBackground();
-    }, 7000);
-
-    setInterval(() => {
-        sendActiveHeartbeat();
-    }, 25000);
-
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            fetchLatestSettingsInBackground();
-            sendActiveHeartbeat();
-        }
-    });
-
-    window.addEventListener('beforeunload', () => {
-        navigator.sendBeacon(WEB_APP_URL, JSON.stringify({ 
-            action: 'heartbeat', 
-            clientId: clientId, 
-            nickname: 'EXIT' 
-        }));
-    });
 </script>
 
 </body>
