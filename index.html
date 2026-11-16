@@ -1777,143 +1777,118 @@
         showModal('successModal');
     }
 
+    // 💡 최적화 핵심: 선행 getSettings 호출을 완전 제거하고 곧바로 단발성 create 요청 전송
     function sendOrderRequest(orderData, hasValidSecretCode) {
+        const inputCode = orderData.secretCode ? orderData.secretCode.trim() : "";
+        const isReallyValid = (serverSecretCode && inputCode !== "" && inputCode === serverSecretCode);
+
+        if (inputCode !== "" && !isReallyValid) {
+            hideModal('orderSubmittingModal');
+            hideModal('rouletteModal');
+            
+            isSubmitting = false;
+            isQuickSubmitting = false;
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
+            
+            pendingOrderPayload = { orderData: orderData, secretCode: inputCode };
+            showModal('secretCodeConfirmModal');
+            return;
+        }
+
+        orderData.secretCode = isReallyValid ? inputCode : "";
+
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getSettings', clientId: clientId, nickname: orderData.nickname })
+            body: JSON.stringify(orderData)
         })
         .then(res => res.text())
-        .then(settingsText => {
-            try {
-                const settings = JSON.parse(settingsText);
-                if (settings.result === "blocked" || settings.isBlocked) {
-                    enforceBlockedOverlay(settings.reason || settings.blockReason);
-                    return;
-                }
-                if (settings.secretCode !== undefined) {
-                    serverSecretCode = String(settings.secretCode).trim();
-                }
-            } catch(e) {}
-
-            const inputCode = orderData.secretCode ? orderData.secretCode.trim() : "";
-            const isReallyValid = (inputCode !== "" && inputCode === serverSecretCode);
-
-            if (inputCode !== "" && !isReallyValid) {
-                hideModal('orderSubmittingModal');
+        .then(text => {
+            let data;
+            try { data = JSON.parse(text); } catch(e) {}
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
+            const quickBox = document.getElementById('quickReorderBox');
+            
+            hideModal('orderSubmittingModal');
+            if (hasValidSecretCode || isReallyValid) {
                 hideModal('rouletteModal');
-                
-                isSubmitting = false;
-                isQuickSubmitting = false;
-                const submitBtn = document.getElementById('submitBtn');
+            }
+
+            isSubmitting = false;
+            isQuickSubmitting = false;
+
+            if (data && data.result === "blocked") {
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
                 if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                
-                pendingOrderPayload = { orderData: orderData, secretCode: inputCode };
-                showModal('secretCodeConfirmModal');
+                if (quickLoadBtn) quickLoadBtn.disabled = false;
+                enforceBlockedOverlay(data.reason || data.message);
                 return;
             }
 
-            orderData.secretCode = isReallyValid ? inputCode : "";
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(orderData)
-            })
-            .then(res => res.text())
-            .then(text => {
-                let data;
-                try { data = JSON.parse(text); } catch(e) {}
-                
-                const submitBtn = document.getElementById('submitBtn');
-                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-                const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
-                const quickBox = document.getElementById('quickReorderBox');
-                
-                hideModal('orderSubmittingModal');
-                if (hasValidSecretCode || isReallyValid) {
-                    hideModal('rouletteModal');
-                }
-
-                isSubmitting = false;
-                isQuickSubmitting = false;
-
-                if (data && data.result === "blocked") {
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                    if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                    if (quickLoadBtn) quickLoadBtn.disabled = false;
-                    enforceBlockedOverlay(data.reason || data.message);
-                    return;
-                }
-
-                if (data && data.result === "closed") {
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                    if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                    if (quickLoadBtn) quickLoadBtn.disabled = false;
-                    showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
-                    return;
-                }
-
-                if (data && data.result === "out_of_stock") {
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                    if (quickLoadBtn) quickLoadBtn.disabled = false;
-                    refreshSoldOutStateSilently(data.menuName);
-                    showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
-                    return;
-                }
-
-                if (data && data.syncedClientId) {
-                    clientId = data.syncedClientId;
-                    persistentClientId = data.syncedClientId;
-                    TripleStorage.save('donkatsu_client_id', clientId);
-                }
-
-                const issuedResNo = (data && data.reservationNo) ? data.reservationNo : "";
-                if (issuedResNo) {
-                    TripleStorage.save('lastReservationNo', issuedResNo);
-                }
-
+            if (data && data.result === "closed") {
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
                 if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
                 if (quickLoadBtn) quickLoadBtn.disabled = false;
-                if (quickBox) quickBox.style.display = 'none';
+                showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
+                return;
+            }
 
-                if (isReallyValid) {
-                    if (data && data.isWinner) {
-                        openEventWinModal(data.eventMenuList);
-                    } else {
-                        showModal('eventFailModal');
-                    }
+            if (data && data.result === "out_of_stock") {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
+                if (quickLoadBtn) quickLoadBtn.disabled = false;
+                refreshSoldOutStateSilently(data.menuName);
+                showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
+                return;
+            }
+
+            if (data && data.syncedClientId) {
+                clientId = data.syncedClientId;
+                persistentClientId = data.syncedClientId;
+                TripleStorage.save('donkatsu_client_id', clientId);
+            }
+
+            const issuedResNo = (data && data.reservationNo) ? data.reservationNo : "";
+            if (issuedResNo) {
+                TripleStorage.save('lastReservationNo', issuedResNo);
+            }
+
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
+            if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
+            if (quickLoadBtn) quickLoadBtn.disabled = false;
+            if (quickBox) quickBox.style.display = 'none';
+
+            if (isReallyValid) {
+                if (data && data.isWinner) {
+                    openEventWinModal(data.eventMenuList);
                 } else {
-                    showSuccessModalWithResNo(issuedResNo);
+                    showModal('eventFailModal');
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                isSubmitting = false;
-                isQuickSubmitting = false;
-
-                const submitBtn = document.getElementById('submitBtn');
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-                if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
-                if (quickLoadBtn) quickLoadBtn.disabled = false;
-                hideModal('orderSubmittingModal');
-                if (hasValidSecretCode || isReallyValid) {
-                    hideModal('rouletteModal');
-                }
-                showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
-            });
+            } else {
+                showSuccessModalWithResNo(issuedResNo);
+            }
         })
-        .catch(() => {
+        .catch(err => {
+            console.error(err);
             isSubmitting = false;
             isQuickSubmitting = false;
+
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
+            const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
+            if (quickLoadBtn) quickLoadBtn.disabled = false;
             hideModal('orderSubmittingModal');
-            hideModal('rouletteModal');
-            showCustomAlert('시크릿 코드 확인 중 통신 오류가 발생했습니다.', '통신 오류');
+            if (hasValidSecretCode || isReallyValid) {
+                hideModal('rouletteModal');
+            }
+            showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
         });
     }
 
