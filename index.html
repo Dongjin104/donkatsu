@@ -442,6 +442,84 @@
         .kakao-btn { background-color: #FEE500; color: #3C1E1E; border: 1.5px solid #FAD000; padding: 12px; font-size: 14px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 8px; width: 100%; display: block; text-decoration: none; text-align: center; box-shadow: var(--shadow-card); transition: filter 0.2s, transform 0.15s; }
         .kakao-btn:hover { filter: brightness(0.97); transform: translateY(-1px); }
 
+        /* 👑 프리미엄 딥 차콜 & 샴페인 골드 시크릿 이벤트 영역 */
+        .secret-code-card {
+            background: linear-gradient(180deg, #FBF8F0 0%, #F6F0E2 100%);
+            border: 1.5px solid #DFC793;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 14px rgba(197, 160, 89, 0.08);
+            text-align: left;
+        }
+        .secret-code-label {
+            font-size: 13.5px;
+            color: #7A5C18;
+            margin-bottom: 6px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: -0.02em;
+        }
+        .secret-code-input {
+            background: #FFFFFF !important;
+            border: 1.5px solid #D5B87A !important;
+            font-size: 12.5px !important;
+            color: var(--text-main) !important;
+        }
+        .secret-code-input:focus {
+            border-color: var(--accent-dark) !important;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.2) !important;
+        }
+        .secret-code-desc {
+            font-size: 11.5px;
+            color: #8C6D1F;
+            margin-top: 6px;
+            line-height: 1.4;
+            font-weight: 500;
+            word-break: keep-all;
+        }
+        .secret-code-room-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 11px;
+            padding: 11px 14px;
+            background: linear-gradient(135deg, #1C1B18 0%, #2E2C27 100%);
+            color: #F3D999;
+            border: 1.5px solid #C5A059;
+            border-radius: 9px;
+            font-size: 12.5px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 6px 14px rgba(28, 27, 24, 0.14);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            word-break: keep-all;
+        }
+        .secret-code-room-btn:hover {
+            background: linear-gradient(135deg, #2A2824 0%, #3B3832 100%);
+            border-color: #E6C584;
+            color: #FFFFFF;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(28, 27, 24, 0.2);
+        }
+        .secret-code-room-btn:active {
+            transform: translateY(0);
+        }
+        .secret-btn-badge {
+            background: rgba(197, 160, 89, 0.22);
+            color: #E6C584;
+            border: 1px solid rgba(197, 160, 89, 0.45);
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.03em;
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+
         .share-link-btn { background-color: #FAFAF9; color: var(--text-main); border: 1.5px solid var(--border-color); padding: 12px; font-size: 14px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 8px; width: 100%; box-shadow: var(--shadow-card); transition: all 0.2s; line-height: 1.4; text-align: center; }
         .share-link-btn:hover { background-color: #FAFAF9; border-color: #D1CFCD; transform: translateY(-1px); }
 
@@ -850,14 +928,21 @@
             <div id="quickBusyInfoBox" class="busy-info-box"></div>
         </div>
 
-        <div style="margin-bottom: 14px; text-align: left; background: #fff8e1; border: 1.5px dashed #ffa726; padding: 12px; border-radius: 10px;">
-            <label for="quickSecretCodeInput" style="font-size: 13.5px; color: #e65100; margin-bottom: 5px; font-weight: 700;">
-                🎁 톡방 시크릿 이벤트 코드 (선택)
+        <div class="secret-code-card" style="margin-bottom: 14px;">
+            <label for="quickSecretCodeInput" class="secret-code-label">
+                <span>🎁</span> 톡방 시크릿 이벤트 코드 (선택)
             </label>
-            <input type="text" id="quickSecretCodeInput" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!" style="background: #ffffff; border-color: #ffb74d; font-size: 11.5px;">
-            <div style="font-size: 11px; color: #af601a; margin-top: 4px; line-height: 1.35;">
+            <input type="text" id="quickSecretCodeInput" class="secret-code-input" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!">
+            <div class="secret-code-desc">
                 💡 톡방 공지의 암호를 입력하고 예약을 누르면 삼촌의 깜짝 선물 뽑기가 열립니다!
             </div>
+            <a href="https://open.kakao.com/o/gX95pGRi" target="_blank" class="secret-code-room-btn">
+                <span style="display: flex; align-items: center;">
+                    <span class="secret-btn-badge">CODE</span>
+                    <span>오픈채팅방에 오늘의 시크릿 코드 확인</span>
+                </span>
+                <span style="color: #E6C584; font-size: 14px;">→</span>
+            </a>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -890,14 +975,21 @@
             </div>
         </div>
 
-        <div class="form-group" style="background: #fff8e1; border: 1.5px dashed #ffa726; padding: 14px; border-radius: 10px;">
-            <label for="secretCodeInput" style="font-size: 14px; color: #e65100; margin-bottom: 5px; font-weight: 700;">
-                🎁 톡방 시크릿 이벤트 코드 입력 (선택)
+        <div class="form-group secret-code-card">
+            <label for="secretCodeInput" class="secret-code-label">
+                <span>🎁</span> 톡방 시크릿 이벤트 코드 입력 (선택)
             </label>
-            <input type="text" id="secretCodeInput" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!" style="background: #ffffff; border-color: #ffb74d; font-size: 11.5px;">
-            <div style="font-size: 12px; color: #af601a; margin-top: 5px; line-height: 1.4;">
+            <input type="text" id="secretCodeInput" class="secret-code-input" placeholder="카카오톡 돈가스방 공지의 오늘의 코드 입력!">
+            <div class="secret-code-desc">
                 💡 톡방 공지의 암호를 입력하고 예약을 누르면 삼촌의 깜짝 선물 뽑기가 열립니다!
             </div>
+            <a href="https://open.kakao.com/o/gX95pGRi" target="_blank" class="secret-code-room-btn">
+                <span style="display: flex; align-items: center;">
+                    <span class="secret-btn-badge">CODE</span>
+                    <span>오픈채팅방에서 오늘의 시크릿 코드 확인</span>
+                </span>
+                <span style="color: #E6C584; font-size: 14px;">→</span>
+            </a>
         </div>
 
         <div class="form-group">
@@ -1777,7 +1869,6 @@
         showModal('successModal');
     }
 
-    // 💡 최적화 핵심: 선행 getSettings 호출을 완전 제거하고 곧바로 단발성 create 요청 전송
     function sendOrderRequest(orderData, hasValidSecretCode) {
         const inputCode = orderData.secretCode ? orderData.secretCode.trim() : "";
         const isReallyValid = (serverSecretCode && inputCode !== "" && inputCode === serverSecretCode);
