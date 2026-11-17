@@ -136,6 +136,48 @@
             border-color: #D1CFCD;
             box-shadow: 0 6px 18px -4px rgba(28, 27, 24, 0.05);
         }
+
+        /* 🔥 인기메뉴(HOT) 프리미엄 강조 스타일 */
+        .menu-item-card.hot-menu {
+            background: linear-gradient(135deg, #FFFDF8 0%, #FDF6E4 100%);
+            border: 2px solid #C5A059;
+            box-shadow: 0 10px 24px -6px rgba(197, 160, 89, 0.28), 0 2px 6px rgba(28, 27, 24, 0.04);
+        }
+        .menu-item-card.hot-menu:hover {
+            border-color: #B48A3E;
+            box-shadow: 0 12px 28px -6px rgba(197, 160, 89, 0.36);
+        }
+        .menu-item-card.hot-menu .menu-thumb {
+            border: 2px solid #C5A059;
+        }
+        .menu-item-card.hot-menu .menu-title {
+            color: #1C1B18;
+            font-weight: 800;
+        }
+        .menu-item-card.hot-menu .menu-price {
+            color: #9A6B16;
+            font-weight: 800;
+        }
+        .hot-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: linear-gradient(135deg, #1C1B18 0%, #34312B 100%);
+            color: #F6DFA4;
+            border: 1px solid #C5A059;
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.02em;
+            box-shadow: 0 2px 6px rgba(28, 27, 24, 0.16);
+            margin-bottom: 3px;
+            width: fit-content;
+        }
+        .hot-badge-fire {
+            font-size: 11px;
+            line-height: 1;
+        }
         
         .menu-item-card.sold-out {
             background-color: #FAFAF9;
@@ -2538,9 +2580,25 @@
         if (editContainer) editContainer.innerHTML = '';
         if (typeof menuList === 'undefined' || !menuList) return;
 
-        menuList.forEach((item, idx) => {
+        // 원본 인덱스(idx)를 보존한 채 HOT 최신순 -> 일반 메뉴 원래 순서대로 정렬
+        const sortedMenuEntries = menuList.map((item, idx) => ({ item, idx }));
+        sortedMenuEntries.sort((a, b) => {
+            const aHot = a.item.isHot ? 1 : 0;
+            const bHot = b.item.isHot ? 1 : 0;
+            if (aHot !== bHot) return bHot - aHot; // HOT 메뉴 최상단 노출
+            if (aHot === 1 && bHot === 1) {
+                const diff = (Number(b.item.hotOrder) || 0) - (Number(a.item.hotOrder) || 0);
+                if (diff !== 0) return diff; // 마지막으로 HOT 변경한 메뉴가 가장 위
+            }
+            return a.idx - b.idx; // 나머지는 메뉴판 시트 원래 순서 유지
+        });
+
+        sortedMenuEntries.forEach(({ item, idx }) => {
             const card = document.createElement('div');
             card.classList.add('menu-item-card');
+            if (item.isHot) {
+                card.classList.add('hot-menu');
+            }
             
             let safeUrl = "";
             if (item.imageUrl) {
@@ -2579,7 +2637,10 @@
 
             const detailsDiv = document.createElement('div');
             detailsDiv.classList.add('menu-details');
-            detailsDiv.innerHTML = formatMenuName(item.name) + '<div class="menu-price">' + formattedPriceStr + '</div>';
+            const hotBadgeHtml = item.isHot
+                ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span> 인기추천 HOT</div>`
+                : '';
+            detailsDiv.innerHTML = hotBadgeHtml + formatMenuName(item.name) + '<div class="menu-price">' + formattedPriceStr + '</div>';
             topDiv.appendChild(detailsDiv);
             card.appendChild(topDiv);
 
