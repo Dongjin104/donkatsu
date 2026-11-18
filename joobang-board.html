@@ -587,6 +587,12 @@
 
         function renderOrders(orders) {
             const container = document.getElementById('orderContainer');
+            
+            // 🛡️ [방어 코드 추가] 데이터가 배열이 아니거나 정상적이지 않으면 빈 배열로 보정
+            if (!Array.isArray(orders)) {
+                orders = [];
+            }
+
             if (!orders || orders.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
                 document.getElementById('unconfirmedCount').innerText = 0;
