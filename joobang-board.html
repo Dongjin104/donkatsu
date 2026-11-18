@@ -297,19 +297,6 @@
             letter-spacing: -0.5px;
         }
 
-        /* 🎫 예약번호 고급 배지 */
-        .reservation-no-badge {
-            background: linear-gradient(135deg, rgba(197, 160, 89, 0.25), rgba(197, 160, 89, 0.1));
-            color: #E6C584;
-            border: 1px solid rgba(197, 160, 89, 0.5);
-            font-size: 0.72rem;
-            font-weight: 800;
-            padding: 1px 6px;
-            border-radius: 4px;
-            letter-spacing: 0.03em;
-            white-space: nowrap;
-        }
-
         .winner-badge {
             background: rgba(236, 72, 153, 0.15);
             color: #f472b6;
@@ -647,21 +634,12 @@
                     eventDetailHtml = `<span class="winner-badge">🎁 ${eventText}</span>`;
                 }
 
-                let resNoDisplay = '';
-                if (item.reservationNo) {
-                    let cleanNo = String(item.reservationNo).trim();
-                    if (cleanNo !== '') {
-                        resNoDisplay = `<span class="reservation-no-badge">🎫 #${cleanNo}</span>`;
-                    }
-                }
-
                 html += `
                     <div class="order-item ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}">
                         <div class="order-info">
                             <div class="top-row">
                                 <div class="time-group">
                                     <span class="time-tag">⏰ ${item.pickupTime}</span>
-                                    ${resNoDisplay}
                                     ${eventDetailHtml}
                                 </div>
                                 <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
