@@ -42,7 +42,7 @@
             max-width: 600px; 
             margin: 0 auto; 
             background: var(--surface-color); 
-            padding: 20px 16px; 
+            padding: 20px 16px 120px 16px; 
             border-radius: var(--radius-lg); 
             box-shadow: var(--shadow-card); 
             border: 1px solid rgba(230, 227, 218, 0.6);
@@ -116,6 +116,287 @@
             border-color: var(--accent-dark); 
             color: #ffffff; 
             box-shadow: 0 4px 12px rgba(28, 27, 24, 0.12);
+        }
+
+        /* 조리/데우기 안내 배너 & 팝업 스타일 */
+        .cook-guide-strip {
+            margin-top: 8px;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+        .cook-guide-strip.fried-mode {
+            background-color: #FAFAF9;
+            border: 1.5px solid var(--border-color);
+        }
+        .cook-guide-strip.raw-mode {
+            background: linear-gradient(135deg, #FBF8F0 0%, #F7F0DE 100%);
+            border: 1.5px solid #DFC793;
+        }
+        .cook-guide-strip-text {
+            font-size: 12.5px;
+            line-height: 1.38;
+            word-break: keep-all;
+            font-weight: 600;
+            flex: 1;
+        }
+        .cook-guide-strip.fried-mode .cook-guide-strip-text {
+            color: var(--text-sub);
+        }
+        .cook-guide-strip.raw-mode .cook-guide-strip-text {
+            color: #7A5C18;
+        }
+        .cook-guide-trigger-btn {
+            flex-shrink: 0;
+            padding: 6px 11px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .cook-guide-strip.fried-mode .cook-guide-trigger-btn {
+            background: #FFFFFF;
+            color: var(--text-main);
+            border: 1.5px solid #D8D4C9;
+            box-shadow: 0 2px 5px rgba(28, 27, 24, 0.04);
+        }
+        .cook-guide-strip.fried-mode .cook-guide-trigger-btn:hover {
+            background: var(--surface-sub);
+            border-color: var(--accent-dark);
+        }
+        .cook-guide-strip.raw-mode .cook-guide-trigger-btn {
+            background: var(--accent-dark);
+            color: #F3D999;
+            border: 1.5px solid #C5A059;
+            box-shadow: 0 3px 8px rgba(28, 27, 24, 0.12);
+        }
+        .cook-guide-strip.raw-mode .cook-guide-trigger-btn:hover {
+            background: #2F2D29;
+            color: #FFFFFF;
+        }
+
+        /* 예약 완료 화면 전용 프리미엄 조리 가이드 카드 (시인성 강화) */
+        .completed-guide-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 14px 14px;
+            background: linear-gradient(135deg, #FFFDF7 0%, #F8EED6 100%);
+            border: 2px solid #C5A059;
+            border-radius: var(--radius-md);
+            box-shadow: 0 8px 20px -6px rgba(197, 160, 89, 0.32), 0 2px 6px rgba(28, 27, 24, 0.04);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            word-break: keep-all;
+        }
+        .completed-guide-card:hover {
+            border-color: #A88032;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px -6px rgba(197, 160, 89, 0.42);
+        }
+        .completed-guide-card:active {
+            transform: translateY(0);
+        }
+        .completed-guide-card.raw-highlight {
+            background: linear-gradient(135deg, #FFF9EB 0%, #F5E3B8 100%);
+            border: 2px solid #B48228;
+            box-shadow: 0 8px 22px -4px rgba(180, 130, 40, 0.38);
+        }
+        .completed-guide-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+        .completed-guide-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            width: fit-content;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: #1C1B18;
+            color: #F6DFA4;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin-bottom: 2px;
+        }
+        .completed-guide-title {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #1C1B18;
+            line-height: 1.3;
+        }
+        .completed-guide-sub {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7A5C18;
+            line-height: 1.35;
+        }
+        .completed-guide-cta {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 9px 12px;
+            background: linear-gradient(135deg, #1C1B18 0%, #322F2A 100%);
+            color: #F6DFA4;
+            border: 1.5px solid #C5A059;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(28, 27, 24, 0.16);
+        }
+
+        .guide-tab-group {
+            display: flex;
+            background: var(--surface-sub);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            margin-bottom: 14px;
+            gap: 4px;
+        }
+        .guide-tab-btn {
+            flex: 1;
+            padding: 9px 8px;
+            border: none;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-sub);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .guide-tab-btn.active {
+            background: var(--accent-dark);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(28, 27, 24, 0.14);
+        }
+        .guide-section-box {
+            text-align: left;
+            word-break: keep-all;
+        }
+        .guide-variance-banner {
+            background: #FFF1F2;
+            border: 1.5px solid #FECDD3;
+            border-radius: var(--radius-sm);
+            padding: 11px 12px;
+            margin-bottom: 12px;
+            font-size: 12.8px;
+            color: #9F1239;
+            line-height: 1.5;
+            font-weight: 600;
+        }
+        .guide-highlight-card {
+            background: var(--accent-gold-bg);
+            border: 1.5px solid #DFC793;
+            border-radius: var(--radius-sm);
+            padding: 11px 12px;
+            margin-bottom: 12px;
+            font-size: 12.8px;
+            color: #7A5C18;
+            line-height: 1.5;
+        }
+        .guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            font-size: 12.5px;
+            background: #FFFFFF;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1.5px solid var(--border-color);
+        }
+        .guide-table th {
+            background: var(--accent-dark);
+            color: #F6DFA4;
+            font-weight: 700;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .guide-table td {
+            padding: 9px 7px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            vertical-align: middle;
+            line-height: 1.38;
+        }
+        .guide-table tr:last-child td {
+            border-bottom: none;
+        }
+        .guide-table td.menu-col {
+            font-weight: 800;
+            text-align: center;
+            background: #FAFAF9;
+            width: 26%;
+        }
+        .guide-table td.time-col {
+            font-weight: 800;
+            color: #9A6B16;
+            text-align: center;
+            width: 26%;
+        }
+        .guide-tip-list {
+            background: #FAFAF9;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 11px 12px;
+            font-size: 12.5px;
+            color: var(--text-sub);
+            line-height: 1.55;
+        }
+        .guide-tip-list div {
+            margin-bottom: 6px;
+        }
+        .guide-tip-list div:last-child {
+            margin-bottom: 0;
+        }
+        .reheat-method-card {
+            background: #FAFAF9;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 11px 12px;
+            margin-bottom: 8px;
+        }
+        .reheat-method-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .reheat-badge {
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: var(--accent-dark);
+            color: #F6DFA4;
+        }
+        .reheat-method-desc {
+            font-size: 12.5px;
+            color: var(--text-sub);
+            line-height: 1.48;
         }
 
         .menu-grid { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
@@ -300,13 +581,6 @@
         }
         .item-q-btn:hover:not(:disabled) { background-color: #EBE8E1; border-color: #D1CFCD; }
         .item-q-btn:disabled { background-color: #F5F4F0 !important; color: #C5C2BA !important; cursor: not-allowed !important; border-color: #EFEFEF !important; }
-        .item-qty-display {
-            flex: 1;
-            text-align: center;
-            font-weight: 800;
-            font-size: 14px;
-            color: var(--text-main);
-        }
 
         .sauce-grid { 
             display: grid; 
@@ -337,9 +611,6 @@
             filter: grayscale(30%);
         }
 
-        .sauce-info { display: flex; flex-direction: column; gap: 1px; flex: 1; z-index: 1; }
-        .sauce-title { font-weight: 700; font-size: 13px; color: var(--text-main); }
-        .sauce-price { font-size: 12px; color: var(--text-sub); font-weight: 600; }
         .sauce-card-bottom {
             display: flex;
             justify-content: center;
@@ -348,25 +619,7 @@
             padding-top: 5px;
         }
 
-        .selected-summary-box { background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 10px 12px; border-radius: var(--radius-sm); margin-top: 12px; font-size: 13.5px; color: var(--text-main); line-height: 1.5; text-align: left; }
         .summary-item-line { display: block; margin-bottom: 2px; font-weight: 600; color: var(--text-main); }
-
-        .total-price-box { 
-            background: var(--accent-dark); 
-            border: none; 
-            padding: 12px 16px; 
-            border-radius: var(--radius-sm); 
-            text-align: right; 
-            margin-top: 10px; 
-            font-size: 15px; 
-            font-weight: 700; 
-            color: #ffffff; 
-            box-shadow: 0 8px 20px rgba(28, 27, 24, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .total-price-box span { color: #E6C584; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
 
         .submit-btn { 
             width: 100%; 
@@ -660,7 +913,7 @@
             padding: 12px 12px; 
             border-radius: var(--radius-sm); 
             text-align: left; 
-            margin-bottom: 14px; 
+            margin-bottom: 12px; 
             font-size: 14px; 
             color: var(--text-main); 
         }
@@ -722,8 +975,9 @@
             padding-bottom: 2px;
             border-bottom: 1px dashed var(--border-color);
         }
-        .container {
-            padding-bottom: 120px !important; 
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-8px); }
         }
     </style>
 </head>
@@ -894,6 +1148,16 @@
             <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 12px; margin-bottom: 2px; padding: 13px; font-size: 15px; border-radius: var(--radius-sm); white-space: nowrap; font-weight: 800;" onclick="openSearchModal()">✏️ 내 예약 내용 수정하기</button>
         </div>
 
+        <!-- 예약 완료 화면 독립 샴페인 골드 조리·데우기 가이드 카드 -->
+        <div id="completedCookGuideCard" class="completed-guide-card" role="button" tabindex="0" onclick="openCookingGuideModal('reheat')">
+            <div class="completed-guide-info">
+                <div id="completedCookGuideBadge" class="completed-guide-badge">🍗 데우기 가이드</div>
+                <div id="completedCookGuideTitle" class="completed-guide-title">집에서도 바삭하게 데우는 법</div>
+                <div id="completedCookGuideSub" class="completed-guide-sub">에어프라이어 · 프라이팬 · 전자레인지 황금시간</div>
+            </div>
+            <div id="completedCookGuideCta" class="completed-guide-cta">가이드 보기 →</div>
+        </div>
+
         <div id="fortuneSection" style="display: none; margin-bottom: 12px; text-align: center;">
             <button id="fortuneOpenBtn" onclick="openFortuneCookie()" style="width: 100%; background: var(--accent-gold-bg); border: 2px dashed #FCD34D; padding: 12px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; color: #B45309; cursor: pointer; box-shadow: var(--shadow-card);">
                 🥠 [클릭] 오늘의 포춘쿠키 열어보기 ✨
@@ -960,13 +1224,17 @@
             <label>1. 조리 방식을 선택해주세요 *</label>
             <div class="radio-group">
                 <div class="radio-btn">
-                    <input type="radio" id="cook1" name="cookType" value="🍗 튀겨서 포장" checked>
+                    <input type="radio" id="cook1" name="cookType" value="🍗 튀겨서 포장" checked onchange="updateMainCookGuideBanner()">
                     <label for="cook1">튀겨서 포장</label>
                 </div>
                 <div class="radio-btn">
-                    <input type="radio" id="cook2" name="cookType" value="🥩 생고기(반죽+빵가루)">
+                    <input type="radio" id="cook2" name="cookType" value="🥩 생고기(반죽+빵가루)" onchange="updateMainCookGuideBanner()">
                     <label for="cook2">생고기<br><small style="font-size:11px; font-weight:normal; opacity:0.85;">(반죽+빵가루)</small></label>
                 </div>
+            </div>
+            <div id="mainCookGuideStrip" class="cook-guide-strip fried-mode">
+                <div id="mainCookGuideText" class="cook-guide-strip-text">식었을 때도 맛있게 데우는 법</div>
+                <button type="button" id="mainCookGuideBtn" class="cook-guide-trigger-btn" onclick="openCookingGuideModal('reheat')">데우는 법 안내</button>
             </div>
         </div>
 
@@ -1029,6 +1297,125 @@
     </form>
 </div>
 
+<!-- 조리 & 데우기 안내 팝업 -->
+<div id="cookingGuideModal" class="modal" style="z-index: 10036;">
+    <div class="modal-content" style="max-width: 440px; padding: 22px 15px;">
+        <h3 style="color: var(--text-main); margin-bottom: 10px; font-size: 18px;">맛있게 조리 &amp; 데우는 방법</h3>
+
+        <div class="guide-variance-banner">
+            ⚠️ <b>기기 및 조리 환경 편차 안내:</b> 가정용 에어프라이어·프라이팬·전자레인지의 출력(W)과 기기 성능, 보관 상태(냉장/냉동)에 따라 조리 시간이 달라질 수 있습니다. 안내된 시간은 권장 기준이니 <b>종료 1~2분 전 상태를 꼭 먼저 확인</b>해 주세요.
+        </div>
+
+        <div class="guide-tab-group">
+            <button type="button" id="guideTabReheat" class="guide-tab-btn active" onclick="switchCookingGuideTab('reheat')">🍗 튀긴 돈가스 데우기</button>
+            <button type="button" id="guideTabRaw" class="guide-tab-btn" onclick="switchCookingGuideTab('raw')">🥩 생고기(세트별) 조리법</button>
+        </div>
+
+        <!-- 탭 1: 튀겨서 나간 돈가스 데우기 -->
+        <div id="guideContentReheat" class="guide-section-box">
+            <div class="guide-highlight-card">
+                <b>핵심 포인트:</b> 수분이 갇혀 눅눅해지지 않도록 <b>뚜껑이나 랩을 씌우지 않고</b> 열기를 날려주며 데우는 것이 가장 바삭합니다.
+            </div>
+
+            <div class="reheat-method-card">
+                <div class="reheat-method-title">
+                    <span>1. 에어프라이어 조리</span>
+                    <span class="reheat-badge">가장 추천 · 바삭함 유지</span>
+                </div>
+                <div class="reheat-method-desc">
+                    • <b>180도에서 4~6분</b>간 데워주세요. (치즈가스는 치즈가 흐르지 않게 <b>3~4분</b> 권장)<br>
+                    • 이미 한 번 튀겨져 기름기를 머금고 있으므로 식용유를 추가로 바르실 필요가 없습니다.
+                </div>
+            </div>
+
+            <div class="reheat-method-card">
+                <div class="reheat-method-title">
+                    <span>2. 프라이팬 조리</span>
+                    <span class="reheat-badge">겉바속촉</span>
+                </div>
+                <div class="reheat-method-desc">
+                    • 기름을 두르지 않은 마른 팬을 <b>약불</b>로 예열한 뒤, 앞뒤로 뒤집어가며 <b>각 1분 30초~2분씩</b> 천천히 구워주세요.<br>
+                    • 센 불은 빵가루만 탈 수 있으니 반드시 약불을 유지해 주세요.
+                </div>
+            </div>
+
+            <div class="reheat-method-card" style="margin-bottom: 4px;">
+                <div class="reheat-method-title">
+                    <span>3. 전자레인지 조리</span>
+                    <span class="reheat-badge" style="background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color);">간편 조리</span>
+                </div>
+                <div class="reheat-method-desc">
+                    • 랩을 씌우지 않고 <b>30초~1분</b>만 짧게 데워주세요.<br>
+                    • 오래 돌리면 빵가루가 눅눅해지고 고기가 질겨질 수 있습니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭 2: 생고기(미조리) 세트별 조리법 -->
+        <div id="guideContentRaw" class="guide-section-box" style="display: none;">
+            <div class="guide-highlight-card">
+                <b>필수 사전 준비 (에어프라이어 조리 시):</b><br>
+                조리 전 빵가루 겉면 앞뒤로 <b>식용유(오일 스프레이·붓·숟가락 활용)를 넉넉히 발라주셔야</b> 하얗게 마르지 않고 매장처럼 노릇하고 바삭하게 익습니다.
+            </div>
+
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th>세트 / 메뉴 구성</th>
+                        <th>에어프라이어<br>(180도 기준)</th>
+                        <th>뒤집기 &amp; 조리 포인트</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="menu-col">세트 1<br><span style="font-size:11px; font-weight:600; color:var(--text-sub);">등심 5장</span></td>
+                        <td class="time-col">180도<br>12~14분</td>
+                        <td><b>7분 후 뒤집기</b><br>성인 손바닥 크기입니다. 바스켓에 겹치지 않게 펴서 구워주세요.</td>
+                    </tr>
+                    <tr>
+                        <td class="menu-col">세트 2<br><span style="font-size:11px; font-weight:600; color:var(--text-sub);">치즈 3장</span></td>
+                        <td class="time-col">180도<br>10~12분</td>
+                        <td><b>6분 후 뒤집기</b><br>너무 오래 돌리면 치즈가 터지므로 <b>치즈가 살짝 배어 나올 때</b> 바로 꺼내세요.</td>
+                    </tr>
+                    <tr>
+                        <td class="menu-col">세트 3<br><span style="font-size:11px; font-weight:600; color:var(--text-sub);">등심2 + 치즈2</span></td>
+                        <td class="time-col">180도<br>10~13분</td>
+                        <td><b>6분 후 뒤집기</b><br>치즈가스는 <b>10~11분경 먼저 꺼내시고</b>, 등심만 1~2분 더 익혀주시면 완벽합니다.</td>
+                    </tr>
+                    <tr>
+                        <td class="menu-col">세트 4<br><span style="font-size:11px; font-weight:600; color:var(--text-sub);">새우 5마리</span></td>
+                        <td class="time-col">180도<br>10~12분</td>
+                        <td><b>6분 후 뒤집기</b><br>새우는 빠르게 익으므로 오래 돌리면 식감이 질겨질 수 있습니다.</td>
+                    </tr>
+                    <tr>
+                        <td class="menu-col">세트 5<br><span style="font-size:11px; font-weight:600; color:var(--text-sub);">닭안심 13개</span></td>
+                        <td class="time-col">180도<br>10~12분</td>
+                        <td><b>6분 후 뒤집기</b><br>손가락 두 마디 크기의 한입 사이즈입니다. <b>산처럼 쌓지 말고 펼쳐서</b>(필요시 2회 나눠) 구워주세요.</td>
+                    </tr>
+                    <tr>
+                        <td class="menu-col">세트 6<br><span style="font-size:11px; font-weight:600; color:var(--text-sub);">등심2 + 안심8</span></td>
+                        <td class="time-col">180도<br>10~13분</td>
+                        <td><b>6분 후 뒤집기</b><br>작은 닭안심은 <b>10~11분경 먼저 꺼내시고</b>, 등심만 1~2분 더 익히면 퍽퍽하지 않습니다.</td>
+                    </tr>
+                    <tr>
+                        <td class="menu-col">모듬메뉴<br><span style="font-size:10.5px; font-weight:600; color:var(--text-sub);">등심2·치즈2<br>새우2·안심6</span></td>
+                        <td class="time-col">180도<br>10~13분</td>
+                        <td><b>6분 후 뒤집기 · 2회 분할 추천</b><br>양과 종류가 다양하므로 2번 나눠 구우시고, <b>치즈·새우·안심은 10~11분경 먼저</b>, <b>등심은 1~2분 더</b> 조리해 주세요.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="guide-tip-list">
+                <div><b>1. 프라이팬 기름 튀김 시 (전 메뉴 공통):</b> 매장 튀김기(165도, 4분)는 고기 전체가 푹 잠겨 익지만, 가정집 프라이팬은 기름 깊이가 얕아 열이 천천히 들어갑니다. 기름을 넉넉히 두르고 <b>한 면당 2~3분씩 앞뒤로 뒤집어가며 총 5~7분 정도</b> 노릇하게 익혀주세요.</div>
+                <div><b>2. 불 조절 및 속 익힘 확인:</b> 등심이나 치즈가 들어간 메뉴는 겉이 먼저 타지 않도록 <b>중불~약불로 조절</b>하면서 익히시고, 두꺼운 고기는 <b>가위로 한 점 잘라 속까지 하얗게 익었는지 확인</b>해 주세요. 작은 안심·새우는 먼저 꺼내거나 불을 줄여 마무리하세요.</div>
+                <div><b>3. 냉동 보관 후 조리 시:</b> 위 시간은 <b>당일 냉장(생물) 기준</b>입니다. 냉동 보관 후에는 해동 없이 <b>170도에서 안내 시간보다 3~5분 더</b> 조리해 주세요.</div>
+            </div>
+        </div>
+
+        <button type="button" class="modal-btn" style="margin-top: 14px;" onclick="closeCookingGuideModal()">확인했습니다</button>
+    </div>
+</div>
+
 <div id="orderSubmittingModal" class="modal" style="z-index: 10045;">
     <div class="modal-content" style="padding: 28px 18px; max-width: 360px; text-align: center;">
         <div style="font-size: 36px; margin-bottom: 10px; animation: bounce 0.6s infinite alternate;">⏳</div>
@@ -1050,18 +1437,11 @@
     </div>
 </div>
 
-<style>
-@keyframes bounce {
-    from { transform: translateY(0); }
-    to { transform: translateY(-8px); }
-}
-</style>
-
 <div id="noticeModal" class="modal" style="z-index: 10035;">
     <div class="modal-content" style="text-align: left;">
-        <h3 style="color: var(--text-main); text-align: center; margin-bottom: 14px;">📢 단골 혜택 & 이용 안내</h3>
+        <h3 style="color: var(--text-main); text-align: center; margin-bottom: 14px;">📢 단골 혜택 &amp; 이용 안내</h3>
         <div style="font-size: 14px; color: var(--text-sub); line-height: 1.7; margin-bottom: 20px;">
-            • <b>온라인 예약 시간</b> <br>매일 오후1시부터 오후6시 30분까지 가능합니다.(주말&공휴일 제외)<br>
+            • <b>온라인 예약 시간</b> <br>매일 오후1시부터 오후6시 30분까지 가능합니다.(주말&amp;공휴일 제외)<br>
             • <b>돈가스 픽업 시간</b> <br>매일 오후3시부터 오후8시까지 가능합니다. <br>6시 30분에 모든 예약건을 만들어 놓기때문에 8시에 찾아가실 수는 있으나 음식이 식을 수 있습니다.<br>
             • <b>방문 횟수 적립</b> <br>최초 예약 닉네임과 전화번호를 그대로 유지하시면 단골 방문 횟수가 자동으로 쌓여 다양한 혜택을 드려요!<br>
             • <b>픽업 안내</b> <br>예약 시간에 맞춰 오셔서 예약하신 닉네임을 말씀해 주세요.<br>
@@ -1201,13 +1581,17 @@
                 <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">조리 방식 변경</span>
                 <div class="radio-group">
                     <div class="radio-btn">
-                        <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장">
+                        <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장" onchange="updateEditCookGuideBanner()">
                         <label for="editCook1" style="font-size:13.5px; min-height:42px;">튀겨서 포장</label>
                     </div>
                     <div class="radio-btn">
-                        <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)">
+                        <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)" onchange="updateEditCookGuideBanner()">
                         <label for="editCook2" style="font-size:13.5px; min-height:42px;">생고기(반죽+빵가루)</label>
                     </div>
+                </div>
+                <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
+                    <div id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 맛있게 데우는 법</div>
+                    <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn" onclick="openCookingGuideModal('reheat')">데우는 법 안내</button>
                 </div>
             </div>
 
@@ -1391,12 +1775,124 @@
 
     let isSubmitting = false;
     let isQuickSubmitting = false;
+    let currentCompletedCookType = "🍗 튀겨서 포장";
 
     const pickupSelect = document.getElementById('pickupTime');
     const quickPickupSelect = document.getElementById('quickPickupTime');
     const newPickupSelect = document.getElementById('newPickupTime');
 
     let scrollPosition = 0;
+
+    function isRawCookType(rawType) {
+        if (!rawType) return false;
+        const str = String(rawType).trim();
+        return str.includes("비튀김") || str.includes("생고기") || str.includes("안튀김");
+    }
+
+    function applyGuideBannerState(stripId, textId, btnId, isRaw) {
+        const strip = document.getElementById(stripId);
+        const textEl = document.getElementById(textId);
+        const btnEl = document.getElementById(btnId);
+        if (!strip || !textEl || !btnEl) return;
+
+        if (isRaw) {
+            strip.classList.remove('fried-mode');
+            strip.classList.add('raw-mode');
+            textEl.textContent = "생고기 조리법 · 세트별 에어프라이어·프라이팬 시간 안내";
+            btnEl.textContent = "조리법 보기";
+            btnEl.onclick = function() { openCookingGuideModal('raw'); };
+        } else {
+            strip.classList.remove('raw-mode');
+            strip.classList.add('fried-mode');
+            textEl.textContent = "식었을 때도 맛있게 데우는 법";
+            btnEl.textContent = "데우는 법 안내";
+            btnEl.onclick = function() { openCookingGuideModal('reheat'); };
+        }
+    }
+
+    function updateMainCookGuideBanner() {
+        const checked = document.querySelector('input[name="cookType"]:checked');
+        const isRaw = checked ? isRawCookType(checked.value) : false;
+        applyGuideBannerState('mainCookGuideStrip', 'mainCookGuideText', 'mainCookGuideBtn', isRaw);
+    }
+
+    function updateEditCookGuideBanner() {
+        const checked = document.querySelector('input[name="editCookType"]:checked');
+        const isRaw = checked ? isRawCookType(checked.value) : false;
+        applyGuideBannerState('editCookGuideStrip', 'editCookGuideText', 'editCookGuideBtn', isRaw);
+    }
+
+    function updateCompletedCookGuideCard(rawCookType) {
+        currentCompletedCookType = rawCookType || "🍗 튀겨서 포장";
+        const isRaw = isRawCookType(currentCompletedCookType);
+        const cardEl = document.getElementById('completedCookGuideCard');
+        const badgeEl = document.getElementById('completedCookGuideBadge');
+        const titleEl = document.getElementById('completedCookGuideTitle');
+        const subEl = document.getElementById('completedCookGuideSub');
+        const ctaEl = document.getElementById('completedCookGuideCta');
+        if (!cardEl || !badgeEl || !titleEl || !subEl || !ctaEl) return;
+
+        if (isRaw) {
+            cardEl.classList.add('raw-highlight');
+            badgeEl.textContent = "🥩 생고기 조리 필독";
+            titleEl.textContent = "세트별 맛있게 굽는 법 보기";
+            subEl.textContent = "에어프라이어 · 프라이팬 시간 & 뒤집기 팁";
+            ctaEl.textContent = "조리법 보기 →";
+            cardEl.onclick = function() { openCookingGuideModal('raw'); };
+        } else {
+            cardEl.classList.remove('raw-highlight');
+            badgeEl.textContent = "🍗 데우기 가이드";
+            titleEl.textContent = "집에서도 바삭하게 데우는 법";
+            subEl.textContent = "에어프라이어 · 프라이팬 · 전자레인지 황금시간";
+            ctaEl.textContent = "가이드 보기 →";
+            cardEl.onclick = function() { openCookingGuideModal('reheat'); };
+        }
+    }
+
+    function switchCookingGuideTab(tabName) {
+        const tabReheat = document.getElementById('guideTabReheat');
+        const tabRaw = document.getElementById('guideTabRaw');
+        const contentReheat = document.getElementById('guideContentReheat');
+        const contentRaw = document.getElementById('guideContentRaw');
+
+        if (tabName === 'raw') {
+            if (tabReheat) tabReheat.classList.remove('active');
+            if (tabRaw) tabRaw.classList.add('active');
+            if (contentReheat) contentReheat.style.display = 'none';
+            if (contentRaw) contentRaw.style.display = 'block';
+        } else {
+            if (tabRaw) tabRaw.classList.remove('active');
+            if (tabReheat) tabReheat.classList.add('active');
+            if (contentRaw) contentRaw.style.display = 'none';
+            if (contentReheat) contentReheat.style.display = 'block';
+        }
+    }
+
+    function openCookingGuideModal(defaultTab) {
+        let targetTab = defaultTab;
+        if (!targetTab) {
+            const activeForm = document.getElementById('orderForm');
+            const editModal = document.getElementById('searchModal');
+            const completedNotice = document.getElementById('alreadyOrderedNotice');
+            if (editModal && editModal.classList.contains('active')) {
+                const c = document.querySelector('input[name="editCookType"]:checked');
+                targetTab = (c && isRawCookType(c.value)) ? 'raw' : 'reheat';
+            } else if (activeForm && activeForm.style.display !== 'none') {
+                const c = document.querySelector('input[name="cookType"]:checked');
+                targetTab = (c && isRawCookType(c.value)) ? 'raw' : 'reheat';
+            } else if (completedNotice && completedNotice.style.display !== 'none') {
+                targetTab = isRawCookType(currentCompletedCookType) ? 'raw' : 'reheat';
+            } else {
+                targetTab = 'reheat';
+            }
+        }
+        switchCookingGuideTab(targetTab);
+        showModal('cookingGuideModal');
+    }
+
+    function closeCookingGuideModal() {
+        hideModal('cookingGuideModal');
+    }
 
     function enforceBlockedOverlay(reasonText) {
         const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
@@ -1463,6 +1959,10 @@
     }
 
     window.addEventListener('DOMContentLoaded', async function() {
+        updateMainCookGuideBanner();
+        updateEditCookGuideBanner();
+        updateCompletedCookGuideCard("🍗 튀겨서 포장");
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('out')) {
             localStorage.removeItem('isDonkatsuAdmin');
@@ -1764,12 +2264,13 @@
         parseSauceStringToObj(lastSauce, sauceItems);
 
         if (lastCookType) {
-            if (lastCookType.includes("생고기") || lastCookType.includes("비튀김") || lastCookType.includes("안튀김")) {
+            if (isRawCookType(lastCookType)) {
                 document.getElementById('cook2').checked = true;
             } else {
                 document.getElementById('cook1').checked = true;
             }
         }
+        updateMainCookGuideBanner();
 
         Object.keys(orderItems).forEach(idx => {
             if (!menuList[idx] || menuList[idx].isSoldOut) {
@@ -2167,7 +2668,7 @@
     function formatCookType(rawType) {
         if (!rawType) return "튀겨서 포장";
         let str = String(rawType).trim();
-        if (str.includes("비튀김") || str.includes("생고기") || str.includes("안튀김")) {
+        if (isRawCookType(str)) {
             return "생고기(반죽+빵가루)";
         }
         return "튀겨서 포장";
@@ -2532,17 +3033,16 @@
         if (editContainer) editContainer.innerHTML = '';
         if (typeof menuList === 'undefined' || !menuList) return;
 
-        // 원본 인덱스(idx)를 보존한 채 HOT 최신순 -> 일반 메뉴 원래 순서대로 정렬
         const sortedMenuEntries = menuList.map((item, idx) => ({ item, idx }));
         sortedMenuEntries.sort((a, b) => {
             const aHot = a.item.isHot ? 1 : 0;
             const bHot = b.item.isHot ? 1 : 0;
-            if (aHot !== bHot) return bHot - aHot; // HOT 메뉴 최상단 노출
+            if (aHot !== bHot) return bHot - aHot;
             if (aHot === 1 && bHot === 1) {
                 const diff = (Number(b.item.hotOrder) || 0) - (Number(a.item.hotOrder) || 0);
-                if (diff !== 0) return diff; // 마지막으로 HOT 변경한 메뉴가 가장 위
+                if (diff !== 0) return diff;
             }
-            return a.idx - b.idx; // 나머지는 메뉴판 시트 원래 순서 유지
+            return a.idx - b.idx;
         });
 
         sortedMenuEntries.forEach(({ item, idx }) => {
@@ -3002,6 +3502,7 @@
 
                 document.getElementById('displayNick').textContent = globalUserNickname;
                 document.getElementById('displayCookType').textContent = formatCookType(data.cookType);
+                updateCompletedCookGuideCard(data.cookType);
                 
                 let rawMenu = data.menu || "-";
                 document.getElementById('displayMenu').innerHTML = rawMenu.split(',').map(item => `• ${item.trim()}`).join('<br>');
@@ -3074,6 +3575,7 @@
             document.getElementById('pageLoadingOverlay').style.display = 'none';
             document.getElementById('topNoticeBox').style.display = 'block';
             document.getElementById('orderForm').style.display = 'block';
+            updateMainCookGuideBanner();
         });
     }
 
@@ -3110,6 +3612,7 @@
         document.getElementById('alreadyOrderedNotice').style.display = 'none';
         document.getElementById('pickupCompletedNotice').style.display = 'none';
         document.getElementById('orderForm').style.display = 'block';
+        updateMainCookGuideBanner();
         checkQuickReorderData();
     }
 
@@ -3340,11 +3843,12 @@
                     document.getElementById('resTime').textContent = cleanPickupTime;
                     
                     const savedCookType = String(data.cookType || "").trim();
-                    if (savedCookType.includes("비튀김") || savedCookType.includes("생고기") || savedCookType.includes("안튀김")) {
+                    if (isRawCookType(savedCookType)) {
                         document.getElementById('editCook2').checked = true;
                     } else {
                         document.getElementById('editCook1').checked = true;
                     }
+                    updateEditCookGuideBanner();
 
                     parseMenuStringToObj(data.menu, editOrderItems);
                     parseSauceStringToObj(data.sauce, editSauceItems);
