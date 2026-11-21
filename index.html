@@ -3858,6 +3858,15 @@ function extractDriveFileId(rawUrl) {
             checkClosedTimeAndRender(loadSettingsCache());
         }
 
+        function formatCustomerCookType(rawType) {
+            const str = String(rawType || '').trim();
+            if (!str) return '튀겨서 포장';
+            if (str.includes('생고기') || str.includes('비튀김') || str.includes('안튀김')) {
+                return '생고기(반죽+빵가루)';
+            }
+            return '튀겨서 포장';
+        }
+
         function renderActiveReservationScreen(data) {
             currentFoundRowIndex = data.rowIndex;
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
@@ -3871,6 +3880,8 @@ function extractDriveFileId(rawUrl) {
                 }
             }
 
+            const customerCookType = formatCustomerCookType(data.cookType);
+
             document.getElementById('alreadyOrderedNotice').style.display = 'block';
             document.getElementById('orderForm').style.display = 'none';
             document.getElementById('quickReorderBox').style.display = 'none';
@@ -3880,8 +3891,8 @@ function extractDriveFileId(rawUrl) {
             document.getElementById('pageLoadingOverlay').style.display = 'none';
 
             document.getElementById('displayNick').textContent = resolvedNick;
-            document.getElementById('displayCookType').textContent = data.cookType || '';
-            updateCompletedCookGuideCard(data.cookType || '');
+            document.getElementById('displayCookType').textContent = customerCookType;
+            updateCompletedCookGuideCard(customerCookType);
 
             const menuLines = String(data.menu || '').split(',').map(s => s.trim()).filter(Boolean);
             document.getElementById('displayMenu').innerHTML = menuLines.length > 0
@@ -3927,7 +3938,7 @@ function extractDriveFileId(rawUrl) {
             if (data.menu) {
                 TripleStorage.save('lastOrderSummary', JSON.stringify({
                     nickname: resolvedNick,
-                    cookType: data.cookType || '🍗 튀겨서 포장',
+                    cookType: customerCookType,
                     menuSummary: String(data.menu),
                     sauce: data.sauce || '없음',
                     totalPrice: String(formatPriceNumber(data.totalPrice))
@@ -3936,7 +3947,7 @@ function extractDriveFileId(rawUrl) {
 
             saveCustomerStateCache({
                 type: 'active_order',
-                reservation: data
+                reservation: Object.assign({}, data, { cookType: customerCookType })
             });
 
             startOrderStatusPolling(false);
