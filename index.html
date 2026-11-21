@@ -955,15 +955,47 @@
             border-top: 1px solid var(--border-color);
             z-index: 99;
         }
+        .menu-item-card.selected-item,
+        .sauce-item-card.selected-item {
+            border-color: var(--accent-dark);
+            background: #F4F7F4;
+            box-shadow: 0 4px 14px rgba(28, 27, 24, 0.08);
+        }
+        .menu-item-card.hot-menu.selected-item {
+            border-color: #B48A3E;
+            background: linear-gradient(135deg, #FFFDF4 0%, #F9ECCB 100%);
+            box-shadow: 0 6px 18px rgba(197, 160, 89, 0.28);
+        }
+        .selected-qty-badge {
+            display: inline-block;
+            background: var(--accent-dark);
+            color: #F6DFA4;
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 1px 7px;
+            border-radius: 10px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        .inline-helper-note {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #7A5C18;
+            background: var(--accent-gold-bg);
+            border: 1px solid #EBD9B0;
+            padding: 7px 10px;
+            border-radius: 8px;
+            line-height: 1.4;
+            font-weight: 600;
+            word-break: keep-all;
+        }
         .sticky-summary-bar {
             background: #FAFAF9;
             border: 1.5px solid var(--border-color);
-            padding: 6px 10px;
+            padding: 7px 10px;
             border-radius: var(--radius-sm);
             margin-bottom: 6px;
             font-size: 12.5px;
-            max-height: 72px;
-            overflow-y: auto;
             text-align: left;
             box-shadow: 0 2px 6px rgba(28, 27, 24, 0.03);
         }
@@ -1193,6 +1225,9 @@
         <div style="margin-bottom: 12px; text-align: left;">
             <label for="quickPickupTime" style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 5px;">픽업 시간 선택 *</label>
             <select id="quickPickupTime" style="padding: 11px 12px; font-size: 14px;" onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
+            <div class="inline-helper-note">
+                ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다.
+            </div>
             <div id="quickBusyInfoBox" class="busy-info-box"></div>
         </div>
 
@@ -1243,7 +1278,7 @@
             <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
             <div style="margin-top: 8px; font-size: 12.5px; color: #B45309; background: var(--accent-gold-bg); padding: 10px 12px; border-radius: var(--radius-sm); border: 1.5px solid #F3E6C8; line-height: 1.5; font-weight: 500;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
-                꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라지수 있으니 변경하지 말고 쭉 유지해 주세요!
+                꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라질 수 있으니 변경하지 말고 쭉 유지해 주세요!
             </div>
         </div>
 
@@ -1271,12 +1306,18 @@
 
         <div class="form-group">
             <label>4. 추가 소스 선택</label>
+            <div class="inline-helper-note" style="margin-top: 0; margin-bottom: 8px;">
+                💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가로 더 필요하신 경우에만 수량을 선택해 주세요!
+            </div>
             <div id="sauceCardContainer" class="sauce-grid"></div>
         </div>
 
         <div class="form-group" id="pickupFormGroup">
             <label for="pickupTime">5. 픽업 시간 선택 *</label>
             <select id="pickupTime" required onchange="handleTimeChange(this, 'mainBusyInfoBox')"></select>
+            <div class="inline-helper-note">
+                ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다. (늦게 오실 경우 음식이 식을 수 있습니다)
+            </div>
             <div id="mainBusyInfoBox" class="busy-info-box"></div>
         </div>
 
@@ -1602,6 +1643,9 @@
 
             <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
                 <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">추가 소스 변경</span>
+                <div class="inline-helper-note" style="margin-top: 0; margin-bottom: 6px;">
+                    💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가분만 선택해 주세요.
+                </div>
                 <div id="editSauceCardContainer" class="sauce-grid"></div>
             </div>
 
@@ -1610,12 +1654,15 @@
             <div class="form-group" style="margin-top:6px; margin-bottom:4px;" id="editPickupFormGroup">
                 <span style="font-size:14px; display:block; margin-bottom:5px; font-weight:700; color:var(--text-main);">변경할 픽업 시간 선택</span>
                 <select id="newPickupTime" style="padding:11px; font-size:14px;" onchange="handleTimeChange(this, 'editBusyInfoBox')"></select>
+                <div class="inline-helper-note">
+                    ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다.
+                </div>
                 <div id="editBusyInfoBox" class="busy-info-box"></div>
             </div>
         </div>
 
         <div id="searchModalActionBtns" style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
-            <div class="sticky-summary-bar" style="max-height: 68px; margin-bottom: 6px;">
+            <div class="sticky-summary-bar" style="margin-bottom: 6px;">
                 <div class="sticky-summary-header">
                     <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
                     <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span id="editTotalPrice" style="color: #B45309;">0</span>원</span>
@@ -2902,6 +2949,9 @@
             } else if (typeof sauceOrderItems !== 'undefined' && sauceOrderItems[idx]) {
                 currentQty = sauceOrderItems[idx];
             }
+            if (currentQty > 0) {
+                card.classList.add('selected-item');
+            }
             let formattedPriceStr = formatPriceText(sauce.price);
             let isSoldOut = sauce.isSoldOut;
             let alreadyReserved = (typeof editSauceOrderItems !== 'undefined' && editSauceOrderItems[idx] && editSauceOrderItems[idx] > 0);
@@ -2987,6 +3037,11 @@
 
             const editCard = card.cloneNode(true);
             let editQty = (typeof editSauceItems !== 'undefined' && editSauceItems[idx]) ? editSauceItems[idx] : 0;
+            if (editQty > 0) {
+                editCard.classList.add('selected-item');
+            } else {
+                editCard.classList.remove('selected-item');
+            }
             
             let editLabel = editCard.querySelector(`#qty_sauce_${idx}`);
             if (editLabel) {
@@ -3062,6 +3117,9 @@
             }
 
             let currentQty = (typeof orderItems !== 'undefined' && orderItems[idx]) ? orderItems[idx] : 0;
+            if (currentQty > 0) {
+                card.classList.add('selected-item');
+            }
             let formattedPriceStr = formatPriceText(item.price);
             let isSoldOut = item.isSoldOut;
             let alreadyReserved = (typeof editOrderItems !== 'undefined' && editOrderItems[idx] && editOrderItems[idx] > 0);
@@ -3142,6 +3200,11 @@
 
             const editCard = card.cloneNode(true);
             let editQty = (typeof editOrderItems !== 'undefined' && editOrderItems[idx]) ? editOrderItems[idx] : 0;
+            if (editQty > 0) {
+                editCard.classList.add('selected-item');
+            } else {
+                editCard.classList.remove('selected-item');
+            }
             
             let editLabel = editCard.querySelector(`#qty_main_${idx}`);
             if (editLabel) {
