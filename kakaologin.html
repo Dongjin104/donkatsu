@@ -46,7 +46,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 고급스러운 카카오 회원 인증 게이트 오버레이 */
         #kakaoGateOverlay {
             display: flex;
             position: fixed;
@@ -410,7 +409,6 @@
 </head>
 
 <body>
-    <!-- 카카오 로그인 & 4자리 인증 게이트 -->
     <div id="kakaoGateOverlay">
         <div class="kakao-gate-card">
             <div class="kakao-gate-ribbon">
@@ -438,7 +436,7 @@
                 </div>
             </div>
 
-            <button type="button" id="kakaoGateLoginBtn" class="kakao-gate-btn" onclick="startKakaoLoginFlow()">
+            <button type="button" id="kakaoGateLoginBtn" class="kakao-gate-btn" onclick="window.startKakaoLoginFlow()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path fill-rule="evenodd" clip-rule="evenodd"
                         d="M12 3C6.477 3 2 6.463 2 10.734c0 2.742 1.825 5.149 4.573 6.515-.153.547-.986 3.52-1.02 3.744 0 0-.02.167.088.23.108.063.235.014.235.014.31-.043 3.59-2.35 4.157-2.753.635.093 1.29.142 1.974.142 5.523 0 10-3.463 10-7.734C22 6.463 17.523 3 12 3Z"
@@ -460,7 +458,7 @@
                     등록될 예약 식별명: -
                 </div>
                 <button type="button" id="kakaoPhone4SubmitBtn" class="kakao-phone4-submit"
-                    onclick="completeKakaoRegistration()">
+                    onclick="window.completeKakaoRegistration()">
                     회원 등록 완료하고 예약하기
                 </button>
             </div>
@@ -491,7 +489,6 @@
         </div>
     </div>
 
-    <!-- 카카오 계정 관리 모달 -->
     <div id="kakaoAccountModal" class="modal" style="z-index: 10038;">
         <div class="modal-content" style="text-align: left;">
             <h3 style="color: var(--text-main); text-align: center; margin-bottom: 12px;">카카오 회원 정보</h3>
@@ -516,649 +513,684 @@
             </div>
             <button type="button" class="modal-btn"
                 style="background-color: var(--kakao-yellow); color: var(--kakao-brown); border: 1px solid #E5CE00; margin-top: 0;"
-                onclick="switchKakaoAccount()">다른 카카오 계정으로 로그인</button>
-            <button type="button" class="modal-btn close-btn" onclick="hideModal('kakaoAccountModal')">닫기</button>
+                onclick="window.switchKakaoAccount()">다른 카카오 계정으로 로그인</button>
+            <button type="button" class="modal-btn close-btn" onclick="window.hideModal('kakaoAccountModal')">닫기</button>
         </div>
     </div>
 
     <script>
-        var KAKAO_WEB_APP_URL = window.KAKAO_WEB_APP_URL || window.WEB_APP_URL || "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
-        var KAKAO_JS_KEY = window.KAKAO_JS_KEY || window.DONKATSU_KAKAO_JS_KEY || "db06049bca3d739bbf1d8d9d0cad1b5b";
+        (function () {
+            const KAKAO_WEB_APP_URL = window.KAKAO_WEB_APP_URL || window.WEB_APP_URL || "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
+            const KAKAO_JS_KEY = window.KAKAO_JS_KEY || window.DONKATSU_KAKAO_JS_KEY || "db06049bca3d739bbf1d8d9d0cad1b5b";
 
-        window.KAKAO_WEB_APP_URL = KAKAO_WEB_APP_URL;
-        window.KAKAO_JS_KEY = KAKAO_JS_KEY;
+            window.KAKAO_WEB_APP_URL = KAKAO_WEB_APP_URL;
+            window.KAKAO_JS_KEY = KAKAO_JS_KEY;
 
-        const KakaoTripleStorage = window.KakaoTripleStorage || {
-            dbName: 'DonkatsuBackupDB',
-            storeName: 'backupStore',
+            const existingStorage = window.KakaoTripleStorage || window.TripleStorage;
+            const storageImpl = (existingStorage && typeof existingStorage.save === "function" && typeof existingStorage.load === "function")
+                ? existingStorage
+                : {
+                    dbName: 'DonkatsuBackupDB',
+                    storeName: 'backupStore',
 
-            setCookie: function (name, value, days = 365) {
-                try {
-                    const date = new Date();
-                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                    document.cookie = `${name}=${encodeURIComponent(value)};expires=${date.toUTCString()};path=/;SameSite=Lax`;
-                } catch (e) { }
-            },
-            getCookie: function (name) {
-                try {
-                    const nameEQ = name + "=";
-                    const ca = document.cookie.split(';');
-                    for (let i = 0; i < ca.length; i++) {
-                        let c = ca[i];
-                        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                        if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
-                    }
-                } catch (e) { }
-                return null;
-            },
-            openDB: function () {
-                return new Promise((resolve) => {
-                    if (!window.indexedDB) return resolve(null);
-                    try {
-                        const request = indexedDB.open(this.dbName, 1);
-                        request.onupgradeneeded = (e) => {
-                            const db = e.target.result;
-                            if (!db.objectStoreNames.contains(this.storeName)) {
-                                db.createObjectStore(this.storeName);
+                    setCookie: function (name, value, days = 365) {
+                        try {
+                            const date = new Date();
+                            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                            document.cookie = `${name}=${encodeURIComponent(value)};expires=${date.toUTCString()};path=/;SameSite=Lax`;
+                        } catch (e) { }
+                    },
+                    getCookie: function (name) {
+                        try {
+                            const nameEQ = name + "=";
+                            const ca = document.cookie.split(';');
+                            for (let i = 0; i < ca.length; i++) {
+                                let c = ca[i];
+                                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                                if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
                             }
-                        };
-                        request.onsuccess = (e) => resolve(e.target.result);
-                        request.onerror = () => resolve(null);
-                    } catch (e) {
-                        resolve(null);
-                    }
-                });
-            },
-            setIDB: async function (key, value) {
-                try {
-                    const db = await this.openDB();
-                    if (!db) return;
-                    const tx = db.transaction(this.storeName, 'readwrite');
-                    tx.objectStore(this.storeName).put(value, key);
-                } catch (e) { }
-            },
-            getIDB: async function (key) {
-                try {
-                    const db = await this.openDB();
-                    if (!db) return null;
-                    return new Promise((resolve) => {
-                        const tx = db.transaction(this.storeName, 'readonly');
-                        const req = tx.objectStore(this.storeName).get(key);
-                        req.onsuccess = () => resolve(req.result || null);
-                        req.onerror = () => resolve(null);
-                    });
-                } catch (e) {
-                    return null;
-                }
-            },
-            save: function (key, value) {
-                if (value === null || value === undefined) return;
-                try { localStorage.setItem(key, value); } catch (e) { }
-                this.setCookie(key, value);
-                this.setIDB(key, value);
-            },
-            load: async function (key) {
-                let val = null;
-                try { val = localStorage.getItem(key); } catch (e) { }
-                if (val) {
-                    this.setCookie(key, val);
-                    this.setIDB(key, val);
-                    return val;
-                }
-                val = this.getCookie(key);
-                if (val) {
-                    try { localStorage.setItem(key, val); } catch (e) { }
-                    this.setIDB(key, val);
-                    return val;
-                }
-                val = await this.getIDB(key);
-                if (val) {
-                    try { localStorage.setItem(key, val); } catch (e) { }
-                    this.setCookie(key, val);
-                    return val;
-                }
-                return null;
-            }
-        };
-
-        const KakaoAuthManager = window.KakaoAuthManager || {
-            sdkReady: false,
-            sdkLoadingPromise: null,
-            session: {
-                kakaoId: "",
-                kakaoNickname: "",
-                phone4: "",
-                identifier: ""
-            },
-
-            isMobileDevice: function () {
-                const ua = navigator.userAgent || "";
-                return /Android|iPhone|iPad|iPod|Mobile|KakaoTalk/i.test(ua);
-            },
-
-            ensureSDKLoaded: function () {
-                if (window.Kakao && typeof window.Kakao.init === "function") {
-                    this.initSDK();
-                    return Promise.resolve(true);
-                }
-                if (this.sdkLoadingPromise) {
-                    return this.sdkLoadingPromise;
-                }
-                this.sdkLoadingPromise = new Promise((resolve) => {
-                    const existingScript = document.querySelector('script[src*="kakao_js_sdk"]');
-                    const onReady = () => {
-                        this.sdkLoadingPromise = null;
-                        resolve(this.initSDK());
-                    };
-                    const onFailed = () => {
-                        this.sdkLoadingPromise = null;
-                        resolve(false);
-                    };
-
-                    if (existingScript) {
-                        existingScript.addEventListener("load", onReady, { once: true });
-                        existingScript.addEventListener("error", onFailed, { once: true });
-                        setTimeout(() => {
-                            if (window.Kakao && typeof window.Kakao.init === "function") {
-                                onReady();
+                        } catch (e) { }
+                        return null;
+                    },
+                    openDB: function () {
+                        return new Promise((resolve) => {
+                            if (!window.indexedDB) return resolve(null);
+                            try {
+                                const request = indexedDB.open(this.dbName, 1);
+                                request.onupgradeneeded = (e) => {
+                                    const db = e.target.result;
+                                    if (!db.objectStoreNames.contains(this.storeName)) {
+                                        db.createObjectStore(this.storeName);
+                                    }
+                                };
+                                request.onsuccess = (e) => resolve(e.target.result);
+                                request.onerror = () => resolve(null);
+                            } catch (e) {
+                                resolve(null);
                             }
-                        }, 300);
-                        return;
-                    }
-
-                    const script = document.createElement("script");
-                    script.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js";
-                    script.async = true;
-                    script.crossOrigin = "anonymous";
-                    script.onload = onReady;
-                    script.onerror = onFailed;
-                    document.head.appendChild(script);
-                });
-                return this.sdkLoadingPromise;
-            },
-
-            initSDK: function () {
-                if (!window.Kakao || typeof window.Kakao.init !== "function") return false;
-                try {
-                    if (!window.Kakao.isInitialized()) {
-                        window.Kakao.init(KAKAO_JS_KEY);
-                    }
-                    this.sdkReady = !!window.Kakao.isInitialized();
-                    return this.sdkReady;
-                } catch (e) {
-                    return false;
-                }
-            },
-
-            normalizeId: function (raw) {
-                if (raw === null || raw === undefined) return "";
-                let s = String(raw).trim();
-                if (!s) return "";
-                if (s.startsWith("kakao_")) s = s.slice(6).trim();
-                return s;
-            },
-
-            formatClientId: function (raw) {
-                const norm = this.normalizeId(raw);
-                if (!norm) return "";
-                return /^\d+$/.test(norm) ? ("kakao_" + norm) : norm;
-            },
-
-            saveSession: function (data) {
-                const normId = this.normalizeId(data.kakaoId !== undefined ? data.kakaoId : this.session.kakaoId);
-                const kNick = (data.kakaoNickname !== undefined ? String(data.kakaoNickname).trim() : this.session.kakaoNickname);
-                const p4 = (data.phone4 !== undefined ? String(data.phone4).replace(/[^0-9]/g, "").slice(-4) : this.session.phone4);
-                const ident = (data.identifier !== undefined ? String(data.identifier).trim() : (kNick && p4 ? (kNick + p4) : this.session.identifier));
-
-                this.session = {
-                    kakaoId: normId,
-                    kakaoNickname: kNick,
-                    phone4: p4,
-                    identifier: ident
-                };
-
-                if (normId) {
-                    KakaoTripleStorage.save("donkatsu_kakao_id", normId);
-                    KakaoTripleStorage.save("donkatsu_client_id", this.formatClientId(normId));
-                }
-                if (kNick) KakaoTripleStorage.save("donkatsu_kakao_nick", kNick);
-                if (p4) KakaoTripleStorage.save("donkatsu_phone4", p4);
-                if (ident) {
-                    KakaoTripleStorage.save("savedNickname", ident);
-                    window.globalUserNickname = ident;
-                }
-                if (typeof window.syncNicknameUI === "function") {
-                    window.syncNicknameUI();
-                }
-                return this.session;
-            },
-
-            async restoreSession() {
-                const savedKakaoId = await KakaoTripleStorage.load("donkatsu_kakao_id");
-                const savedKakaoNick = await KakaoTripleStorage.load("donkatsu_kakao_nick");
-                const savedPhone4 = await KakaoTripleStorage.load("donkatsu_phone4");
-                const savedIdent = await KakaoTripleStorage.load("savedNickname");
-
-                const normId = this.normalizeId(savedKakaoId);
-                this.session = {
-                    kakaoId: normId,
-                    kakaoNickname: savedKakaoNick ? String(savedKakaoNick).trim() : "",
-                    phone4: savedPhone4 ? String(savedPhone4).replace(/[^0-9]/g, "").slice(-4) : "",
-                    identifier: savedIdent ? String(savedIdent).trim() : ""
-                };
-                return this.session;
-            },
-
-            clearLocalSessionOnly: function () {
-                this.session = { kakaoId: "", kakaoNickname: "", phone4: "", identifier: "" };
-                try {
-                    localStorage.removeItem("donkatsu_kakao_id");
-                    localStorage.removeItem("donkatsu_kakao_nick");
-                    localStorage.removeItem("donkatsu_phone4");
-                    localStorage.removeItem("savedNickname");
-                    localStorage.removeItem("donkatsu_cached_state");
-                } catch (e) { }
-                KakaoTripleStorage.setCookie("donkatsu_kakao_id", "", -1);
-                KakaoTripleStorage.setCookie("donkatsu_kakao_nick", "", -1);
-                KakaoTripleStorage.setCookie("donkatsu_phone4", "", -1);
-                KakaoTripleStorage.setCookie("savedNickname", "", -1);
-                KakaoTripleStorage.setCookie("donkatsu_cached_state", "", -1);
-            },
-
-            fetchUserProfileWithExistingToken: function () {
-                return new Promise((resolve) => {
-                    if (!window.Kakao || !window.Kakao.Auth || typeof window.Kakao.Auth.getAccessToken !== "function") {
-                        resolve(null);
-                        return;
-                    }
-                    let token = "";
-                    try {
-                        token = window.Kakao.Auth.getAccessToken();
-                    } catch (e) {
-                        token = "";
-                    }
-                    if (!token) {
-                        resolve(null);
-                        return;
-                    }
-                    try {
-                        window.Kakao.API.request({
-                            url: "/v2/user/me",
-                            success: (res) => {
-                                const rawId = res && res.id ? String(res.id).trim() : "";
-                                const profileNick = res && res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname
-                                    ? String(res.kakao_account.profile.nickname).trim()
-                                    : (res && res.properties && res.properties.nickname ? String(res.properties.nickname).trim() : "");
-                                if (rawId) {
-                                    resolve({
-                                        kakaoId: rawId,
-                                        kakaoNickname: profileNick || "카카오고객"
-                                    });
-                                } else {
-                                    resolve(null);
-                                }
-                            },
-                            fail: () => resolve(null)
                         });
-                    } catch (e) {
-                        resolve(null);
+                    },
+                    setIDB: async function (key, value) {
+                        try {
+                            const db = await this.openDB();
+                            if (!db) return;
+                            const tx = db.transaction(this.storeName, 'readwrite');
+                            tx.objectStore(this.storeName).put(value, key);
+                        } catch (e) { }
+                    },
+                    getIDB: async function (key) {
+                        try {
+                            const db = await this.openDB();
+                            if (!db) return null;
+                            return new Promise((resolve) => {
+                                const tx = db.transaction(this.storeName, 'readonly');
+                                const req = tx.objectStore(this.storeName).get(key);
+                                req.onsuccess = () => resolve(req.result || null);
+                                req.onerror = () => resolve(null);
+                            });
+                        } catch (e) {
+                            return null;
+                        }
+                    },
+                    save: function (key, value) {
+                        if (value === null || value === undefined) return;
+                        try { localStorage.setItem(key, value); } catch (e) { }
+                        if (typeof this.setCookie === "function") this.setCookie(key, value);
+                        if (typeof this.setIDB === "function") this.setIDB(key, value);
+                    },
+                    load: async function (key) {
+                        let val = null;
+                        try { val = localStorage.getItem(key); } catch (e) { }
+                        if (val) {
+                            if (typeof this.setCookie === "function") this.setCookie(key, val);
+                            if (typeof this.setIDB === "function") this.setIDB(key, val);
+                            return val;
+                        }
+                        if (typeof this.getCookie === "function") {
+                            val = this.getCookie(key);
+                            if (val) {
+                                try { localStorage.setItem(key, val); } catch (e) { }
+                                if (typeof this.setIDB === "function") this.setIDB(key, val);
+                                return val;
+                            }
+                        }
+                        if (typeof this.getIDB === "function") {
+                            val = await this.getIDB(key);
+                            if (val) {
+                                try { localStorage.setItem(key, val); } catch (e) { }
+                                if (typeof this.setCookie === "function") this.setCookie(key, val);
+                                return val;
+                            }
+                        }
+                        return null;
                     }
-                });
-            },
+                };
 
-            authorizeViaKakao: function () {
-                return new Promise(async (resolve, reject) => {
-                    const loaded = await this.ensureSDKLoaded();
-                    if (!loaded || !window.Kakao) {
-                        reject(new Error("카카오 SDK를 불러오지 못했습니다. 네트워크나 광고차단기를 확인 후 새로고침해 주세요."));
-                        return;
+            window.KakaoTripleStorage = storageImpl;
+            window.TripleStorage = storageImpl;
+
+            const prevAuth = window.KakaoAuthManager || {};
+            const authImpl = {
+                sdkReady: false,
+                sdkLoadingPromise: null,
+                session: Object.assign({
+                    kakaoId: "",
+                    kakaoNickname: "",
+                    phone4: "",
+                    identifier: ""
+                }, prevAuth.session || {}),
+
+                isMobileDevice: function () {
+                    const ua = navigator.userAgent || "";
+                    return /Android|iPhone|iPad|iPod|Mobile|KakaoTalk/i.test(ua);
+                },
+
+                ensureSDKLoaded: function () {
+                    if (window.Kakao && typeof window.Kakao.init === "function") {
+                        this.initSDK();
+                        return Promise.resolve(true);
                     }
-
-                    const existingProfile = await this.fetchUserProfileWithExistingToken();
-                    if (existingProfile && existingProfile.kakaoId) {
-                        resolve(existingProfile);
-                        return;
+                    if (this.sdkLoadingPromise) {
+                        return this.sdkLoadingPromise;
                     }
+                    this.sdkLoadingPromise = new Promise((resolve) => {
+                        const existingScript = document.querySelector('script[src*="kakao_js_sdk"]');
+                        const onReady = () => {
+                            this.sdkLoadingPromise = null;
+                            resolve(this.initSDK());
+                        };
+                        const onFailed = () => {
+                            this.sdkLoadingPromise = null;
+                            resolve(false);
+                        };
 
+                        if (existingScript) {
+                            existingScript.addEventListener("load", onReady, { once: true });
+                            existingScript.addEventListener("error", onFailed, { once: true });
+                            setTimeout(() => {
+                                if (window.Kakao && typeof window.Kakao.init === "function") {
+                                    onReady();
+                                }
+                            }, 300);
+                            return;
+                        }
+
+                        const script = document.createElement("script");
+                        script.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js";
+                        script.async = true;
+                        script.crossOrigin = "anonymous";
+                        script.onload = onReady;
+                        script.onerror = onFailed;
+                        document.head.appendChild(script);
+                    });
+                    return this.sdkLoadingPromise;
+                },
+
+                initSDK: function () {
+                    if (!window.Kakao || typeof window.Kakao.init !== "function") return false;
                     try {
-                        const redirectUri = encodeURIComponent(`${window.location.origin}/`);
-                        const clientId = encodeURIComponent(KAKAO_JS_KEY);
-                        const scope = encodeURIComponent("profile_nickname");
-                        const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-                        window.location.href = authUrl;
+                        if (!window.Kakao.isInitialized()) {
+                            window.Kakao.init(window.KAKAO_JS_KEY || KAKAO_JS_KEY);
+                        }
+                        this.sdkReady = !!window.Kakao.isInitialized();
+                        return this.sdkReady;
                     } catch (e) {
-                        console.error("카카오 로그인 상세 에러:", e);
-                        reject(new Error("카카오 로그인 호출 중 오류가 발생했습니다."));
+                        return false;
                     }
-                });
-            }
-        };
+                },
 
-        window.KakaoAuthManager = KakaoAuthManager;
-        window.TripleStorage = KakaoTripleStorage;
-        window.KakaoTripleStorage = KakaoTripleStorage;
+                normalizeId: function (raw) {
+                    if (raw === null || raw === undefined) return "";
+                    let s = String(raw).trim();
+                    if (!s) return "";
+                    if (s.startsWith("kakao_")) s = s.slice(6).trim();
+                    return s;
+                },
 
-        function showKakaoGateOverlay(stepMode = "login", statusMessage = "") {
-            if (typeof window.stopOrderStatusPolling === "function") {
-                window.stopOrderStatusPolling();
-            }
-            const gate = document.getElementById('kakaoGateOverlay');
-            const loginBtn = document.getElementById('kakaoGateLoginBtn');
-            const phonePanel = document.getElementById('kakaoPhone4Panel');
-            const badge = document.getElementById('kakaoVerifiedNickBadge');
-            const phoneInput = document.getElementById('kakaoPhone4Input');
-            const statusEl = document.getElementById('kakaoGateStatus');
+                formatClientId: function (raw) {
+                    const norm = this.normalizeId(raw);
+                    if (!norm) return "";
+                    return /^\d+$/.test(norm) ? ("kakao_" + norm) : norm;
+                },
 
-            if (gate) gate.style.display = 'flex';
-            if (statusEl) statusEl.textContent = statusMessage || "";
+                saveSession: function (data) {
+                    const normId = this.normalizeId(data.kakaoId !== undefined ? data.kakaoId : this.session.kakaoId);
+                    const kNick = (data.kakaoNickname !== undefined ? String(data.kakaoNickname).trim() : this.session.kakaoNickname);
+                    const p4 = (data.phone4 !== undefined ? String(data.phone4).replace(/[^0-9]/g, "").slice(-4) : this.session.phone4);
+                    const ident = (data.identifier !== undefined ? String(data.identifier).trim() : (kNick && p4 ? (kNick + p4) : this.session.identifier));
 
-            if (stepMode === "phone4") {
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (phonePanel) phonePanel.style.display = 'block';
-                if (badge) badge.textContent = "카카오 닉네임: " + (KakaoAuthManager.session.kakaoNickname || "확인됨");
-                if (phoneInput) {
-                    phoneInput.value = KakaoAuthManager.session.phone4 || "";
-                    updatePhone4Preview();
-                    setTimeout(() => phoneInput.focus(), 80);
-                }
-            } else {
-                if (loginBtn) {
-                    loginBtn.style.display = 'flex';
-                    loginBtn.disabled = false;
-                }
-                if (phonePanel) phonePanel.style.display = 'none';
-            }
-        }
+                    this.session = {
+                        kakaoId: normId,
+                        kakaoNickname: kNick,
+                        phone4: p4,
+                        identifier: ident
+                    };
 
-        function hideKakaoGateOverlay() {
-            const gate = document.getElementById('kakaoGateOverlay');
-            if (gate) gate.style.display = 'none';
-        }
-
-        function updatePhone4Preview() {
-            const phoneInput = document.getElementById('kakaoPhone4Input');
-            const previewEl = document.getElementById('kakaoPreviewIdentText');
-            if (!phoneInput || !previewEl) return;
-            const digits = phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4);
-            phoneInput.value = digits;
-            const kNick = KakaoAuthManager.session.kakaoNickname || "고객";
-            previewEl.textContent = digits.length === 4
-                ? ("등록될 예약 식별명: " + kNick + digits)
-                : ("등록될 예약 식별명: " + kNick + (digits || "____"));
-        }
-
-        async function syncMemberAfterLogin(authUser) {
-            const endpointUrl = window.WEB_APP_URL || KAKAO_WEB_APP_URL;
-            const statusEl = document.getElementById('kakaoGateStatus');
-
-            KakaoAuthManager.saveSession({
-                kakaoId: authUser.kakaoId,
-                kakaoNickname: authUser.kakaoNickname
-            });
-            const formattedId = KakaoAuthManager.formatClientId(authUser.kakaoId);
-            window.clientId = formattedId;
-
-            if (statusEl) statusEl.textContent = "회원 정보를 확인하고 있습니다...";
-
-            try {
-                const res = await fetch(endpointUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'syncKakaoMember',
-                        clientId: formattedId,
-                        kakaoId: authUser.kakaoId,
-                        kakaoNickname: authUser.kakaoNickname
-                    })
-                });
-                const text = await res.text();
-                let payload = null;
-                try { payload = JSON.parse(text); } catch (e) { }
-
-                if (payload && (payload.result === "blocked" || (payload.settings && payload.settings.isBlocked))) {
-                    hideKakaoGateOverlay();
-                    if (typeof window.enforceBlockedOverlay === "function") {
-                        window.enforceBlockedOverlay(payload.message || (payload.settings && payload.settings.blockReason));
+                    if (normId) {
+                        storageImpl.save("donkatsu_kakao_id", normId);
+                        storageImpl.save("donkatsu_client_id", this.formatClientId(normId));
                     }
+                    if (kNick) storageImpl.save("donkatsu_kakao_nick", kNick);
+                    if (p4) storageImpl.save("donkatsu_phone4", p4);
+                    if (ident) {
+                        storageImpl.save("savedNickname", ident);
+                        window.globalUserNickname = ident;
+                    }
+                    if (typeof window.syncNicknameUI === "function") {
+                        window.syncNicknameUI();
+                    }
+                    return this.session;
+                },
+
+                async restoreSession() {
+                    const savedKakaoId = await storageImpl.load("donkatsu_kakao_id");
+                    const savedKakaoNick = await storageImpl.load("donkatsu_kakao_nick");
+                    const savedPhone4 = await storageImpl.load("donkatsu_phone4");
+                    const savedIdent = await storageImpl.load("savedNickname");
+
+                    const normId = this.normalizeId(savedKakaoId);
+                    this.session = {
+                        kakaoId: normId,
+                        kakaoNickname: savedKakaoNick ? String(savedKakaoNick).trim() : "",
+                        phone4: savedPhone4 ? String(savedPhone4).replace(/[^0-9]/g, "").slice(-4) : "",
+                        identifier: savedIdent ? String(savedIdent).trim() : ""
+                    };
+                    return this.session;
+                },
+
+                clearLocalSessionOnly: function () {
+                    this.session = { kakaoId: "", kakaoNickname: "", phone4: "", identifier: "" };
+                    try {
+                        localStorage.removeItem("donkatsu_kakao_id");
+                        localStorage.removeItem("donkatsu_kakao_nick");
+                        localStorage.removeItem("donkatsu_phone4");
+                        localStorage.removeItem("savedNickname");
+                        localStorage.removeItem("donkatsu_cached_state");
+                    } catch (e) { }
+                    if (typeof storageImpl.setCookie === "function") {
+                        storageImpl.setCookie("donkatsu_kakao_id", "", -1);
+                        storageImpl.setCookie("donkatsu_kakao_nick", "", -1);
+                        storageImpl.setCookie("donkatsu_phone4", "", -1);
+                        storageImpl.setCookie("savedNickname", "", -1);
+                        storageImpl.setCookie("donkatsu_cached_state", "", -1);
+                    }
+                },
+
+                fetchUserProfileWithExistingToken: function () {
+                    return new Promise((resolve) => {
+                        if (!window.Kakao || !window.Kakao.Auth || typeof window.Kakao.Auth.getAccessToken !== "function") {
+                            resolve(null);
+                            return;
+                        }
+                        let token = "";
+                        try {
+                            token = window.Kakao.Auth.getAccessToken();
+                        } catch (e) {
+                            token = "";
+                        }
+                        if (!token) {
+                            resolve(null);
+                            return;
+                        }
+                        try {
+                            window.Kakao.API.request({
+                                url: "/v2/user/me",
+                                success: (res) => {
+                                    const rawId = res && res.id ? String(res.id).trim() : "";
+                                    const profileNick = res && res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname
+                                        ? String(res.kakao_account.profile.nickname).trim()
+                                        : (res && res.properties && res.properties.nickname ? String(res.properties.nickname).trim() : "");
+                                    if (rawId) {
+                                        resolve({
+                                            kakaoId: rawId,
+                                            kakaoNickname: profileNick || "카카오고객"
+                                        });
+                                    } else {
+                                        resolve(null);
+                                    }
+                                },
+                                fail: () => resolve(null)
+                            });
+                        } catch (e) {
+                            resolve(null);
+                        }
+                    });
+                },
+
+                authorizeViaKakao: function () {
+                    return new Promise(async (resolve, reject) => {
+                        const loaded = await this.ensureSDKLoaded();
+                        if (!loaded || !window.Kakao) {
+                            reject(new Error("카카오 SDK를 불러오지 못했습니다. 네트워크나 광고차단기를 확인 후 새로고침해 주세요."));
+                            return;
+                        }
+
+                        const existingProfile = await this.fetchUserProfileWithExistingToken();
+                        if (existingProfile && existingProfile.kakaoId) {
+                            resolve(existingProfile);
+                            return;
+                        }
+
+                        try {
+                            const redirectUri = encodeURIComponent(`${window.location.origin}/`);
+                            const clientId = encodeURIComponent(window.KAKAO_JS_KEY || KAKAO_JS_KEY);
+                            const scope = encodeURIComponent("profile_nickname");
+                            const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+                            window.location.href = authUrl;
+                        } catch (e) {
+                            console.error("카카오 로그인 상세 에러:", e);
+                            reject(new Error("카카오 로그인 호출 중 오류가 발생했습니다."));
+                        }
+                    });
+                }
+            };
+
+            window.KakaoAuthManager = authImpl;
+
+            function getAuth() {
+                return window.KakaoAuthManager || authImpl;
+            }
+
+            function showKakaoGateOverlay(stepMode = "login", statusMessage = "") {
+                if (typeof window.stopOrderStatusPolling === "function") {
+                    window.stopOrderStatusPolling();
+                }
+                const auth = getAuth();
+                const gate = document.getElementById('kakaoGateOverlay');
+                const loginBtn = document.getElementById('kakaoGateLoginBtn');
+                const phonePanel = document.getElementById('kakaoPhone4Panel');
+                const badge = document.getElementById('kakaoVerifiedNickBadge');
+                const phoneInput = document.getElementById('kakaoPhone4Input');
+                const statusEl = document.getElementById('kakaoGateStatus');
+
+                if (gate) gate.style.display = 'flex';
+                if (statusEl) statusEl.textContent = statusMessage || "";
+
+                if (stepMode === "phone4") {
+                    if (loginBtn) loginBtn.style.display = 'none';
+                    if (phonePanel) phonePanel.style.display = 'block';
+                    if (badge) badge.textContent = "카카오 닉네임: " + ((auth.session && auth.session.kakaoNickname) || "확인됨");
+                    if (phoneInput) {
+                        phoneInput.value = (auth.session && auth.session.phone4) || "";
+                        updatePhone4Preview();
+                        setTimeout(() => phoneInput.focus(), 80);
+                    }
+                } else {
+                    if (loginBtn) {
+                        loginBtn.style.display = 'flex';
+                        loginBtn.disabled = false;
+                    }
+                    if (phonePanel) phonePanel.style.display = 'none';
+                }
+            }
+
+            function hideKakaoGateOverlay() {
+                const gate = document.getElementById('kakaoGateOverlay');
+                if (gate) gate.style.display = 'none';
+            }
+
+            function updatePhone4Preview() {
+                const auth = getAuth();
+                const phoneInput = document.getElementById('kakaoPhone4Input');
+                const previewEl = document.getElementById('kakaoPreviewIdentText');
+                if (!phoneInput || !previewEl) return;
+                const digits = phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4);
+                phoneInput.value = digits;
+                const kNick = (auth.session && auth.session.kakaoNickname) || "고객";
+                previewEl.textContent = digits.length === 4
+                    ? ("등록될 예약 식별명: " + kNick + digits)
+                    : ("등록될 예약 식별명: " + kNick + (digits || "____"));
+            }
+
+            async function syncMemberAfterLogin(authUser) {
+                const auth = getAuth();
+                const endpointUrl = window.WEB_APP_URL || window.KAKAO_WEB_APP_URL || KAKAO_WEB_APP_URL;
+                const statusEl = document.getElementById('kakaoGateStatus');
+
+                auth.saveSession({
+                    kakaoId: authUser.kakaoId,
+                    kakaoNickname: authUser.kakaoNickname
+                });
+                const formattedId = auth.formatClientId(authUser.kakaoId);
+                window.clientId = formattedId;
+
+                if (statusEl) statusEl.textContent = "회원 정보를 확인하고 있습니다...";
+
+                try {
+                    const res = await fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'syncKakaoMember',
+                            clientId: formattedId,
+                            kakaoId: authUser.kakaoId,
+                            kakaoNickname: authUser.kakaoNickname
+                        })
+                    });
+                    const text = await res.text();
+                    let payload = null;
+                    try { payload = JSON.parse(text); } catch (e) { }
+
+                    if (payload && (payload.result === "blocked" || (payload.settings && payload.settings.isBlocked))) {
+                        hideKakaoGateOverlay();
+                        if (typeof window.enforceBlockedOverlay === "function") {
+                            window.enforceBlockedOverlay(payload.message || (payload.settings && payload.settings.blockReason));
+                        }
+                        return;
+                    }
+
+                    if (payload && payload.settings) {
+                        if (typeof window.saveSettingsCache === "function") window.saveSettingsCache(payload.settings);
+                        if (typeof window.applySettingsToGlobals === "function") window.applySettingsToGlobals(payload.settings);
+                    }
+
+                    const profile = payload && payload.memberProfile ? payload.memberProfile : null;
+                    if (profile && profile.isRegistered && profile.identifier && profile.phone4) {
+                        auth.saveSession({
+                            kakaoId: authUser.kakaoId,
+                            kakaoNickname: profile.kakaoNickname || authUser.kakaoNickname,
+                            phone4: profile.phone4,
+                            identifier: profile.identifier
+                        });
+                        if (typeof window.syncNicknameUI === "function") window.syncNicknameUI();
+                        hideKakaoGateOverlay();
+                        if (typeof window.checkAndRenderState === "function") window.checkAndRenderState(false);
+                    } else {
+                        showKakaoGateOverlay("phone4", "");
+                    }
+                } catch (err) {
+                    showKakaoGateOverlay("phone4", "");
+                }
+            }
+
+            async function startKakaoLoginFlow() {
+                const auth = getAuth();
+                const loginBtn = document.getElementById('kakaoGateLoginBtn');
+                const statusEl = document.getElementById('kakaoGateStatus');
+                if (loginBtn) loginBtn.disabled = true;
+                if (statusEl) statusEl.textContent = "카카오 로그인 페이지로 이동 중입니다...";
+
+                try {
+                    if (!auth || typeof auth.authorizeViaKakao !== "function") {
+                        throw new Error("카카오 로그인 모듈이 준비되지 않았습니다.");
+                    }
+                    const authUser = await auth.authorizeViaKakao();
+                    if (authUser && authUser.kakaoId) {
+                        await syncMemberAfterLogin(authUser);
+                    }
+                } catch (err) {
+                    if (loginBtn) loginBtn.disabled = false;
+                    if (statusEl) statusEl.textContent = err && err.message ? err.message : "카카오 로그인 중 문제가 발생했습니다.";
+                }
+            }
+
+            async function handleOAuthCallbackOnLandingPage() {
+                const auth = getAuth();
+                const params = new URLSearchParams(window.location.search);
+                const authCode = params.get("code");
+                const authError = params.get("error");
+
+                if (!authCode && !authError) return false;
+
+                if (window.history && typeof window.history.replaceState === "function") {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
+                if (authError) {
+                    showKakaoGateOverlay("login", "카카오 로그인이 취소되었거나 완료되지 않았습니다.");
+                    return true;
+                }
+
+                const statusEl = document.getElementById('kakaoGateStatus');
+                const loginBtn = document.getElementById('kakaoGateLoginBtn');
+                if (loginBtn) loginBtn.disabled = true;
+                if (statusEl) statusEl.textContent = "카카오 로그인 정보를 확인하고 있습니다...";
+
+                const endpointUrl = window.WEB_APP_URL || window.KAKAO_WEB_APP_URL || KAKAO_WEB_APP_URL;
+                const redirectUri = `${window.location.origin}/`;
+
+                try {
+                    const res = await fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'exchangeKakaoCode',
+                            code: authCode,
+                            redirectUri: redirectUri
+                        })
+                    });
+                    const text = await res.text();
+                    let payload = null;
+                    try { payload = JSON.parse(text); } catch (e) { }
+
+                    const authUser = payload && (payload.authUser || payload.user || (payload.kakaoId ? payload : null));
+                    if (authUser && authUser.kakaoId) {
+                        await syncMemberAfterLogin({
+                            kakaoId: String(authUser.kakaoId).trim(),
+                            kakaoNickname: authUser.kakaoNickname || authUser.nickname || "카카오고객"
+                        });
+                        return true;
+                    }
+                } catch (e) { }
+
+                const loaded = await auth.ensureSDKLoaded();
+                if (loaded && window.Kakao) {
+                    const profile = await auth.fetchUserProfileWithExistingToken();
+                    if (profile && profile.kakaoId) {
+                        await syncMemberAfterLogin(profile);
+                        return true;
+                    }
+                }
+
+                if (loginBtn) loginBtn.disabled = false;
+                if (statusEl) statusEl.textContent = "카카오 인증 정보를 확인하지 못했습니다. 다시 로그인해 주세요.";
+                showKakaoGateOverlay("login", "카카오 인증 정보를 확인하지 못했습니다. 다시 로그인해 주세요.");
+                return true;
+            }
+
+            async function completeKakaoRegistration() {
+                const auth = getAuth();
+                const phoneInput = document.getElementById('kakaoPhone4Input');
+                const submitBtn = document.getElementById('kakaoPhone4SubmitBtn');
+                const statusEl = document.getElementById('kakaoGateStatus');
+
+                const digits = phoneInput ? phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4) : "";
+                if (digits.length !== 4) {
+                    if (statusEl) statusEl.textContent = "휴대폰 번호 뒷자리 숫자 4자리를 정확히 입력해 주세요.";
+                    if (phoneInput) phoneInput.focus();
                     return;
                 }
 
-                if (payload && payload.settings) {
-                    if (typeof window.saveSettingsCache === "function") window.saveSettingsCache(payload.settings);
-                    if (typeof window.applySettingsToGlobals === "function") window.applySettingsToGlobals(payload.settings);
+                const kNick = (auth.session && auth.session.kakaoNickname) || "카카오고객";
+                const kId = auth.session && auth.session.kakaoId;
+                if (!kId) {
+                    showKakaoGateOverlay("login", "카카오 회원번호가 없습니다. 먼저 카카오 로그인을 진행해 주세요.");
+                    return;
                 }
 
-                const profile = payload && payload.memberProfile ? payload.memberProfile : null;
-                if (profile && profile.isRegistered && profile.identifier && profile.phone4) {
-                    KakaoAuthManager.saveSession({
-                        kakaoId: authUser.kakaoId,
-                        kakaoNickname: profile.kakaoNickname || authUser.kakaoNickname,
-                        phone4: profile.phone4,
-                        identifier: profile.identifier
+                const identifier = kNick + digits;
+                const formattedId = auth.formatClientId(kId);
+                window.clientId = formattedId;
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "회원 등록 중...";
+                }
+                if (statusEl) statusEl.textContent = "";
+
+                const endpointUrl = window.WEB_APP_URL || window.KAKAO_WEB_APP_URL || KAKAO_WEB_APP_URL;
+
+                try {
+                    const res = await fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'syncKakaoMember',
+                            clientId: formattedId,
+                            kakaoId: kId,
+                            kakaoNickname: kNick,
+                            phone4: digits,
+                            nickname: identifier
+                        })
+                    });
+                    const text = await res.text();
+                    let payload = null;
+                    try { payload = JSON.parse(text); } catch (e) { }
+
+                    if (payload && payload.result === "blocked") {
+                        hideKakaoGateOverlay();
+                        if (typeof window.enforceBlockedOverlay === "function") {
+                            window.enforceBlockedOverlay(payload.message);
+                        }
+                        return;
+                    }
+
+                    auth.saveSession({
+                        kakaoId: kId,
+                        kakaoNickname: kNick,
+                        phone4: digits,
+                        identifier: identifier
                     });
                     if (typeof window.syncNicknameUI === "function") window.syncNicknameUI();
                     hideKakaoGateOverlay();
                     if (typeof window.checkAndRenderState === "function") window.checkAndRenderState(false);
+                } catch (err) {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "회원 등록 완료하고 예약하기";
+                    }
+                    if (statusEl) statusEl.textContent = "회원 정보 저장 중 오류가 발생했습니다. 다시 시도해 주세요.";
+                }
+            }
+
+            function openKakaoAccountModal() {
+                const auth = getAuth();
+                const sess = auth.session || {};
+                document.getElementById('modalKakaoIdent').textContent = sess.identifier || "-";
+                document.getElementById('modalKakaoNick').textContent = sess.kakaoNickname || "-";
+                document.getElementById('modalKakaoPhone4').textContent = sess.phone4 || "-";
+                document.getElementById('modalKakaoId').textContent = sess.kakaoId ? ("kakao_" + sess.kakaoId) : "-";
+                if (typeof window.showModal === "function") {
+                    window.showModal('kakaoAccountModal');
                 } else {
-                    showKakaoGateOverlay("phone4", "");
-                }
-            } catch (err) {
-                showKakaoGateOverlay("phone4", "");
-            }
-        }
-
-        async function startKakaoLoginFlow() {
-            const loginBtn = document.getElementById('kakaoGateLoginBtn');
-            const statusEl = document.getElementById('kakaoGateStatus');
-            if (loginBtn) loginBtn.disabled = true;
-            if (statusEl) statusEl.textContent = "카카오 로그인 페이지로 이동 중입니다...";
-
-            try {
-                const authUser = await KakaoAuthManager.authorizeViaKakao();
-                if (authUser && authUser.kakaoId) {
-                    await syncMemberAfterLogin(authUser);
-                }
-            } catch (err) {
-                if (loginBtn) loginBtn.disabled = false;
-                if (statusEl) statusEl.textContent = err && err.message ? err.message : "카카오 로그인 중 문제가 발생했습니다.";
-            }
-        }
-
-        // redirectUri(/)로 돌아왔을 때 ?code=... 또는 ?error=... 처리용
-        async function handleOAuthCallbackOnLandingPage() {
-            const params = new URLSearchParams(window.location.search);
-            const authCode = params.get("code");
-            const authError = params.get("error");
-
-            if (!authCode && !authError) return false;
-
-            if (window.history && typeof window.history.replaceState === "function") {
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-
-            if (authError) {
-                showKakaoGateOverlay("login", "카카오 로그인이 취소되었거나 완료되지 않았습니다.");
-                return true;
-            }
-
-            const statusEl = document.getElementById('kakaoGateStatus');
-            const loginBtn = document.getElementById('kakaoGateLoginBtn');
-            if (loginBtn) loginBtn.disabled = true;
-            if (statusEl) statusEl.textContent = "카카오 로그인 정보를 확인하고 있습니다...";
-
-            const endpointUrl = window.WEB_APP_URL || KAKAO_WEB_APP_URL;
-            const redirectUri = `${window.location.origin}/`;
-
-            try {
-                const res = await fetch(endpointUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'exchangeKakaoCode',
-                        code: authCode,
-                        redirectUri: redirectUri
-                    })
-                });
-                const text = await res.text();
-                let payload = null;
-                try { payload = JSON.parse(text); } catch (e) { }
-
-                const authUser = payload && (payload.authUser || payload.user || (payload.kakaoId ? payload : null));
-                if (authUser && authUser.kakaoId) {
-                    await syncMemberAfterLogin({
-                        kakaoId: String(authUser.kakaoId).trim(),
-                        kakaoNickname: authUser.kakaoNickname || authUser.nickname || "카카오고객"
-                    });
-                    return true;
-                }
-            } catch (e) { }
-
-            const loaded = await KakaoAuthManager.ensureSDKLoaded();
-            if (loaded && window.Kakao) {
-                const profile = await KakaoAuthManager.fetchUserProfileWithExistingToken();
-                if (profile && profile.kakaoId) {
-                    await syncMemberAfterLogin(profile);
-                    return true;
+                    const m = document.getElementById('kakaoAccountModal');
+                    if (m) { m.style.display = 'flex'; m.classList.add('active'); }
                 }
             }
 
-            if (loginBtn) loginBtn.disabled = false;
-            if (statusEl) statusEl.textContent = "카카오 인증 정보를 확인하지 못했습니다. 다시 로그인해 주세요.";
-            showKakaoGateOverlay("login", "카카오 인증 정보를 확인하지 못했습니다. 다시 로그인해 주세요.");
-            return true;
-        }
-
-        async function completeKakaoRegistration() {
-            const phoneInput = document.getElementById('kakaoPhone4Input');
-            const submitBtn = document.getElementById('kakaoPhone4SubmitBtn');
-            const statusEl = document.getElementById('kakaoGateStatus');
-
-            const digits = phoneInput ? phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4) : "";
-            if (digits.length !== 4) {
-                if (statusEl) statusEl.textContent = "휴대폰 번호 뒷자리 숫자 4자리를 정확히 입력해 주세요.";
-                if (phoneInput) phoneInput.focus();
-                return;
-            }
-
-            const kNick = KakaoAuthManager.session.kakaoNickname || "카카오고객";
-            const kId = KakaoAuthManager.session.kakaoId;
-            if (!kId) {
-                showKakaoGateOverlay("login", "카카오 회원번호가 없습니다. 먼저 카카오 로그인을 진행해 주세요.");
-                return;
-            }
-
-            const identifier = kNick + digits;
-            const formattedId = KakaoAuthManager.formatClientId(kId);
-            window.clientId = formattedId;
-
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = "회원 등록 중...";
-            }
-            if (statusEl) statusEl.textContent = "";
-
-            const endpointUrl = window.WEB_APP_URL || KAKAO_WEB_APP_URL;
-
-            try {
-                const res = await fetch(endpointUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'syncKakaoMember',
-                        clientId: formattedId,
-                        kakaoId: kId,
-                        kakaoNickname: kNick,
-                        phone4: digits,
-                        nickname: identifier
-                    })
-                });
-                const text = await res.text();
-                let payload = null;
-                try { payload = JSON.parse(text); } catch (e) { }
-
-                if (payload && payload.result === "blocked") {
-                    hideKakaoGateOverlay();
-                    if (typeof window.enforceBlockedOverlay === "function") {
-                        window.enforceBlockedOverlay(payload.message);
-                    }
-                    return;
+            function switchKakaoAccount() {
+                const auth = getAuth();
+                if (typeof window.hideModal === "function") {
+                    window.hideModal('kakaoAccountModal');
+                } else {
+                    const m = document.getElementById('kakaoAccountModal');
+                    if (m) { m.classList.remove('active'); m.style.display = 'none'; }
                 }
-
-                KakaoAuthManager.saveSession({
-                    kakaoId: kId,
-                    kakaoNickname: kNick,
-                    phone4: digits,
-                    identifier: identifier
-                });
+                auth.clearLocalSessionOnly();
                 if (typeof window.syncNicknameUI === "function") window.syncNicknameUI();
-                hideKakaoGateOverlay();
-                if (typeof window.checkAndRenderState === "function") window.checkAndRenderState(false);
-            } catch (err) {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "회원 등록 완료하고 예약하기";
-                }
-                if (statusEl) statusEl.textContent = "회원 정보 저장 중 오류가 발생했습니다. 다시 시도해 주세요.";
-            }
-        }
-
-        function openKakaoAccountModal() {
-            const sess = KakaoAuthManager.session;
-            document.getElementById('modalKakaoIdent').textContent = sess.identifier || "-";
-            document.getElementById('modalKakaoNick').textContent = sess.kakaoNickname || "-";
-            document.getElementById('modalKakaoPhone4').textContent = sess.phone4 || "-";
-            document.getElementById('modalKakaoId').textContent = sess.kakaoId ? ("kakao_" + sess.kakaoId) : "-";
-            if (typeof window.showModal === "function") {
-                window.showModal('kakaoAccountModal');
-            } else {
-                const m = document.getElementById('kakaoAccountModal');
-                if (m) { m.style.display = 'flex'; m.classList.add('active'); }
-            }
-        }
-
-        function switchKakaoAccount() {
-            if (typeof window.hideModal === "function") {
-                window.hideModal('kakaoAccountModal');
-            } else {
-                const m = document.getElementById('kakaoAccountModal');
-                if (m) { m.classList.remove('active'); m.style.display = 'none'; }
-            }
-            KakaoAuthManager.clearLocalSessionOnly();
-            if (typeof window.syncNicknameUI === "function") window.syncNicknameUI();
-            try {
-                if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === "function" && window.Kakao.Auth.getAccessToken()) {
-                    window.Kakao.Auth.logout(() => {
-                        showKakaoGateOverlay("login", "다른 카카오 계정으로 로그인해 주세요.");
-                    });
-                    return;
-                }
-            } catch (e) { }
-            showKakaoGateOverlay("login", "다른 카카오 계정으로 로그인해 주세요.");
-        }
-
-        window.showKakaoGateOverlay = showKakaoGateOverlay;
-        window.hideKakaoGateOverlay = hideKakaoGateOverlay;
-        window.updatePhone4Preview = updatePhone4Preview;
-        window.startKakaoLoginFlow = startKakaoLoginFlow;
-        window.completeKakaoRegistration = completeKakaoRegistration;
-        window.openKakaoAccountModal = openKakaoAccountModal;
-        window.switchKakaoAccount = switchKakaoAccount;
-        window.handleOAuthCallbackOnLandingPage = handleOAuthCallbackOnLandingPage;
-
-        window.addEventListener('DOMContentLoaded', async function () {
-            KakaoAuthManager.ensureSDKLoaded();
-            const phoneInput = document.getElementById('kakaoPhone4Input');
-            if (phoneInput) {
-                phoneInput.addEventListener('input', updatePhone4Preview);
-                phoneInput.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        completeKakaoRegistration();
+                try {
+                    if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === "function" && window.Kakao.Auth.getAccessToken()) {
+                        window.Kakao.Auth.logout(() => {
+                            showKakaoGateOverlay("login", "다른 카카오 계정으로 로그인해 주세요.");
+                        });
+                        return;
                     }
-                });
+                } catch (e) { }
+                showKakaoGateOverlay("login", "다른 카카오 계정으로 로그인해 주세요.");
             }
-            await handleOAuthCallbackOnLandingPage();
-        });
+
+            window.showKakaoGateOverlay = showKakaoGateOverlay;
+            window.hideKakaoGateOverlay = hideKakaoGateOverlay;
+            window.updatePhone4Preview = updatePhone4Preview;
+            window.startKakaoLoginFlow = startKakaoLoginFlow;
+            window.completeKakaoRegistration = completeKakaoRegistration;
+            window.openKakaoAccountModal = openKakaoAccountModal;
+            window.switchKakaoAccount = switchKakaoAccount;
+            window.handleOAuthCallbackOnLandingPage = handleOAuthCallbackOnLandingPage;
+
+            authImpl.ensureSDKLoaded();
+
+            const initBindings = async () => {
+                const phoneInput = document.getElementById('kakaoPhone4Input');
+                if (phoneInput && !phoneInput.dataset.bound) {
+                    phoneInput.dataset.bound = "1";
+                    phoneInput.addEventListener('input', updatePhone4Preview);
+                    phoneInput.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            completeKakaoRegistration();
+                        }
+                    });
+                }
+                await handleOAuthCallbackOnLandingPage();
+            };
+
+            if (document.readyState === "loading") {
+                window.addEventListener('DOMContentLoaded', initBindings, { once: true });
+            } else {
+                initBindings();
+            }
+        })();
     </script>
 </body>
 
