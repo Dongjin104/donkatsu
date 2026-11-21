@@ -1445,7 +1445,6 @@
                     <div id="kakaoMemberBarSub" class="kakao-member-sub">단골 이력 연동됨</div>
                 </div>
             </div>
-            <button type="button" class="kakao-account-btn" onclick="openKakaoAccountModal()">카카오 계정</button>
         </div>
 
         <div id="pageLoadingOverlay" class="menu-grid" style="display: none;">
@@ -2475,10 +2474,8 @@
                         mountPoint.innerHTML = '';
                         const gateEl = doc.getElementById('kakaoGateOverlay');
                         const blockedEl = doc.getElementById('blockedOverlay');
-                        const accountModalEl = doc.getElementById('kakaoAccountModal');
                         if (gateEl) mountPoint.appendChild(document.importNode(gateEl, true));
                         if (blockedEl) mountPoint.appendChild(document.importNode(blockedEl, true));
-                        if (accountModalEl) mountPoint.appendChild(document.importNode(accountModalEl, true));
                     }
 
                     const scripts = Array.from(doc.querySelectorAll('script'));
@@ -2571,9 +2568,7 @@
         }
 
         function openKakaoAccountModal() {
-            if (typeof window.openKakaoAccountModal === "function" && window.openKakaoAccountModal !== openKakaoAccountModal) {
-                window.openKakaoAccountModal();
-            }
+            // 고객용 회원 정보 팝업 비활성화 (식별명 영역만 표시)
         }
 
         function syncNicknameUI() {
@@ -4331,25 +4326,29 @@
                     const lastOrderStr = JSON.stringify(lastOrderObj);
                     TripleStorage.save('lastOrderSummary', lastOrderStr);
 
+                    const createdReservation = {
+                        result: 'found',
+                        rowIndex: resData.rowIndex,
+                        status: '미확인',
+                        nickname: payload.nickname,
+                        pickupTime: payload.pickupTime,
+                        cookType: payload.cookType,
+                        menu: payload.menuSummary,
+                        sauce: payload.sauce,
+                        totalPrice: payload.totalPrice,
+                        eventPrize: resData.isWinner ? '당첨 (선택대기)' : ''
+                    };
+
                     saveCustomerStateCache({
                         type: 'active_order',
-                        reservation: {
-                            result: 'found',
-                            rowIndex: resData.rowIndex,
-                            status: '미확인',
-                            nickname: payload.nickname,
-                            pickupTime: payload.pickupTime,
-                            cookType: payload.cookType,
-                            menu: payload.menuSummary,
-                            sauce: payload.sauce,
-                            totalPrice: payload.totalPrice,
-                            eventPrize: resData.isWinner ? '당첨 (선택대기)' : ''
-                        }
+                        reservation: createdReservation
                     });
 
                     if (Array.isArray(resData.eventMenuList) && resData.eventMenuList.length > 0) {
                         cachedEventMenuList = resData.eventMenuList;
                     }
+
+                    renderActiveReservationScreen(createdReservation);
 
                     if (resData.isWinner) {
                         openEventWinModal(cachedEventMenuList);
@@ -4460,6 +4459,10 @@
         function reloadAfterSuccess() {
             hideModal('successModal');
             resetSubmitLocks();
+            const cachedState = loadCustomerStateCache();
+            if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
+                renderActiveReservationScreen(cachedState.reservation);
+            }
             checkAndRenderState(false);
         }
 
@@ -4644,10 +4647,30 @@
                         totalPrice: String(summaryObj.totalPrice)
                     };
                     TripleStorage.save('lastOrderSummary', JSON.stringify(updatedOrderObj));
-                    closeSearchModal();
-                    showCustomAlert("예약 내용이 성공적으로 변경되었습니다!", "변경 완료", () => {
-                        checkAndRenderState(false);
+
+                    const prevState = loadCustomerStateCache();
+                    const prevRes = (prevState && prevState.reservation) ? prevState.reservation : {};
+                    const updatedReservation = Object.assign({}, prevRes, {
+                        result: 'found',
+                        rowIndex: currentFoundRowIndex,
+                        status: prevRes.status || '미확인',
+                        nickname: nick || prevRes.nickname || '',
+                        cookType: newCookType,
+                        menu: summaryObj.menuSummary,
+                        sauce: summaryObj.sauceSummary,
+                        pickupTime: newPickupTime,
+                        totalPrice: String(summaryObj.totalPrice)
                     });
+
+                    saveCustomerStateCache({
+                        type: 'active_order',
+                        reservation: updatedReservation
+                    });
+
+                    closeSearchModal();
+                    renderActiveReservationScreen(updatedReservation);
+                    checkAndRenderState(false);
+                    showCustomAlert("예약 내용이 성공적으로 변경되었습니다!", "변경 완료");
                     return;
                 }
 
