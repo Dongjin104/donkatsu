@@ -1288,7 +1288,25 @@
             window.startKakaoLoginFlow = startKakaoLoginFlow;
             window.completeKakaoRegistration = completeKakaoRegistration;
             window.handleOAuthCallbackOnLandingPage = handleOAuthCallbackOnLandingPage;
+            
+            function resetKakaoAuthUI() {
+                isKakaoAuthInProgress = false;
+                isNavigatingToKakao = false;
+                toggleAuthSkeleton(false);
 
+                const statusEl = document.getElementById('kakaoGateStatus');
+                if (statusEl && /이동 중|연결 중|확인 중/.test(statusEl.textContent || '')) {
+                    statusEl.textContent = '';
+                }
+
+                const phonePanel = document.getElementById('kakaoPhone4Panel');
+                const isPhone4Visible = !!(phonePanel && phonePanel.style.display === 'block');
+                if (!isPhone4Visible) {
+                    setLoginButtonLocked(false, "카카오톡으로 1초 로그인");
+                }
+            }
+
+            window.resetKakaoAuthUI = resetKakaoAuthUI;
             authImpl.ensureSDKLoaded();
 
             const initBindings = async () => {

@@ -4175,6 +4175,29 @@ function extractDriveFileId(rawUrl) {
             await checkAndRenderState(true);
         });
 
+        window.addEventListener('pageshow', async function () {
+            if (typeof window.resetKakaoAuthUI === "function") {
+                window.resetKakaoAuthUI();
+            }
+
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            if (activeAuth && typeof activeAuth.restoreSession === "function") {
+                await activeAuth.restoreSession();
+            }
+
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (sess && sess.kakaoId && sess.phone4 && String(sess.phone4).length === 4 && sess.identifier) {
+                hideKakaoGateOverlay();
+                syncNicknameUI();
+                const cachedState = loadCustomerStateCache();
+                if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
+                    renderActiveReservationScreen(cachedState.reservation);
+                } else {
+                    await checkAndRenderState(false);
+                }
+            }
+        });
+
         function executeQuickReorder() {
             if (isQuickSubmitting) return;
 
