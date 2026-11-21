@@ -3561,20 +3561,6 @@ function extractDriveFileId(rawUrl) {
             hideModal('noticeModal');
         }
 
-        function shareStoreLink() {
-            const shareUrl = "https://url.kr/z5g8e2";
-            const shareText = "장날동천 수제 돈가스 간편 예약\n" + shareUrl;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(shareText).then(() => {
-                    showCustomAlert("예약 링크가 클립보드에 복사되었습니다!<br>카카오톡 채팅방에 붙여넣기 해서 공유해 주세요.", "링크 복사 완료");
-                }).catch(() => {
-                    showCustomAlert(`아래 링크를 복사해서 공유해 주세요:<br><b>${shareUrl}</b>`, "예약 링크");
-                });
-            } else {
-                showCustomAlert(`아래 링크를 복사해서 공유해 주세요:<br><b>${shareUrl}</b>`, "예약 링크");
-            }
-        }
-
         function applySettingsToGlobals(settingsData) {
             if (!settingsData) return;
 
