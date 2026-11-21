@@ -3546,12 +3546,16 @@ function extractDriveFileId(rawUrl) {
                 const urlList = JSON.parse(decodeURIComponent(encodedUrls));
                 const container = document.getElementById('modalImageContainer');
                 container.innerHTML = '';
+                container.scrollLeft = 0;
                 urlList.forEach(url => {
                     const img = document.createElement('img');
                     applyDriveImageToElement(img, url);
                     container.appendChild(img);
                 });
                 showModal('imageModal');
+                requestAnimationFrame(() => {
+                    container.scrollLeft = 0;
+                });
             } catch (e) { }
         }
 
