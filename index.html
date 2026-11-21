@@ -3263,6 +3263,27 @@
             }
         }
 
+function extractDriveFileId(rawUrl) {
+            const cleaned = String(rawUrl || '').trim();
+            if (!cleaned) return '';
+            const match = cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/) || cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            return match ? match[1].trim() : '';
+        }
+
+        function buildDriveImageCandidates(rawUrl) {
+            const cleaned = String(rawUrl || '').trim();
+            const fileId = extractDriveFileId(cleaned);
+            const candidates = [];
+            if (fileId) {
+                candidates.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
+                candidates.push(`https://drive.google.com/uc?export=view&id=${fileId}`);
+            }
+            if (cleaned && !candidates.includes(cleaned)) {
+                candidates.push(cleaned);
+            }
+            return candidates;
+        }
+
         function renderMenuAndSauceCards(containerId, sauceContainerId, isEditMode = false) {
             const container = document.getElementById(containerId);
             const sauceContainer = document.getElementById(sauceContainerId);
@@ -3288,8 +3309,11 @@
                 if (item.imageUrl && item.imageUrl.trim() !== '') {
                     const urlList = item.imageUrl.split(',').map(u => u.trim()).filter(u => u !== '');
                     if (urlList.length > 0) {
+                        const candidates = buildDriveImageCandidates(urlList[0]);
+                        const primaryUrl = candidates[0] || '';
+                        const nextCandidates = candidates.slice(1);
                         const encodedUrls = encodeURIComponent(JSON.stringify(urlList));
-                        imgHtml = `<img src="${urlList[0]}" class="menu-thumb" onclick="openImageModal('${encodedUrls}')" alt="${item.name}" onerror="this.style.display='none'">`;
+                        imgHtml = `<img src="${primaryUrl}" referrerpolicy="no-referrer" class="menu-thumb" onclick="openImageModal('${encodedUrls}')" alt="${item.name}" data-fallbacks="${encodeURIComponent(JSON.stringify(nextCandidates))}" onerror="const list = JSON.parse(decodeURIComponent(this.dataset.fallbacks || '[]')); if (list.length > 0) { this.src = list.shift(); this.dataset.fallbacks = encodeURIComponent(JSON.stringify(list)); } else { this.style.display='none'; }">`;
                     }
                 }
 
