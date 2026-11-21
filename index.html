@@ -4024,6 +4024,26 @@
 
         window.checkAndRenderState = checkAndRenderState;
 
+        function setLoadingSkeletonVisible(visible, messageText) {
+            const overlay = document.getElementById('pageLoadingOverlay');
+            if (!overlay) return;
+
+            if (visible) {
+                overlay.style.zIndex = '99996';
+                overlay.style.display = 'flex';
+                if (messageText) {
+                    const textTarget = overlay.querySelector('[data-loading-text], p, .loading-text') || overlay.querySelector('div');
+                    if (textTarget) {
+                        textTarget.textContent = messageText;
+                    }
+                }
+            } else {
+                overlay.style.display = 'none';
+                overlay.style.zIndex = '';
+            }
+        }
+        window.setLoadingSkeletonVisible = setLoadingSkeletonVisible;
+
         const orderFormEl = document.getElementById('orderForm');
         if (orderFormEl) {
             orderFormEl.addEventListener('submit', function (e) {
