@@ -4175,6 +4175,16 @@ function extractDriveFileId(rawUrl) {
             await checkAndRenderState(true);
         });
 
+        function showOnlySkeletonForPageshow() {
+            document.getElementById('alreadyOrderedNotice').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('quickReorderBox').style.display = 'none';
+            document.getElementById('pickupCompletedNotice').style.display = 'none';
+            document.getElementById('closedNotice').style.display = 'none';
+            document.getElementById('topNoticeBox').style.display = 'none';
+            document.getElementById('pageLoadingOverlay').style.display = 'flex';
+        }
+
         window.addEventListener('pageshow', async function () {
             if (typeof window.resetKakaoAuthUI === "function") {
                 window.resetKakaoAuthUI();
@@ -4189,12 +4199,8 @@ function extractDriveFileId(rawUrl) {
             if (sess && sess.kakaoId && sess.phone4 && String(sess.phone4).length === 4 && sess.identifier) {
                 hideKakaoGateOverlay();
                 syncNicknameUI();
-                const cachedState = loadCustomerStateCache();
-                if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
-                    renderActiveReservationScreen(cachedState.reservation);
-                } else {
-                    await checkAndRenderState(false);
-                }
+                showOnlySkeletonForPageshow();
+                await checkAndRenderState(false);
             }
         });
 
