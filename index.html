@@ -1904,7 +1904,8 @@
                             </td>
                             <td class="time-col">180도<br>10~13분</td>
                             <td><b>6분 후 뒤집기 · 2회 분할 추천</b><br>양과 종류가 다양하므로 2번 나눠 구우시고, <b>치즈·새우·안심은 10~11분경 먼저</b>,
-                                <b>등심은 1~2분 더</b> 조리해 주세요.</td>
+                                <b>등심은 1~2분 더</b> 조리해 주세요.
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -1913,7 +1914,8 @@
                     <div><b>1. 프라이팬 기름 튀김 시 (전 메뉴 공통):</b> 매장 튀김기(165도, 4분)는 고기 전체가 푹 잠겨 익지만, 가정집 프라이팬은 기름 깊이가 얕아 열이 천천히
                         들어갑니다. 기름을 넉넉히 두르고 <b>한 면당 2~3분씩 앞뒤로 뒤집어가며 총 5~7분 정도</b> 노릇하게 익혀주세요.</div>
                     <div><b>2. 불 조절 및 속 익힘 확인:</b> 등심이나 치즈가 들어간 메뉴는 겉이 먼저 타지 않도록 <b>중불~약불로 조절</b>하면서 익히시고, 두꺼운 고기는
-                        <b>가위로 한 점 잘라 속까지 하얗게 익었는지 확인</b>해 주세요. 작은 안심·새우는 먼저 꺼내거나 불을 줄여 마무리하세요.</div>
+                        <b>가위로 한 점 잘라 속까지 하얗게 익었는지 확인</b>해 주세요. 작은 안심·새우는 먼저 꺼내거나 불을 줄여 마무리하세요.
+                    </div>
                     <div><b>3. 냉동 보관 후 조리 시:</b> 위 시간은 <b>당일 냉장(생물) 기준</b>입니다. 냉동 보관 후에는 해동 없이 <b>170도에서 안내 시간보다 3~5분
                             더</b> 조리해 주세요.</div>
                 </div>
@@ -2431,7 +2433,7 @@
 
         let scrollPosition = 0;
 
-async function mountKakaoLoginModule() {
+        async function mountKakaoLoginModule() {
             const hasCodeOrError = (() => {
                 try {
                     const params = new URLSearchParams(window.location.search);
@@ -2510,10 +2512,12 @@ async function mountKakaoLoginModule() {
                     }
 
                     if (window.KakaoAuthManager) {
+                        window.KakaoAuthManager = window.KakaoAuthManager;
                         KakaoAuthManager = window.KakaoAuthManager;
                     }
-                    if (window.TripleStorage) {
-                        TripleStorage = window.TripleStorage;
+                    if (window.KakaoTripleStorage) {
+                        window.TripleStorage = window.KakaoTripleStorage;
+                        TripleStorage = window.KakaoTripleStorage;
                     }
 
                     const phoneInput = document.getElementById('kakaoPhone4Input');
@@ -4006,91 +4010,40 @@ async function mountKakaoLoginModule() {
 
         window.checkAndRenderState = checkAndRenderState;
 
-        window.addEventListener('DOMContentLoaded', async function () {
-            await mountKakaoLoginModule();
+        ㅊ
 
-            const restored = await KakaoAuthManager.restoreSession();
-            if (!restored || !restored.kakaoId) {
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
-                showKakaoGateOverlay("login", "");
-                return;
-            }
-            if (!restored.phone4 || restored.phone4.length !== 4 || !restored.identifier) {
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
-                showKakaoGateOverlay("phone4", "");
-                return;
-            }
+        const summaryObj = buildOrderSummaryString(false);
+        if (summaryObj.totalCount === 0) {
+            showCustomAlert("메뉴를 1개 이상 선택해 주세요!", "메뉴 선택 필요");
+            return;
+        }
 
-            hideKakaoGateOverlay();
-            syncNicknameUI();
+        const pickupTime = pickupSelect.value;
+        if (!pickupTime) {
+            showCustomAlert("픽업 시간을 선택해 주세요!", "픽업 시간 필요");
+            return;
+        }
 
-            const cachedSettings = loadSettingsCache();
-            const cachedState = loadCustomerStateCache();
+        const cookTypeRadio = document.querySelector('input[name="cookType"]:checked');
+        const cookType = cookTypeRadio ? cookTypeRadio.value : '🍗 튀겨서 포장';
+        const secretCode = document.getElementById('secretCodeInput').value.trim();
 
-            if (cachedSettings) {
-                applySettingsToGlobals(cachedSettings);
-                if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
-                    renderActiveReservationScreen(cachedState.reservation);
-                } else if (cachedState && cachedState.type === 'completed') {
-                    document.getElementById('pickupCompletedNotice').style.display = 'block';
-                } else {
-                    checkClosedTimeAndRender(cachedSettings);
-                }
-            } else {
-                document.getElementById('pageLoadingOverlay').style.display = 'flex';
-            }
+        pendingOrderPayload = {
+            isQuick: false,
+            nickname: nickname,
+            clientId: clientId,
+            kakaoId: sess.kakaoId,
+            kakaoNickname: sess.kakaoNickname,
+            phone4: sess.phone4,
+            cookType: cookType,
+            menuSummary: summaryObj.menuSummary,
+            sauce: summaryObj.sauceSummary,
+            totalPrice: String(summaryObj.totalPrice),
+            pickupTime: pickupTime,
+            secretCode: secretCode
+        };
 
-            checkAndRenderState(!cachedSettings);
-        });
-
-        document.getElementById('orderForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (isSubmitting) return;
-
-            const sess = KakaoAuthManager.session;
-            if (!sess || !sess.kakaoId || !sess.phone4 || sess.phone4.length !== 4) {
-                showKakaoGateOverlay(!sess || !sess.kakaoId ? "login" : "phone4", "카카오 회원 인증을 먼저 완료해 주세요.");
-                return;
-            }
-
-            const nickname = (sess.identifier || document.getElementById('nickname').value || '').trim();
-            if (!nickname || nickname.length < 2) {
-                showCustomAlert("카카오 회원 정보(닉네임+전화번호 뒷자리)를 확인해 주세요.", "입력 확인");
-                return;
-            }
-
-            const summaryObj = buildOrderSummaryString(false);
-            if (summaryObj.totalCount === 0) {
-                showCustomAlert("메뉴를 1개 이상 선택해 주세요!", "메뉴 선택 필요");
-                return;
-            }
-
-            const pickupTime = pickupSelect.value;
-            if (!pickupTime) {
-                showCustomAlert("픽업 시간을 선택해 주세요!", "픽업 시간 필요");
-                return;
-            }
-
-            const cookTypeRadio = document.querySelector('input[name="cookType"]:checked');
-            const cookType = cookTypeRadio ? cookTypeRadio.value : '🍗 튀겨서 포장';
-            const secretCode = document.getElementById('secretCodeInput').value.trim();
-
-            pendingOrderPayload = {
-                isQuick: false,
-                nickname: nickname,
-                clientId: clientId,
-                kakaoId: sess.kakaoId,
-                kakaoNickname: sess.kakaoNickname,
-                phone4: sess.phone4,
-                cookType: cookType,
-                menuSummary: summaryObj.menuSummary,
-                sauce: summaryObj.sauceSummary,
-                totalPrice: String(summaryObj.totalPrice),
-                pickupTime: pickupTime,
-                secretCode: secretCode
-            };
-
-            checkLatePickupAndSubmit(pendingOrderPayload);
+        checkLatePickupAndSubmit(pendingOrderPayload);
         });
 
         function executeQuickReorder() {
