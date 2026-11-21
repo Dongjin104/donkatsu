@@ -2445,7 +2445,7 @@
 
             if (window.KakaoAuthManager && typeof window.KakaoAuthManager.authorizeViaKakao === "function" && document.getElementById('kakaoGateOverlay')) {
                 KakaoAuthManager = window.KakaoAuthManager;
-                TripleStorage = window.TripleStorage || TripleStorage;
+                TripleStorage = window.KakaoTripleStorage || window.TripleStorage || TripleStorage;
                 if (hasCodeOrError && typeof window.handleOAuthCallbackOnLandingPage === "function") {
                     await window.handleOAuthCallbackOnLandingPage();
                 }
@@ -2512,12 +2512,12 @@
                     }
 
                     if (window.KakaoAuthManager) {
-                        window.KakaoAuthManager = window.KakaoAuthManager;
                         KakaoAuthManager = window.KakaoAuthManager;
                     }
                     if (window.KakaoTripleStorage) {
-                        window.TripleStorage = window.KakaoTripleStorage;
                         TripleStorage = window.KakaoTripleStorage;
+                    } else if (window.TripleStorage) {
+                        TripleStorage = window.TripleStorage;
                     }
 
                     const phoneInput = document.getElementById('kakaoPhone4Input');
@@ -2577,14 +2577,15 @@
         }
 
         function syncNicknameUI() {
-            const sess = KakaoAuthManager.session;
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const nickInput = document.getElementById('nickname');
             const memberBar = document.getElementById('kakaoMemberBar');
             const memberTitle = document.getElementById('kakaoMemberBarTitle');
             const memberSub = document.getElementById('kakaoMemberBarSub');
 
             if (sess && sess.kakaoId) {
-                clientId = KakaoAuthManager.formatClientId(sess.kakaoId);
+                clientId = typeof activeAuth.formatClientId === "function" ? activeAuth.formatClientId(sess.kakaoId) : "";
                 window.clientId = clientId;
                 if (sess.identifier) {
                     globalUserNickname = sess.identifier;
@@ -2660,7 +2661,9 @@
                 return;
             }
 
-            const savedNick = KakaoAuthManager.session.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
             if (!savedNick && !clientId) {
                 return;
             }
@@ -2674,9 +2677,9 @@
                         action: 'checkSimple',
                         nickname: savedNick,
                         clientId: clientId,
-                        kakaoId: KakaoAuthManager.session.kakaoId,
-                        kakaoNickname: KakaoAuthManager.session.kakaoNickname,
-                        phone4: KakaoAuthManager.session.phone4
+                        kakaoId: sess.kakaoId,
+                        kakaoNickname: sess.kakaoNickname,
+                        phone4: sess.phone4
                     })
                 });
                 const text = await res.text();
@@ -3680,10 +3683,12 @@
 
             syncNicknameUI();
 
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const cookLabel = lastOrder.cookType || '튀김';
             const sauceLabel = lastOrder.sauce || '없음';
             const priceLabel = formatWonDisplay(lastOrder.totalPrice) || '0원';
-            const nickLabel = KakaoAuthManager.session.identifier || globalUserNickname || lastOrder.nickname || '-';
+            const nickLabel = sess.identifier || globalUserNickname || lastOrder.nickname || '-';
 
             document.getElementById('quickReorderSummaryCard').innerHTML = `
                 <div class="order-info-row">
@@ -3809,11 +3814,15 @@
 
         function renderActiveReservationScreen(data) {
             currentFoundRowIndex = data.rowIndex;
-            const resolvedNick = data.nickname || data.recoveredNickname || KakaoAuthManager.session.identifier || globalUserNickname || "";
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            const resolvedNick = data.nickname || data.recoveredNickname || sess.identifier || globalUserNickname || "";
             if (resolvedNick) {
                 globalUserNickname = resolvedNick;
                 window.globalUserNickname = resolvedNick;
-                KakaoAuthManager.saveSession({ identifier: resolvedNick });
+                if (activeAuth && typeof activeAuth.saveSession === "function") {
+                    activeAuth.saveSession({ identifier: resolvedNick });
+                }
             }
 
             document.getElementById('alreadyOrderedNotice').style.display = 'block';
@@ -3901,12 +3910,14 @@
                 return true;
             }
 
-            if (payload.memberProfile) {
-                KakaoAuthManager.saveSession({
-                    kakaoId: payload.memberProfile.kakaoId || KakaoAuthManager.session.kakaoId,
-                    kakaoNickname: payload.memberProfile.kakaoNickname || KakaoAuthManager.session.kakaoNickname,
-                    phone4: payload.memberProfile.phone4 || KakaoAuthManager.session.phone4,
-                    identifier: payload.memberProfile.identifier || KakaoAuthManager.session.identifier
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            if (payload.memberProfile && activeAuth && typeof activeAuth.saveSession === "function") {
+                const curSess = activeAuth.session || {};
+                activeAuth.saveSession({
+                    kakaoId: payload.memberProfile.kakaoId || curSess.kakaoId,
+                    kakaoNickname: payload.memberProfile.kakaoNickname || curSess.kakaoNickname,
+                    phone4: payload.memberProfile.phone4 || curSess.phone4,
+                    identifier: payload.memberProfile.identifier || curSess.identifier
                 });
             }
 
@@ -3948,7 +3959,9 @@
             if (resData.recoveredNickname) {
                 globalUserNickname = resData.recoveredNickname;
                 window.globalUserNickname = resData.recoveredNickname;
-                KakaoAuthManager.saveSession({ identifier: resData.recoveredNickname });
+                if (activeAuth && typeof activeAuth.saveSession === "function") {
+                    activeAuth.saveSession({ identifier: resData.recoveredNickname });
+                }
             }
 
             stopOrderStatusPolling();
@@ -3959,12 +3972,13 @@
         }
 
         async function checkAndRenderState(showSkeleton = true) {
-            const sess = KakaoAuthManager.session;
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (!sess || !sess.kakaoId) {
                 showKakaoGateOverlay("login", "");
                 return;
             }
-            if (!sess.phone4 || sess.phone4.length !== 4 || !sess.identifier) {
+            if (!sess.phone4 || String(sess.phone4).length !== 4 || !sess.identifier) {
                 showKakaoGateOverlay("phone4", "");
                 return;
             }
@@ -4010,47 +4024,87 @@
 
         window.checkAndRenderState = checkAndRenderState;
 
-        ㅊ
+        const orderFormEl = document.getElementById('orderForm');
+        if (orderFormEl) {
+            orderFormEl.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (isSubmitting) return;
 
-        const summaryObj = buildOrderSummaryString(false);
-        if (summaryObj.totalCount === 0) {
-            showCustomAlert("메뉴를 1개 이상 선택해 주세요!", "메뉴 선택 필요");
-            return;
+                const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+                const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+                if (!sess.kakaoId || !sess.phone4 || String(sess.phone4).length !== 4) {
+                    showKakaoGateOverlay(!sess.kakaoId ? "login" : "phone4", "카카오 회원 인증을 먼저 완료해 주세요.");
+                    return;
+                }
+
+                const nickInputEl = document.getElementById('nickname');
+                const nickname = String(sess.identifier || (nickInputEl ? nickInputEl.value : '') || globalUserNickname || '').trim();
+                if (!nickname || nickname.length < 2) {
+                    showCustomAlert("카카오 회원 정보(닉네임+전화번호 뒷자리)를 확인해 주세요.", "입력 확인");
+                    return;
+                }
+
+                const summaryObj = buildOrderSummaryString(false);
+                if (summaryObj.totalCount === 0) {
+                    showCustomAlert("메뉴를 1개 이상 선택해 주세요!", "메뉴 선택 필요");
+                    return;
+                }
+
+                const pickupTime = pickupSelect.value;
+                if (!pickupTime) {
+                    showCustomAlert("픽업 시간을 선택해 주세요!", "픽업 시간 필요");
+                    return;
+                }
+
+                const cookTypeRadio = document.querySelector('input[name="cookType"]:checked');
+                const cookType = cookTypeRadio ? cookTypeRadio.value : '🍗 튀겨서 포장';
+                const secretCodeInputEl = document.getElementById('secretCodeInput');
+                const secretCode = secretCodeInputEl ? secretCodeInputEl.value.trim() : '';
+
+                pendingOrderPayload = {
+                    isQuick: false,
+                    nickname: nickname,
+                    clientId: clientId || (activeAuth && typeof activeAuth.formatClientId === 'function' ? activeAuth.formatClientId(sess.kakaoId) : ''),
+                    kakaoId: sess.kakaoId,
+                    kakaoNickname: sess.kakaoNickname || '',
+                    phone4: sess.phone4,
+                    cookType: cookType,
+                    menuSummary: summaryObj.menuSummary,
+                    sauce: summaryObj.sauceSummary,
+                    totalPrice: String(summaryObj.totalPrice),
+                    pickupTime: pickupTime,
+                    secretCode: secretCode
+                };
+
+                checkLatePickupAndSubmit(pendingOrderPayload);
+            });
         }
 
-        const pickupTime = pickupSelect.value;
-        if (!pickupTime) {
-            showCustomAlert("픽업 시간을 선택해 주세요!", "픽업 시간 필요");
-            return;
-        }
+        window.addEventListener('DOMContentLoaded', async function () {
+            await mountKakaoLoginModule();
 
-        const cookTypeRadio = document.querySelector('input[name="cookType"]:checked');
-        const cookType = cookTypeRadio ? cookTypeRadio.value : '🍗 튀겨서 포장';
-        const secretCode = document.getElementById('secretCodeInput').value.trim();
+            if (window.KakaoAuthManager) {
+                KakaoAuthManager = window.KakaoAuthManager;
+            }
+            if (window.KakaoTripleStorage) {
+                TripleStorage = window.KakaoTripleStorage;
+            } else if (window.TripleStorage) {
+                TripleStorage = window.TripleStorage;
+            }
 
-        pendingOrderPayload = {
-            isQuick: false,
-            nickname: nickname,
-            clientId: clientId,
-            kakaoId: sess.kakaoId,
-            kakaoNickname: sess.kakaoNickname,
-            phone4: sess.phone4,
-            cookType: cookType,
-            menuSummary: summaryObj.menuSummary,
-            sauce: summaryObj.sauceSummary,
-            totalPrice: String(summaryObj.totalPrice),
-            pickupTime: pickupTime,
-            secretCode: secretCode
-        };
+            if (KakaoAuthManager && typeof KakaoAuthManager.restoreSession === 'function') {
+                await KakaoAuthManager.restoreSession();
+            }
 
-        checkLatePickupAndSubmit(pendingOrderPayload);
+            await checkAndRenderState(true);
         });
 
         function executeQuickReorder() {
             if (isQuickSubmitting) return;
 
-            const sess = KakaoAuthManager.session;
-            if (!sess || !sess.kakaoId || !sess.phone4 || sess.phone4.length !== 4) {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (!sess || !sess.kakaoId || !sess.phone4 || String(sess.phone4).length !== 4) {
                 showKakaoGateOverlay(!sess || !sess.kakaoId ? "login" : "phone4", "카카오 회원 인증을 먼저 완료해 주세요.");
                 return;
             }
@@ -4086,9 +4140,9 @@
             pendingOrderPayload = {
                 isQuick: true,
                 nickname: nickname,
-                clientId: clientId,
+                clientId: clientId || (activeAuth && typeof activeAuth.formatClientId === 'function' ? activeAuth.formatClientId(sess.kakaoId) : ''),
                 kakaoId: sess.kakaoId,
-                kakaoNickname: sess.kakaoNickname,
+                kakaoNickname: sess.kakaoNickname || '',
                 phone4: sess.phone4,
                 cookType: lastOrder.cookType || '🍗 튀겨서 포장',
                 menuSummary: lastOrder.menuSummary,
@@ -4225,12 +4279,15 @@
                 }
 
                 if (resData.result === "success") {
-                    KakaoAuthManager.saveSession({
-                        kakaoId: payload.kakaoId,
-                        kakaoNickname: payload.kakaoNickname,
-                        phone4: payload.phone4,
-                        identifier: payload.nickname
-                    });
+                    const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+                    if (activeAuth && typeof activeAuth.saveSession === "function") {
+                        activeAuth.saveSession({
+                            kakaoId: payload.kakaoId,
+                            kakaoNickname: payload.kakaoNickname,
+                            phone4: payload.phone4,
+                            identifier: payload.nickname
+                        });
+                    }
 
                     const lastOrderObj = {
                         nickname: payload.nickname,
@@ -4328,7 +4385,9 @@
             submitBtn.disabled = true;
             submitBtn.textContent = "저장 중...";
 
-            const nick = KakaoAuthManager.session.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            const nick = sess.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
 
             try {
                 await fetch(WEB_APP_URL, {
@@ -4338,7 +4397,7 @@
                         action: 'selectEventPrize',
                         nickname: nick,
                         clientId: clientId,
-                        kakaoId: KakaoAuthManager.session.kakaoId,
+                        kakaoId: sess.kakaoId,
                         prize: prize
                     })
                 });
@@ -4360,7 +4419,9 @@
             document.getElementById('searchResultArea').style.display = 'none';
             document.getElementById('searchModalActionBtns').style.display = 'none';
 
-            const nick = KakaoAuthManager.session.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            const nick = sess.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
 
             fetch(WEB_APP_URL, {
                 method: 'POST',
@@ -4369,9 +4430,9 @@
                     action: 'check',
                     nickname: nick,
                     clientId: clientId,
-                    kakaoId: KakaoAuthManager.session.kakaoId,
-                    kakaoNickname: KakaoAuthManager.session.kakaoNickname,
-                    phone4: KakaoAuthManager.session.phone4
+                    kakaoId: sess.kakaoId,
+                    kakaoNickname: sess.kakaoNickname,
+                    phone4: sess.phone4
                 })
             })
                 .then(res => res.text())
