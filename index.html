@@ -3518,6 +3518,29 @@ function extractDriveFileId(rawUrl) {
             };
         }
 
+        function applyDriveImageToElement(imgEl, rawUrl) {
+            if (!imgEl) return;
+            const candidates = buildDriveImageCandidates(rawUrl);
+            if (!candidates.length) {
+                imgEl.style.display = 'none';
+                return;
+            }
+            imgEl.referrerPolicy = 'no-referrer';
+            const remaining = candidates.slice(1);
+            imgEl.dataset.fallbacks = encodeURIComponent(JSON.stringify(remaining));
+            imgEl.onerror = function () {
+                const list = JSON.parse(decodeURIComponent(this.dataset.fallbacks || '[]'));
+                if (list.length > 0) {
+                    this.src = list.shift();
+                    this.dataset.fallbacks = encodeURIComponent(JSON.stringify(list));
+                } else {
+                    this.style.display = 'none';
+                }
+            };
+            imgEl.style.display = '';
+            imgEl.src = candidates[0];
+        }
+
         function openImageModal(encodedUrls) {
             try {
                 const urlList = JSON.parse(decodeURIComponent(encodedUrls));
@@ -3525,7 +3548,7 @@ function extractDriveFileId(rawUrl) {
                 container.innerHTML = '';
                 urlList.forEach(url => {
                     const img = document.createElement('img');
-                    img.src = url;
+                    applyDriveImageToElement(img, url);
                     container.appendChild(img);
                 });
                 showModal('imageModal');
