@@ -3878,6 +3878,16 @@
                 fortuneSection.style.display = 'none';
             }
 
+            if (data.menu) {
+                TripleStorage.save('lastOrderSummary', JSON.stringify({
+                    nickname: resolvedNick,
+                    cookType: data.cookType || '🍗 튀겨서 포장',
+                    menuSummary: String(data.menu),
+                    sauce: data.sauce || '없음',
+                    totalPrice: String(formatPriceNumber(data.totalPrice))
+                }));
+            }
+
             saveCustomerStateCache({
                 type: 'active_order',
                 reservation: data
@@ -4206,7 +4216,9 @@
         }
 
         function validateSecretCodeAndSubmit(payload) {
-            if (payload.secretCode && serverSecretCode && payload.secretCode !== serverSecretCode) {
+            const inputCode = String(payload.secretCode || '').trim().toLowerCase();
+            const targetCode = String(serverSecretCode || '').trim().toLowerCase();
+            if (inputCode && targetCode && inputCode !== targetCode) {
                 pendingOrderPayload = payload;
                 showModal('secretCodeConfirmModal');
                 return;
@@ -4408,21 +4420,39 @@
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const nick = sess.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
+            const resolvedClientId = clientId || (activeAuth && typeof activeAuth.formatClientId === 'function' ? activeAuth.formatClientId(sess.kakaoId) : '');
 
             try {
-                await fetch(WEB_APP_URL, {
+                const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: 'selectEventPrize',
+                        rowIndex: currentFoundRowIndex,
                         nickname: nick,
-                        clientId: clientId,
-                        kakaoId: sess.kakaoId,
+                        clientId: resolvedClientId,
+                        kakaoId: sess.kakaoId || '',
                         prize: prize
                     })
                 });
-            } catch (e) { }
+                const text = await res.text();
+                let resData = null;
+                try { resData = JSON.parse(text); } catch (e) { }
+                if (resData && resData.result === 'not_found') {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "선택 완료 및 확인";
+                    showCustomAlert("당첨 내역을 반영할 예약을 찾지 못했습니다. 다시 시도해 주세요.", "안내");
+                    return;
+                }
+            } catch (e) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "선택 완료 및 확인";
+                showCustomAlert("네트워크 오류가 발생했습니다. 다시 시도해 주세요.", "통신 오류");
+                return;
+            }
 
+            submitBtn.disabled = false;
+            submitBtn.textContent = "선택 완료 및 확인";
             hideModal('eventWinModal');
             reloadAfterSuccess();
         }
@@ -4555,6 +4585,11 @@
             updateBtn.disabled = true;
             showSubmittingModal("예약 변경 내용을 저장하고 있어요", "잠시만 기다려 주세요...");
 
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            const nick = sess.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
+            const resolvedClientId = clientId || (activeAuth && typeof activeAuth.formatClientId === 'function' ? activeAuth.formatClientId(sess.kakaoId) : '');
+
             try {
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
@@ -4562,6 +4597,9 @@
                     body: JSON.stringify({
                         action: 'update',
                         rowIndex: currentFoundRowIndex,
+                        nickname: nick,
+                        clientId: resolvedClientId,
+                        kakaoId: sess.kakaoId || '',
                         newCookType: newCookType,
                         newMenu: summaryObj.menuSummary,
                         newSauce: summaryObj.sauceSummary,
@@ -4598,6 +4636,14 @@
                 }
 
                 if (resData.result === 'updated') {
+                    const updatedOrderObj = {
+                        nickname: nick,
+                        cookType: newCookType,
+                        menuSummary: summaryObj.menuSummary,
+                        sauce: summaryObj.sauceSummary,
+                        totalPrice: String(summaryObj.totalPrice)
+                    };
+                    TripleStorage.save('lastOrderSummary', JSON.stringify(updatedOrderObj));
                     closeSearchModal();
                     showCustomAlert("예약 내용이 성공적으로 변경되었습니다!", "변경 완료", () => {
                         checkAndRenderState(false);

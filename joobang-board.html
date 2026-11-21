@@ -505,24 +505,48 @@
         const KAKAO_JS_KEY = "db06049bca3d739bbf1d8d9d0cad1b5b";
         let previousTotalCount = 0;
         let isInitialLoad = true;
+        let lastOrderSignature = "";
+        let lastActiveUsersSignature = "";
+
+        function normalizeKakaoId(raw) {
+            if (raw === null || raw === undefined) return "";
+            let s = String(raw).trim();
+            if (!s) return "";
+            if (s.toLowerCase().startsWith("kakao_")) s = s.slice(6).trim();
+            if (/^\d+\.0$/.test(s)) s = s.replace(/\.0$/, "");
+            return s;
+        }
+
+        function formatKakaoId(raw) {
+            const norm = normalizeKakaoId(raw);
+            if (!norm) return "";
+            return /^\d+$/.test(norm) ? ("kakao_" + norm) : norm;
+        }
 
         function getKakaoId() {
             const params = new URLSearchParams(window.location.search);
-            const fromUrl = (params.get("kakaoId") || params.get("kakao_id") || "").trim();
+            const fromUrl = (params.get("kakaoId") || params.get("kakao_id") || params.get("clientId") || "").trim();
             if (fromUrl) {
-                try {
-                    localStorage.setItem("jnal_kakao_id", fromUrl);
-                    sessionStorage.setItem("jnal_kakao_id", fromUrl);
-                } catch (e) {}
-                return fromUrl;
+                const normUrl = normalizeKakaoId(fromUrl);
+                if (normUrl) {
+                    try {
+                        localStorage.setItem("jnal_kakao_id", normUrl);
+                        sessionStorage.setItem("jnal_kakao_id", normUrl);
+                        localStorage.setItem("donkatsu_kakao_id", normUrl);
+                    } catch (e) {}
+                    return normUrl;
+                }
             }
             try {
-                return (
+                const rawStored = (
                     sessionStorage.getItem("jnal_kakao_id") ||
                     localStorage.getItem("jnal_kakao_id") ||
+                    localStorage.getItem("donkatsu_kakao_id") ||
+                    localStorage.getItem("donkatsu_client_id") ||
                     localStorage.getItem("kakaoId") ||
                     ""
                 ).trim();
+                return normalizeKakaoId(rawStored);
             } catch (e) {
                 return "";
             }
@@ -553,6 +577,7 @@
                 }, 400);
             }
             fetchOrders();
+            fetchActiveUsers();
         }
 
         function playNewOrderSound() {
@@ -581,9 +606,28 @@
 
         function callGasAPI(action, params = {}, callback) {
             const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
+            let settled = false;
+            const script = document.createElement('script');
+
+            const cleanup = () => {
+                try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                if (script.parentNode) {
+                    try { script.parentNode.removeChild(script); } catch (e) {}
+                }
+            };
+
+            const timer = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                if (callback) callback(null);
+            }, 10000);
+
             window[callbackName] = function (data) {
-                delete window[callbackName];
-                if (script.parentNode) document.body.removeChild(script);
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                cleanup();
                 if (callback) callback(data);
             };
 
@@ -592,37 +636,64 @@
             if (kakaoId && !mergedParams.kakaoId) {
                 mergedParams.kakaoId = kakaoId;
             }
+            if (kakaoId && !mergedParams.clientId) {
+                mergedParams.clientId = formatKakaoId(kakaoId);
+            }
+            mergedParams._ts = Date.now();
 
-            let url = GAS_WEBAPP_URL + '?action=' + action + '&callback=' + callbackName;
+            let url = GAS_WEBAPP_URL + '?action=' + encodeURIComponent(action) + '&callback=' + encodeURIComponent(callbackName);
             for (let key in mergedParams) {
                 if (mergedParams[key] !== undefined && mergedParams[key] !== null) {
                     url += '&' + key + '=' + encodeURIComponent(mergedParams[key]);
                 }
             }
 
-            const script = document.createElement('script');
             script.src = url;
             script.onerror = function () {
-                delete window[callbackName];
-                if (script.parentNode) document.body.removeChild(script);
-                if (callback) callback({ success: true });
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                cleanup();
+                if (callback) callback(null);
             };
             document.body.appendChild(script);
         }
 
         function fetchOrders() {
             callGasAPI('getAdminOrderList', {}, function (data) {
-                renderOrders(data);
+                if (data === null || data === undefined) return;
+                const ordersList = Array.isArray(data)
+                    ? data
+                    : (data && Array.isArray(data.orders) ? data.orders : null);
+                if (!ordersList) return;
+                renderOrders(ordersList);
             });
         }
 
         function renderOrders(orders) {
             const container = document.getElementById('orderContainer');
-            
-            // 🛡️ [방어 코드 추가] 데이터가 배열이 아니거나 정상적이지 않으면 빈 배열로 보정
+
             if (!Array.isArray(orders)) {
                 orders = [];
             }
+
+            const sig = JSON.stringify(orders.map(o => ({
+                r: o.rowIndex,
+                s: o.status,
+                t: o.pickupTime,
+                c: o.cooking,
+                m: o.menu,
+                es: o.extraSauce,
+                n: o.nickname,
+                p: o.totalPrice,
+                ep: o.eventPrize || o.eventWinner || '',
+                k: normalizeKakaoId(o.kakaoId)
+            })));
+
+            if (!isInitialLoad && sig === lastOrderSignature) {
+                return;
+            }
+            lastOrderSignature = sig;
 
             if (!orders || orders.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
@@ -644,10 +715,12 @@
             let html = '';
 
             orders.forEach(item => {
-                const isUnconfirmed = (item.status === '미확인');
+                const statusVal = String(item.status || '미확인').trim();
+                const isUnconfirmed = (statusVal === '미확인');
                 if (isUnconfirmed) unconfirmedCnt++;
 
-                const isSpecialCooking = item.cooking && item.cooking.includes('비튀김');
+                const cookingVal = String(item.cooking || '').trim();
+                const isSpecialCooking = cookingVal.includes('비튀김') || cookingVal.includes('생고기') || cookingVal.includes('안튀김');
 
                 let priceDisplay = '';
                 if (item.totalPrice !== undefined && item.totalPrice !== '') {
@@ -658,8 +731,9 @@
                 let eventText = item.eventWinner || item.eventPrize || item.event || '';
                 if (!eventText) {
                     for (let key in item) {
+                        if (key === 'kakaoId' || key === 'rowIndex' || key === 'totalPrice') continue;
                         let val = String(item[key] || '');
-                        if (val.includes('당첨') || val.includes('새우') || val.includes('서비스')) {
+                        if (val.includes('당첨') || val.includes('서비스')) {
                             eventText = val;
                             break;
                         }
@@ -676,23 +750,23 @@
                         <div class="order-info">
                             <div class="top-row">
                                 <div class="time-group">
-                                    <span class="time-tag">⏰ ${item.pickupTime}</span>
+                                    <span class="time-tag">⏰ ${item.pickupTime || ''}</span>
                                     ${eventDetailHtml}
                                 </div>
-                                <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
+                                <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${cookingVal || '튀김'}</span>
                             </div>
-                            <div class="menu-text">${item.menu}</div>
+                            <div class="menu-text">${item.menu || ''}</div>
                             <div class="bottom-row">
                                 <div class="sub-info-group">
                                     ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + item.extraSauce + '</span>' : ''}
-                                    <span class="nickname-text"${item.kakaoId ? ` title="카카오ID: ${item.kakaoId}"` : ''}>👤 ${item.nickname}${item.kakaoId ? ` <span style="opacity:0.75;font-size:0.66rem;">(#${item.kakaoId})</span>` : ''}</span>
+                                    <span class="nickname-text">👤 ${item.nickname || ''}</span>
                                 </div>
                                 ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
                             </div>
                         </div>
                         <div class="btn-group">
                             <button class="btn-status ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}" 
-                                    onclick="toggleStatus(${item.rowIndex}, '${item.status}')">
+                                    onclick="toggleStatus(${item.rowIndex}, '${statusVal}')">
                                 ${isUnconfirmed ? '미확인🔴' : '확인완료🟢'}
                             </button>
                             <button class="btn-done" onclick="completeOrder(${item.rowIndex})">
@@ -709,9 +783,10 @@
         }
 
         function toggleStatus(rowIndex, currentStatus) {
-            getAudioContext(); 
+            getAudioContext();
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
+                lastOrderSignature = "";
                 fetchOrders();
             });
         }
@@ -731,8 +806,10 @@
 
             newConfirmBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
-                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) { });
-                fetchOrders();
+                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) {
+                    lastOrderSignature = "";
+                    fetchOrders();
+                });
             });
 
             newCancelBtn.addEventListener('click', function () {
@@ -743,7 +820,7 @@
         function toggleOnlineDropdown() {
             const panel = document.getElementById('onlineDropdownPanel');
             const badge = document.getElementById('onlineBadgeBtn');
-            
+
             if (panel.style.display === 'none' || panel.style.display === '') {
                 panel.style.display = 'block';
                 badge.classList.add('active');
@@ -763,25 +840,30 @@
 
         function fetchActiveUsers() {
             callGasAPI('getActiveUsers', {}, function(data) {
+                if (!data || typeof data !== 'object') return;
                 const badge = document.getElementById('activeVisitorsBadge');
                 const subCount = document.getElementById('dropdownSubCount');
                 const listEl = document.getElementById('onlineUserList');
-                
-                const count = data.count || 0;
-                if(badge) badge.innerText = `접속 중: ${count}명`;
-                if(subCount) subCount.innerText = `총 ${count}명`;
-                
-                if(listEl) {
+
+                const usersArr = Array.isArray(data.users) ? data.users : [];
+                const count = (typeof data.count === 'number') ? data.count : usersArr.length;
+                const sig = count + '|' + JSON.stringify(usersArr);
+                if (sig === lastActiveUsersSignature) return;
+                lastActiveUsersSignature = sig;
+
+                if (badge) badge.innerText = `접속 중: ${count}명`;
+                if (subCount) subCount.innerText = `총 ${count}명`;
+
+                if (listEl) {
                     listEl.innerHTML = '';
-                    if (!data.users || data.users.length === 0) {
+                    if (usersArr.length === 0) {
                         listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
                     } else {
-                        data.users.forEach((userEntry) => {
+                        usersArr.forEach((userEntry) => {
                             const li = document.createElement('li');
                             if (typeof userEntry === 'object' && userEntry !== null) {
-                                const name = userEntry.nickname || userEntry.name || userEntry.kakaoId || '회원';
-                                const kid = userEntry.kakaoId ? ` (#${userEntry.kakaoId})` : '';
-                                li.textContent = `${name}${kid}`;
+                                const name = userEntry.nickname || userEntry.name || userEntry.identifier || '회원';
+                                li.textContent = `${name}`;
                             } else {
                                 li.textContent = String(userEntry);
                             }
