@@ -1,764 +1,1046 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>장날동천 주방 대시보드</title>
-    <!-- 404 에러를 유발하는 누락된 파비콘 요청을 차단하는 기본 파비콘 선언 -->
-    <link rel="icon" href="data:,">
-    <!-- Pretendard 폰트 CSS 스토리지 차단 우회를 위한 인라인 스타일 내장 적용 -->
-    <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>장날동천 주방 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #121212;
+    --bg-card: #1e1e1e;
+    --bg-card-hover: #262626;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --border-color: #333333;
+    --accent-amber: #ff9800;
+    --accent-amber-bg: #332000;
+    --accent-green: #2e7d32;
+    --accent-blue: #1976d2;
+    --accent-blue-bg: #0d223a;
+    --accent-red: #d32f2f;
+    --accent-red-bg: #3b0d0d;
+  }
 
-        :root {
-            --bg-color: #121212;
-            --surface-color: #1a1a1a;
-            --surface-sub: #242424;
-            --border-color: #333333;
-            --text-main: #F8F7F4;
-            --text-sub: #9E9A90;
-            --accent-gold: #C5A059;
-            --accent-gold-bg: rgba(197, 160, 89, 0.12);
-        }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Pretendard Variable', Pretendard, sans-serif;
-        }
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: 40px;
+  }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 6px;
-            font-size: 14.5px;
-            overflow-x: hidden;
-        }
+  /* HEADER */
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-card);
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 16px;
+    gap: 12px;
+  }
 
-        /* 👑 뒤가 은은하게 비치는 프리미엄 블러 오버레이 (화면 터치 시 해제) */
-        #blurOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: rgba(18, 18, 18, 0.45);
-            backdrop-filter: blur(2.5px);
-            -webkit-backdrop-filter: blur(2.5px);
-            z-index: 99999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            cursor: pointer;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-        .blur-popup-card {
-            background: var(--surface-color);
-            border: 1px solid rgba(197, 160, 89, 0.4);
-            border-radius: 20px;
-            padding: 44px 36px;
-            max-width: 380px;
-            width: 100%;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-            text-align: center;
-            cursor: pointer;
-            animation: popupBounce 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
+  .header-title h1 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--accent-amber);
+  }
 
-        @keyframes popupBounce {
-            0% { transform: scale(0.92); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.9rem;
+  }
 
-        .popup-badge {
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: var(--accent-gold);
-            background: var(--accent-gold-bg);
-            padding: 5px 12px;
-            border-radius: 20px;
-            margin-bottom: 18px;
-            display: inline-block;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-        }
+  #clock {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    background: #2a2a2a;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
 
-        .popup-title {
-            font-size: 21px;
-            font-weight: 800;
-            color: var(--text-main);
-            margin-bottom: 12px;
-            letter-spacing: -0.02em;
-        }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #2a2a2a;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
 
-        .popup-desc {
-            font-size: 14px;
-            color: var(--text-sub);
-            line-height: 1.6;
-            word-break: keep-all;
-        }
+  .live-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #4caf50;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4caf50;
+    animation: pulse 1.5s infinite;
+  }
 
-        /* 상단 바 */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--surface-color);
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            border: 1px solid var(--border-color);
-        }
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+  }
 
-        header h1 {
-            font-size: 0.92rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
+  .btn-refresh {
+    background-color: #333333;
+    color: #ffffff;
+    border: 1px solid #555555;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
 
-        .status-badge {
-            background: var(--surface-sub);
-            border: 1px solid var(--border-color);
-            padding: 3px 7px;
-            border-radius: 5px;
-            font-size: 0.7rem;
-            color: var(--text-sub);
-        }
+  .btn-refresh:hover {
+    background-color: #444444;
+  }
 
-        /* 🟢 접속 중 고객 드롭다운 뱃지 스타일 */
-        .online-status-container {
-            position: relative;
-            display: inline-block;
-            z-index: 100;
-        }
+  .btn-refresh:active {
+    transform: scale(0.98);
+  }
 
-        .online-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background-color: var(--surface-sub);
-            border: 1px solid var(--border-color);
-            padding: 4px 9px;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+  .btn-sound {
+    background-color: #2a2a2a;
+    color: #ffb74d;
+    border: 1px solid #ff9800;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
 
-        .online-badge:hover {
-            background-color: #2a2a2a;
-            border-color: #444;
-        }
+  .btn-sound.muted {
+    color: #888888;
+    border-color: #555555;
+  }
 
-        .pulse-dot {
-            width: 6.5px;
-            height: 6.5px;
-            background-color: #22c55e;
-            border-radius: 50%;
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
-            animation: pulse 2s infinite;
-        }
+  /* STATS SUMMARY */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
-            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
+  .stat-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-        .badge-text {
-            font-size: 0.72rem;
-            color: var(--accent-gold);
-            font-weight: 700;
-        }
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
 
-        .arrow-icon {
-            font-size: 0.58rem;
-            color: var(--text-sub);
-            transition: transform 0.2s;
-        }
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+  }
 
-        .online-badge.active .arrow-icon {
-            transform: rotate(180deg);
-        }
+  .stat-value.amber { color: var(--accent-amber); }
+  .stat-value.blue { color: #64b5f6; }
+  .stat-value.green { color: #81c784; }
 
-        /* 드롭다운 펼침 패널 */
-        .online-dropdown-panel {
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            width: 200px;
-            background: var(--surface-color);
-            border-radius: 10px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: none;
-            z-index: 1000;
-        }
+  /* ACTIVE USERS BAR */
+  .active-users-panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
 
-        .dropdown-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 10px;
-            background-color: var(--surface-sub);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--text-sub);
-        }
+  .active-users-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #90caf9;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
 
-        .online-user-list {
-            list-style: none;
-            margin: 0;
-            padding: 5px;
-            max-height: 160px;
-            overflow-y: auto;
-        }
+  .active-users-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+  }
 
-        .online-user-list li {
-            padding: 6px 8px;
-            font-size: 0.76rem;
-            color: var(--text-main);
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+  .user-chip {
+    background-color: #2b2b2b;
+    border: 1px solid #444444;
+    color: #e0e0e0;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
 
-        .online-user-list li:hover {
-            background-color: var(--surface-sub);
-        }
+  .user-chip-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #66bb6a;
+    border-radius: 50%;
+  }
 
-        .online-user-list li::before {
-            content: "•";
-            color: var(--accent-gold);
-            font-weight: bold;
-        }
+  .empty-users-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
 
-        /* 주문 리스트 카드 구조 */
-        .order-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
 
-        .order-item {
-            display: flex;
-            align-items: stretch;
-            justify-content: space-between;
-            background: var(--surface-color);
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            border-left-width: 4.5px;
-        }
+  .tab-btn {
+    flex: 1;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
 
-        .order-item.unconfirmed {
-            border-left-color: #ef4444;
-            background: #1c1515;
-        }
+  .tab-btn.active {
+    background-color: var(--accent-amber);
+    color: #000000;
+    border-color: var(--accent-amber);
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+  }
 
-        .order-item.confirmed {
-            border-left-color: #22c55e;
-            background: #141c14;
-        }
+  .tab-badge {
+    background-color: rgba(0,0,0,0.25);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+  }
 
-        /* 왼쪽 정보 영역 */
-        .order-info {
-            flex: 1;
-            padding: 7px 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
+  .tab-btn.active .tab-badge {
+    background-color: #000000;
+    color: var(--accent-amber);
+  }
 
-        .top-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+  /* ORDER CARDS GRID */
+  .orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
 
-        .time-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
+  .order-card {
+    background-color: var(--bg-card);
+    border-radius: 14px;
+    border: 2px solid var(--border-color);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+    transition: transform 0.15s, box-shadow 0.2s;
+    position: relative;
+  }
 
-        .time-tag {
-            font-size: 0.88rem;
-            font-weight: 800;
-            color: var(--accent-gold);
-            letter-spacing: -0.5px;
-        }
+  .order-card:hover {
+    background-color: var(--bg-card-hover);
+  }
 
-        .winner-badge {
-            background: rgba(236, 72, 153, 0.15);
-            color: #f472b6;
-            border: 1px solid rgba(236, 72, 153, 0.3);
-            font-size: 0.6rem;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
+  .order-card.unconfirmed {
+    border-color: var(--accent-amber);
+    box-shadow: 0 0 18px rgba(255, 152, 0, 0.18);
+  }
 
-        /* 🍗 조리 방식 배지 (박스 제일 우측 상단 정렬) */
-        .cooking-badge {
-            display: inline-block;
-            background: var(--surface-sub);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 4px;
-            white-space: nowrap;
-        }
+  .order-card.confirmed {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 14px rgba(25, 118, 210, 0.15);
+  }
 
-        .cooking-badge.special {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #f87171;
-        }
+  .order-card.event-winner {
+    border-color: #ffeb3b;
+    box-shadow: 0 0 22px rgba(255, 235, 59, 0.35);
+    background: linear-gradient(180deg, #2a2400 0%, var(--bg-card) 35%);
+  }
 
-        /* 📋 메뉴 영역 (2줄까지 쾌적하게 수용) */
-        .menu-text {
-            font-size: 0.88rem;
-            font-weight: 800;
-            color: var(--text-main);
-            line-height: 1.35;
-            word-break: keep-all;
-        }
+  .event-banner {
+    background: linear-gradient(90deg, #ff9800, #ffeb3b);
+    color: #000000;
+    font-weight: 900;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(255, 235, 59, 0.4);
+  }
 
-        /* 👤 하단 정보 및 💰 가격 라인 (우측 제일 하단 일직선 정렬) */
-        .bottom-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 2px;
-        }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 12px;
+  }
 
-        .sub-info-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+  .pickup-time {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.2;
+  }
 
-        .sauce-text {
-            font-size: 0.72rem;
-            color: #fb923c;
-            font-weight: 700;
-        }
+  .pickup-time span {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-amber);
+    display: block;
+    margin-bottom: 2px;
+  }
 
-        .nickname-text {
-            font-size: 0.72rem;
-            color: var(--text-sub);
-            font-weight: 600;
-        }
+  .badge-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
 
-        .price-tag {
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: #4ade80;
-            background: rgba(74, 222, 128, 0.12);
-            border: 1px solid rgba(74, 222, 128, 0.25);
-            padding: 2px 7px;
-            border-radius: 5px;
-            white-space: nowrap;
-            letter-spacing: -0.02em;
-        }
+  .status-tag {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+  }
 
-        /* 오른쪽 버튼 그룹 */
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 3px;
-            padding: 4px;
-            background: rgba(0, 0, 0, 0.3);
-            flex-shrink: 0;
-            border-left: 1px solid var(--border-color);
-        }
+  .status-tag.unconfirmed {
+    background-color: var(--accent-amber-bg);
+    color: var(--accent-amber);
+    border: 1px solid var(--accent-amber);
+  }
 
-        .btn-status {
-            width: 55px;
-            height: 29px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: filter 0.2s;
-        }
+  .status-tag.confirmed {
+    background-color: var(--accent-blue-bg);
+    color: #64b5f6;
+    border: 1px solid var(--accent-blue);
+  }
 
-        .btn-status:hover {
-            filter: brightness(1.1);
-        }
+  .cook-badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 900;
+  }
 
-        .btn-status.unconfirmed {
-            background: #dc2626;
-        }
+  .cook-badge.fry {
+    background-color: var(--accent-red-bg);
+    color: #ff8a80;
+    border: 1px solid #ef5350;
+  }
 
-        .btn-status.confirmed {
-            background: #16a34a;
-        }
+  .cook-badge.raw {
+    background-color: #1b3821;
+    color: #a5d6a7;
+    border: 1px solid #66bb6a;
+  }
 
-        .btn-done {
-            width: 55px;
-            height: 29px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            background: #2563eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: filter 0.2s;
-        }
+  .customer-row {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #eeeeee;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-        .btn-done:hover {
-            filter: brightness(1.1);
-        }
+  .menu-box {
+    background-color: #141414;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #2d2d2d;
+  }
 
-        .btn-done:active {
-            background: #1d4ed8;
-        }
-    </style>
+  .menu-items {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    white-space: pre-line;
+  }
+
+  .sauce-line {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffcc80;
+    padding-top: 8px;
+    border-top: 1px dashed #333;
+  }
+
+  .price-line {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #ffe082;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px dashed #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn-action {
+    padding: 14px 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-action:active {
+    transform: scale(0.96);
+  }
+
+  .btn-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-confirm {
+    background-color: var(--accent-blue);
+    color: #ffffff;
+  }
+
+  .btn-confirm:hover:not(:disabled) {
+    background-color: #1e88e5;
+  }
+
+  .btn-complete {
+    background-color: var(--accent-green);
+    color: #ffffff;
+  }
+
+  .btn-complete:hover:not(:disabled) {
+    background-color: #388e3c;
+  }
+
+  .btn-complete.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background-color: var(--bg-card);
+    border-radius: 14px;
+    border: 1px dashed #444;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+  }
+
+  /* TOAST NOTIFICATION */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: #323232;
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    border: 1px solid #555;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* LOADING OVERLAY FOR INITIAL LOAD */
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 600px) {
+    .header-title h1 { font-size: 1.25rem; }
+    .pickup-time { font-size: 1.35rem; }
+    .menu-items { font-size: 1.15rem; }
+    .btn-action { padding: 14px 6px; font-size: 0.98rem; }
+  }
+</style>
 </head>
-
 <body>
 
-    <!-- 👑 뒤가 은은하게 비치는 프리미엄 블러 오버레이 팝업 (화면 터치 시 해제) -->
-    <div id="blurOverlay" onclick="startDashboard()">
-        <div class="blur-popup-card">
-            <div class="popup-badge">장날동천 시스템</div>
-            <div style="font-size: 2.5rem; margin-bottom: 12px;">🍳</div>
-            <h2 class="popup-title">주방 뷰를 시작합니다</h2>
-            <p class="popup-desc">
-                실시간 주문 접수 시스템이 준비되었습니다.<br>화면을 터치하여 대시보드를 활성화하세요.
-            </p>
-        </div>
+  <header>
+    <div class="header-title">
+      <h1>🍳 장날동천 주방 대시보드</h1>
     </div>
+    <div class="header-status">
+      <div id="clock">00:00:00</div>
+      <div class="status-pill">
+        <div class="live-dot"></div>
+        <span>실시간 연동 (10초)</span>
+      </div>
+      <button id="soundToggleBtn" class="btn-sound" onclick="toggleSound()">🔔 알림음 ON</button>
+      <button class="btn-refresh" onclick="manualRefresh()">🔄 새로고침</button>
+    </div>
+  </header>
 
-    <header>
-        <h1>🍳 장날동천 주방 뷰</h1>
-        
-        <!-- 🟢 접속 중 고객 드롭다운 뱃지 영역 -->
-        <div class="online-status-container">
-            <button id="onlineBadgeBtn" class="online-badge" onclick="toggleOnlineDropdown()">
-                <span class="pulse-dot"></span>
-                <span id="activeVisitorsBadge" class="badge-text">접속 중: 0명</span>
-                <span class="arrow-icon">▼</span>
-            </button>
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-label">전체 대기 주문</span>
+      <span class="stat-value" id="statTotal">0건</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">미확인 주문</span>
+      <span class="stat-value amber" id="statUnconfirmed">0건</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">조리 대기 (확인완료)</span>
+      <span class="stat-value blue" id="statConfirmed">0건</span>
+    </div>
+  </div>
 
-            <div id="onlineDropdownPanel" class="online-dropdown-panel">
-                <div class="dropdown-header">
-                    <span>실시간 접속 목록</span>
-                    <span id="dropdownSubCount">총 0명</span>
-                </div>
-                <ul id="onlineUserList" class="online-user-list">
-                    <li style="color: #888; justify-content: center;">목록 로딩중...</li>
-                </ul>
+  <!-- 실시간 접속중인 고객 현황 패널 -->
+  <div class="active-users-panel">
+    <div class="active-users-title">
+      <span>🟢</span>
+      <span id="activeUsersCountText">현재 접속중인 고객: 0명</span>
+    </div>
+    <div id="activeUsersList" class="active-users-list">
+      <span class="empty-users-text">접속 중인 고객이 없습니다.</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabFry" class="tab-btn active" onclick="switchTab('fry')">
+      🍗 튀김 주문 <span id="badgeFry" class="tab-badge">0</span>
+    </button>
+    <button id="tabRaw" class="tab-btn" onclick="switchTab('raw')">
+      🥩 비튀김 주문 <span id="badgeRaw" class="tab-badge">0</span>
+    </button>
+  </div>
+
+  <div id="ordersContainer" class="orders-grid">
+    <div class="empty-state">
+      <div class="loading-spinner"></div>
+      <p style="margin-top: 12px;">주문 내역을 불러오는 중입니다...</p>
+    </div>
+  </div>
+
+  <div id="toast">알림 메시지</div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
+
+  let allOrders = [];
+  let currentTab = 'fry';
+  let isSoundEnabled = true;
+  let knownUnconfirmedRowIndices = new Set();
+  let isFirstLoad = true;
+  let isFetching = false;
+
+  // 시계 업데이트
+  function updateClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // 알림음 토글
+  function toggleSound() {
+    isSoundEnabled = !isSoundEnabled;
+    const btn = document.getElementById('soundToggleBtn');
+    if (isSoundEnabled) {
+      btn.textContent = '🔔 알림음 ON';
+      btn.classList.remove('muted');
+      playNotificationBeep();
+      showToast('새 주문 알림음이 켜졌습니다.');
+    } else {
+      btn.textContent = '🔕 알림음 OFF';
+      btn.classList.add('muted');
+      showToast('알림음이 꺼졌습니다.');
+    }
+  }
+
+  // Web Audio API 비프음 생성
+  function playNotificationBeep() {
+    if (!isSoundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+
+      const playTone = (freq, startTime, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+
+      const now = ctx.currentTime;
+      playTone(880, now, 0.15);
+      playTone(1174.66, now + 0.18, 0.25);
+    } catch (e) {
+      console.warn('Audio play failed:', e);
+    }
+  }
+
+  // 토스트 메시지
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
+  }
+
+  // 탭 전환
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabFry').classList.toggle('active', tab === 'fry');
+    document.getElementById('tabRaw').classList.toggle('active', tab === 'raw');
+    renderOrders();
+  }
+
+  // 수동 새로고침
+  function manualRefresh() {
+    showToast('최신 주문과 접속 현황을 불러오는 중...');
+    fetchOrders(false);
+    fetchActiveUsers();
+  }
+
+  // JSONP 요청 헬퍼
+  function jsonpRequest(paramsObj, callbackName) {
+    return new Promise((resolve, reject) => {
+      const cbFuncName = callbackName || ('jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000));
+      const script = document.createElement('script');
+
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('JSONP request timeout'));
+      }, 12000);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        delete window[cbFuncName];
+      }
+
+      window[cbFuncName] = function(data) {
+        cleanup();
+        resolve(data);
+      };
+
+      const queryParts = [];
+      for (const key in paramsObj) {
+        if (paramsObj.hasOwnProperty(key) && paramsObj[key] !== undefined && paramsObj[key] !== null) {
+          queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(paramsObj[key])}`);
+        }
+      }
+      queryParts.push(`callback=${encodeURIComponent(cbFuncName)}`);
+      queryParts.push(`_t=${Date.now()}`);
+
+      script.src = `${API_URL}?${queryParts.join('&')}`;
+      script.onerror = function() {
+        cleanup();
+        reject(new Error('JSONP script load error'));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  // 실시간 접속중인 고객 목록 조회
+  async function fetchActiveUsers() {
+    try {
+      const data = await jsonpRequest({ action: 'getActiveUsers' });
+      renderActiveUsers(data);
+    } catch (err) {
+      console.warn('접속자 목록 조회 실패:', err);
+    }
+  }
+
+  // 실시간 접속자 UI 렌더링
+  function renderActiveUsers(data) {
+    const countText = document.getElementById('activeUsersCountText');
+    const listContainer = document.getElementById('activeUsersList');
+
+    if (!data || typeof data.count !== 'number') return;
+
+    const count = data.count;
+    const users = Array.isArray(data.users) ? data.users : [];
+
+    countText.textContent = `현재 접속중인 고객: ${count}명`;
+
+    if (count === 0 || users.length === 0) {
+      listContainer.innerHTML = `<span class="empty-users-text">접속 중인 고객이 없습니다.</span>`;
+      return;
+    }
+
+    listContainer.innerHTML = users.map(nick => `
+      <span class="user-chip">
+        <span class="user-chip-dot"></span>
+        <span>${escapeHtml(nick)}</span>
+      </span>
+    `).join('');
+  }
+
+  // 주문 목록 가져오기
+  async function fetchOrders(silent = true) {
+    if (isFetching) return;
+    isFetching = true;
+
+    try {
+      const data = await jsonpRequest({ action: 'getAdminOrderList' });
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid order list format');
+      }
+
+      const currentUnconfirmedIndices = new Set();
+      let hasNewUnconfirmed = false;
+
+      data.forEach(order => {
+        if (order.status === '미확인') {
+          currentUnconfirmedIndices.add(order.rowIndex);
+          if (!isFirstLoad && !knownUnconfirmedRowIndices.has(order.rowIndex)) {
+            hasNewUnconfirmed = true;
+          }
+        }
+      });
+
+      knownUnconfirmedRowIndices = currentUnconfirmedIndices;
+      allOrders = data;
+
+      updateStatsAndBadges();
+      renderOrders();
+
+      if (hasNewUnconfirmed) {
+        playNotificationBeep();
+        showToast('🔔 새로운 미확인 주문이 들어왔습니다!');
+      }
+
+      isFirstLoad = false;
+    } catch (err) {
+      console.error('주문 조회 실패:', err);
+      if (!silent) {
+        showToast('주문 목록을 불러오지 못했습니다. 다시 시도해주세요.');
+      }
+      if (isFirstLoad) {
+        document.getElementById('ordersContainer').innerHTML = `
+          <div class="empty-state">
+            ⚠️ 주문 내역을 불러오는데 실패했습니다.<br>
+            <button class="btn-refresh" style="margin: 16px auto 0;" onclick="manualRefresh()">다시 시도</button>
+          </div>
+        `;
+      }
+    } finally {
+      isFetching = false;
+    }
+  }
+
+  // 조리방식 판별 헬퍼 (비튀김 vs 튀김)
+  function isRawCooking(cookingStr) {
+    const c = String(cookingStr || '').trim();
+    return c.includes('비튀김') || c.includes('생고기') || c.includes('안튀김');
+  }
+
+  // 통계 및 탭 뱃지 업데이트
+  function updateStatsAndBadges() {
+    const total = allOrders.length;
+    const unconfirmed = allOrders.filter(o => o.status === '미확인').length;
+    const confirmed = allOrders.filter(o => o.status === '확인').length;
+
+    const fryCount = allOrders.filter(o => !isRawCooking(o.cooking)).length;
+    const rawCount = allOrders.filter(o => isRawCooking(o.cooking)).length;
+
+    document.getElementById('statTotal').textContent = `${total}건`;
+    document.getElementById('statUnconfirmed').textContent = `${unconfirmed}건`;
+    document.getElementById('statConfirmed').textContent = `${confirmed}건`;
+
+    document.getElementById('badgeFry').textContent = fryCount;
+    document.getElementById('badgeRaw').textContent = rawCount;
+  }
+
+  // 금액 포맷 헬퍼
+  function formatOrderPrice(rawPrice) {
+    if (rawPrice === undefined || rawPrice === null || String(rawPrice).trim() === '') return '';
+    const num = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10);
+    if (isNaN(num) || num <= 0) return '';
+    return num.toLocaleString() + '원';
+  }
+
+  // 주문 카드 렌더링
+  function renderOrders() {
+    const container = document.getElementById('ordersContainer');
+
+    const filtered = allOrders.filter(order => {
+      const isRaw = isRawCooking(order.cooking);
+      return currentTab === 'raw' ? isRaw : !isRaw;
+    });
+
+    if (filtered.length === 0) {
+      const label = currentTab === 'fry' ? '튀김' : '비튀김';
+      container.innerHTML = `
+        <div class="empty-state">
+          🍽️ 현재 대기 중인 <b>${label}</b> 주문이 없습니다.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(order => {
+      const isUnconfirmed = order.status === '미확인';
+      const isConfirmed = order.status === '확인';
+      const isRaw = isRawCooking(order.cooking);
+      const isWinner = !!order.isEventWinner;
+
+      const cardClasses = [
+        'order-card',
+        isUnconfirmed ? 'unconfirmed' : '',
+        isConfirmed ? 'confirmed' : '',
+        isWinner ? 'event-winner' : ''
+      ].filter(Boolean).join(' ');
+
+      const cookBadgeClass = isRaw ? 'raw' : 'fry';
+      const cookBadgeText = isRaw ? `🥩 ${escapeHtml(order.cooking || '비튀김')}` : `🔥 ${escapeHtml(order.cooking || '튀김')}`;
+
+      const statusTagClass = isUnconfirmed ? 'unconfirmed' : 'confirmed';
+      const statusTagText = isUnconfirmed ? '미확인' : '확인완료';
+
+      const sauceDisplay = (order.extraSauce && order.extraSauce !== '없음' && order.extraSauce.trim() !== '')
+        ? `🧂 추가소스: ${escapeHtml(order.extraSauce)}`
+        : `🧂 추가소스: 없음`;
+
+      const priceFormatted = formatOrderPrice(order.totalPrice);
+      const priceHtml = priceFormatted
+        ? `<div class="price-line"><span style="color:#aaa; font-size:0.9rem; font-weight:700;">현장 결제 금액</span><span>${priceFormatted}</span></div>`
+        : '';
+
+      const eventHtml = isWinner
+        ? `<div class="event-banner">
+             <span>🎉 이벤트 당첨!</span>
+             <span>${escapeHtml(order.eventPrize || '당첨')}</span>
+           </div>`
+        : '';
+
+      let actionsHtml = '';
+      if (isUnconfirmed) {
+        actionsHtml = `
+          <button class="btn-action btn-confirm" onclick="handleStatusChange(${order.rowIndex}, '확인', this)">
+            ✔️ 확인
+          </button>
+          <button class="btn-action btn-complete" onclick="handleStatusChange(${order.rowIndex}, '완료', this)">
+            ✅ 완료
+          </button>
+        `;
+      } else {
+        actionsHtml = `
+          <button class="btn-action btn-complete full-width" onclick="handleStatusChange(${order.rowIndex}, '완료', this)">
+            ✅ 완료 (픽업/조리 끝)
+          </button>
+        `;
+      }
+
+      return `
+        <div class="${cardClasses}" id="order-card-${order.rowIndex}">
+          ${eventHtml}
+          <div>
+            <div class="card-top">
+              <div class="pickup-time">
+                <span>픽업 예정</span>
+                ${escapeHtml(order.pickupTime || '시간미정')}
+              </div>
+              <div class="badge-group">
+                <span class="status-tag ${statusTagClass}">${statusTagText}</span>
+                <span class="cook-badge ${cookBadgeClass}">${cookBadgeText}</span>
+              </div>
             </div>
-        </div>
-
-        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ef4444; font-weight:bold;">0</span> / 총
-            <span id="totalCount">0</span></div>
-    </header>
-
-    <!-- 💡 커스텀 확인 모달 팝업 -->
-    <div id="custom-modal"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; justify-content: center; align-items: center;">
-        <div
-            style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; width: 330px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; color: #fff;">
-            <h3 id="modal-title" style="margin: 0 0 10px 0; font-size: 17px; font-weight: 800; color: var(--accent-gold);">수령 완료 처리</h3>
-            <p id="modal-desc" style="margin: 0 0 22px 0; font-size: 14px; color: var(--text-sub); line-height: 1.5;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
-            <div style="display: flex; gap: 8px;">
-                <button id="modal-cancel-btn"
-                    style="flex: 1; padding: 11px; background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: 700;">취소</button>
-                <button id="modal-confirm-btn"
-                    style="flex: 1; padding: 11px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700;">확인</button>
+            <div class="customer-row" style="margin-top: 10px;">
+              👤 ${escapeHtml(order.nickname || '고객명 없음')}
             </div>
+          </div>
+
+          <div class="menu-box">
+            <div class="menu-items">${escapeHtml(order.menu || '')}</div>
+            <div class="sauce-line">${sauceDisplay}</div>
+            ${priceHtml}
+          </div>
+
+          <div class="card-actions">
+            ${actionsHtml}
+          </div>
         </div>
-    </div>
+      `;
+    }).join('');
+  }
 
-    <div id="orderContainer" class="order-list">
-        <div style="text-align:center; padding: 25px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
-    </div>
+  // 상태 변경 처리 (낙관적 업데이트 + 서버 동기화)
+  async function handleStatusChange(rowIndex, newStatus, btnElement) {
+    const card = document.getElementById(`order-card-${rowIndex}`);
+    if (card) {
+      const buttons = card.querySelectorAll('button');
+      buttons.forEach(b => b.disabled = true);
+    }
+    if (btnElement) {
+      btnElement.innerHTML = `<span class="loading-spinner" style="width:16px;height:16px;border-width:2px;"></span> 처리중`;
+    }
 
-    <script>
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
-        let previousTotalCount = 0;
-        let isInitialLoad = true;
+    const prevOrders = JSON.parse(JSON.stringify(allOrders));
 
-        let audioCtx = null;
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioContextClass) {
-                    audioCtx = new AudioContextClass();
-                }
-            }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
+    if (newStatus === '완료') {
+      allOrders = allOrders.filter(o => o.rowIndex !== rowIndex);
+      knownUnconfirmedRowIndices.delete(rowIndex);
+    } else {
+      allOrders = allOrders.map(o => {
+        if (o.rowIndex === rowIndex) {
+          return { ...o, status: newStatus };
         }
+        return o;
+      });
+      knownUnconfirmedRowIndices.delete(rowIndex);
+    }
 
-        function startDashboard() {
-            getAudioContext();
-            const overlay = document.getElementById('blurOverlay');
-            if (overlay) {
-                overlay.style.opacity = '0';
-                overlay.style.visibility = 'hidden';
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                }, 400);
-            }
-            fetchOrders();
-        }
+    updateStatsAndBadges();
+    renderOrders();
 
-        function playNewOrderSound() {
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const now = ctx.currentTime;
+    try {
+      const result = await jsonpRequest({
+        action: 'updateOrderStatus',
+        rowIndex: rowIndex,
+        status: newStatus
+      });
 
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-                osc1.frequency.setValueAtTime(523.25, now);
-                gain1.gain.setValueAtTime(0.3, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                osc1.connect(gain1); gain1.connect(ctx.destination);
-                osc1.start(now); osc1.stop(now + 0.3);
+      if (result && result.success) {
+        showToast(newStatus === '확인' ? '✔️ 주문이 확인 처리되었습니다.' : '✅ 주문이 완료 처리되었습니다.');
+        setTimeout(() => fetchOrders(true), 800);
+      } else {
+        throw new Error(result && result.error ? result.error : 'Update failed');
+      }
+    } catch (err) {
+      console.error('상태 변경 실패:', err);
+      allOrders = prevOrders;
+      updateStatsAndBadges();
+      renderOrders();
+      showToast('⚠️ 상태 변경에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
 
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.frequency.setValueAtTime(659.25, now + 0.15);
-                gain2.gain.setValueAtTime(0.3, now + 0.15);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-                osc2.connect(gain2); gain2.connect(ctx.destination);
-                osc2.start(now + 0.15); osc2.stop(now + 0.45);
-            } catch (e) { }
-        }
+  // HTML 이스케이프
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
-        function callGasAPI(action, params = {}, callback) {
-            const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
-            window[callbackName] = function (data) {
-                delete window[callbackName];
-                if (script.parentNode) document.body.removeChild(script);
-                if (callback) callback(data);
-            };
-
-            let url = GAS_WEBAPP_URL + '?action=' + action + '&callback=' + callbackName;
-            for (let key in params) {
-                url += '&' + key + '=' + encodeURIComponent(params[key]);
-            }
-
-            const script = document.createElement('script');
-            script.src = url;
-            script.onerror = function () {
-                delete window[callbackName];
-                if (script.parentNode) document.body.removeChild(script);
-                if (callback) callback({ success: true });
-            };
-            document.body.appendChild(script);
-        }
-
-        function fetchOrders() {
-            callGasAPI('getAdminOrderList', {}, function (data) {
-                renderOrders(data);
-            });
-        }
-
-        function renderOrders(orders) {
-            const container = document.getElementById('orderContainer');
-            
-            // 🛡️ [방어 코드 추가] 데이터가 배열이 아니거나 정상적이지 않으면 빈 배열로 보정
-            if (!Array.isArray(orders)) {
-                orders = [];
-            }
-
-            if (!orders || orders.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
-                document.getElementById('unconfirmedCount').innerText = 0;
-                document.getElementById('totalCount').innerText = 0;
-                previousTotalCount = 0;
-                isInitialLoad = false;
-                return;
-            }
-
-            if (!isInitialLoad && orders.length > previousTotalCount) {
-                playNewOrderSound();
-            }
-
-            previousTotalCount = orders.length;
-            isInitialLoad = false;
-
-            let unconfirmedCnt = 0;
-            let html = '';
-
-            orders.forEach(item => {
-                const isUnconfirmed = (item.status === '미확인');
-                if (isUnconfirmed) unconfirmedCnt++;
-
-                const isSpecialCooking = item.cooking && item.cooking.includes('비튀김');
-
-                let priceDisplay = '';
-                if (item.totalPrice !== undefined && item.totalPrice !== '') {
-                    let num = Number(String(item.totalPrice).replace(/[^0-9]/g, ''));
-                    priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : item.totalPrice;
-                }
-
-                let eventText = item.eventWinner || item.eventPrize || item.event || '';
-                if (!eventText) {
-                    for (let key in item) {
-                        let val = String(item[key] || '');
-                        if (val.includes('당첨') || val.includes('새우') || val.includes('서비스')) {
-                            eventText = val;
-                            break;
-                        }
-                    }
-                }
-
-                let eventDetailHtml = '';
-                if (eventText) {
-                    eventDetailHtml = `<span class="winner-badge">🎁 ${eventText}</span>`;
-                }
-
-                html += `
-                    <div class="order-item ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}">
-                        <div class="order-info">
-                            <div class="top-row">
-                                <div class="time-group">
-                                    <span class="time-tag">⏰ ${item.pickupTime}</span>
-                                    ${eventDetailHtml}
-                                </div>
-                                <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${item.cooking || '튀김'}</span>
-                            </div>
-                            <div class="menu-text">${item.menu}</div>
-                            <div class="bottom-row">
-                                <div class="sub-info-group">
-                                    ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + item.extraSauce + '</span>' : ''}
-                                    <span class="nickname-text">👤 ${item.nickname}</span>
-                                </div>
-                                ${priceDisplay ? '<div class="price-tag">💰 ' + priceDisplay + '</div>' : ''}
-                            </div>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn-status ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}" 
-                                    onclick="toggleStatus(${item.rowIndex}, '${item.status}')">
-                                ${isUnconfirmed ? '미확인🔴' : '확인완료🟢'}
-                            </button>
-                            <button class="btn-done" onclick="completeOrder(${item.rowIndex})">
-                                수령완료🏁
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-            document.getElementById('unconfirmedCount').innerText = unconfirmedCnt;
-            document.getElementById('totalCount').innerText = orders.length;
-        }
-
-        function toggleStatus(rowIndex, currentStatus) {
-            getAudioContext(); 
-            const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
-            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
-                fetchOrders();
-            });
-        }
-
-        function completeOrder(rowIndex) {
-            getAudioContext();
-            const modal = document.getElementById('custom-modal');
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            const cancelBtn = document.getElementById('modal-cancel-btn');
-
-            modal.style.display = 'flex';
-
-            const newConfirmBtn = confirmBtn.cloneNode(true);
-            const newCancelBtn = cancelBtn.cloneNode(true);
-            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-            newConfirmBtn.addEventListener('click', function () {
-                modal.style.display = 'none';
-                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) { });
-                fetchOrders();
-            });
-
-            newCancelBtn.addEventListener('click', function () {
-                modal.style.display = 'none';
-            });
-        }
-
-        function toggleOnlineDropdown() {
-            const panel = document.getElementById('onlineDropdownPanel');
-            const badge = document.getElementById('onlineBadgeBtn');
-            
-            if (panel.style.display === 'none' || panel.style.display === '') {
-                panel.style.display = 'block';
-                badge.classList.add('active');
-            } else {
-                panel.style.display = 'none';
-                badge.classList.remove('active');
-            }
-        }
-
-        window.addEventListener('click', function(e) {
-            const container = document.querySelector('.online-status-container');
-            if (container && !container.contains(e.target)) {
-                document.getElementById('onlineDropdownPanel').style.display = 'none';
-                document.getElementById('onlineBadgeBtn').classList.remove('active');
-            }
-        });
-
-        function fetchActiveUsers() {
-            callGasAPI('getActiveUsers', {}, function(data) {
-                const badge = document.getElementById('activeVisitorsBadge');
-                const subCount = document.getElementById('dropdownSubCount');
-                const listEl = document.getElementById('onlineUserList');
-                
-                const count = data.count || 0;
-                if(badge) badge.innerText = `접속 중: ${count}명`;
-                if(subCount) subCount.innerText = `총 ${count}명`;
-                
-                if(listEl) {
-                    listEl.innerHTML = '';
-                    if (!data.users || data.users.length === 0) {
-                        listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
-                    } else {
-                        data.users.forEach((userName) => {
-                            const li = document.createElement('li');
-                            li.textContent = userName;
-                            listEl.appendChild(li);
-                        });
-                    }
-                }
-            });
-        }
-        setInterval(fetchActiveUsers, 5000);
-        setTimeout(fetchActiveUsers, 1000);
-
-        setInterval(fetchOrders, 5000);
-    </script>
+  // 초기 로드 및 10초 주기 폴링
+  fetchOrders(false);
+  fetchActiveUsers();
+  setInterval(() => {
+    fetchOrders(true);
+    fetchActiveUsers();
+  }, 10000);
+</script>
 </body>
-
 </html>

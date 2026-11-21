@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>장날동천 돈가스 예약</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
     <style>
         :root {
             --bg-color: #F8F7F4;
@@ -18,6 +19,8 @@
             --accent-dark: #1C1B18;
             --accent-gold: #C5A059;
             --accent-gold-bg: #FBF8F0;
+            --kakao-yellow: #FEE500;
+            --kakao-brown: #191919;
             --radius-lg: 20px;
             --radius-md: 14px;
             --radius-sm: 10px;
@@ -63,7 +66,7 @@
 
         .header-wrapper {
             text-align: center;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
         }
 
         h1 { 
@@ -78,6 +81,260 @@
             font-size: 13.5px; 
             margin: 0; 
             font-weight: 400;
+        }
+
+        /* 고급스러운 카카오 회원 인증 게이트 오버레이 */
+        #kakaoGateOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: radial-gradient(circle at top, #FBF8F0 0%, #F8F7F4 52%, #EFECE3 100%);
+            z-index: 99995;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .kakao-gate-card {
+            position: relative;
+            background: linear-gradient(180deg, #FFFFFF 0%, #FFFEFA 100%);
+            border-radius: 24px;
+            padding: 32px 22px 26px 22px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 24px 54px -12px rgba(28, 27, 24, 0.14), 0 2px 6px rgba(28, 27, 24, 0.04);
+            border: 1.5px solid rgba(197, 160, 89, 0.45);
+            text-align: center;
+            word-break: keep-all;
+        }
+        .kakao-gate-ribbon {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #1C1B18 0%, #322E27 100%);
+            color: #F6DFA4;
+            border: 1px solid #C5A059;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 12px rgba(28, 27, 24, 0.14);
+        }
+        .kakao-gate-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0 0 8px 0;
+            letter-spacing: -0.03em;
+            line-height: 1.28;
+        }
+        .kakao-gate-desc {
+            font-size: 13.5px;
+            color: var(--text-sub);
+            line-height: 1.58;
+            margin: 0 0 18px 0;
+        }
+        .kakao-gate-perks {
+            background: #FAF8F3;
+            border: 1px solid #E9E2D0;
+            border-radius: 14px;
+            padding: 13px 14px;
+            margin-bottom: 18px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .kakao-gate-perk-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12.5px;
+            color: var(--text-main);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .kakao-gate-perk-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: var(--accent-gold-bg);
+            border: 1px solid #DFC793;
+            color: #8C6D1F;
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+        }
+        .kakao-gate-btn {
+            width: 100%;
+            background: linear-gradient(180deg, #FFE812 0%, #FEE500 100%);
+            color: var(--kakao-brown);
+            border: 1.5px solid #E6CE00;
+            padding: 15px 16px;
+            border-radius: 13px;
+            font-size: 15.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            box-shadow: 0 10px 24px -6px rgba(254, 229, 0, 0.55);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: inherit;
+        }
+        .kakao-gate-btn:hover:not(:disabled) {
+            filter: brightness(0.98);
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px -6px rgba(254, 229, 0, 0.65);
+        }
+        .kakao-gate-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .kakao-phone4-panel {
+            display: none;
+            margin-top: 14px;
+            text-align: left;
+            background: linear-gradient(180deg, #FBF8F0 0%, #F7F2E6 100%);
+            border: 1.5px solid #DFC793;
+            border-radius: 14px;
+            padding: 16px 14px;
+        }
+        .kakao-phone4-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 800;
+            color: #7A5C18;
+            background: #FFFFFF;
+            border: 1px solid #DFC793;
+            padding: 3px 9px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .kakao-phone4-input {
+            width: 100%;
+            padding: 13px 14px;
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: 0.32em;
+            text-align: center;
+            border: 2px solid var(--accent-dark);
+            border-radius: 11px;
+            background: #FFFFFF;
+            color: var(--text-main);
+            outline: none;
+            font-family: inherit;
+        }
+        .kakao-phone4-input:focus {
+            border-color: #9A6B16;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.25);
+        }
+        .kakao-phone4-submit {
+            width: 100%;
+            margin-top: 12px;
+            padding: 13px 14px;
+            border-radius: 11px;
+            border: 1.5px solid #C5A059;
+            background: linear-gradient(135deg, #1C1B18 0%, #312E28 100%);
+            color: #F6DFA4;
+            font-size: 14.5px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 8px 18px rgba(28, 27, 24, 0.16);
+            transition: all 0.2s ease;
+        }
+        .kakao-phone4-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2A2823 0%, #3E3A33 100%);
+            transform: translateY(-1px);
+        }
+        .kakao-phone4-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .kakao-gate-status {
+            margin-top: 10px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #9F1239;
+            min-height: 18px;
+            line-height: 1.4;
+        }
+
+        /* 로그인 회원 상태 바 (기존 디자인 톤 유지) */
+        .kakao-member-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(135deg, #FAF8F3 0%, #F5F1E6 100%);
+            border: 1.5px solid #E3D7B9;
+            border-radius: var(--radius-sm);
+            padding: 9px 12px;
+            margin-bottom: 14px;
+        }
+        .kakao-member-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        .kakao-mark-box {
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            background: var(--kakao-yellow);
+            color: var(--kakao-brown);
+            border: 1px solid #E5CE00;
+            font-size: 11px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .kakao-member-label {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .kakao-member-sub {
+            font-size: 11.5px;
+            color: #7A5C18;
+            font-weight: 600;
+        }
+        .kakao-account-btn {
+            background: #FFFFFF;
+            border: 1px solid #D8D0BE;
+            color: var(--text-sub);
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 5px 9px;
+            border-radius: 7px;
+            cursor: pointer;
+            flex-shrink: 0;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+        .kakao-account-btn:hover {
+            background: var(--surface-sub);
+            color: var(--text-main);
         }
 
         .form-group { margin-bottom: 16px; }
@@ -100,6 +357,11 @@
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(28, 27, 24, 0.05);
         }
+        input[type="text"][readonly] {
+            background-color: #F4F2EC;
+            color: var(--text-main);
+            font-weight: 700;
+        }
 
         .radio-group { display: flex; gap: 8px; }
         .radio-btn { flex: 1; display: flex; }
@@ -118,7 +380,6 @@
             box-shadow: 0 4px 12px rgba(28, 27, 24, 0.12);
         }
 
-        /* 조리/데우기 안내 배너 & 팝업 스타일 */
         .cook-guide-strip {
             margin-top: 8px;
             padding: 9px 12px;
@@ -182,7 +443,6 @@
             color: #FFFFFF;
         }
 
-        /* 예약 완료 화면 전용 프리미엄 조리 가이드 카드 */
         .completed-guide-card {
             display: flex;
             align-items: center;
@@ -418,7 +678,6 @@
             box-shadow: 0 6px 18px -4px rgba(28, 27, 24, 0.05);
         }
 
-        /* 인기메뉴(HOT) 프리미엄 강조 스타일 */
         .menu-item-card.hot-menu {
             background: linear-gradient(135deg, #FFFDF8 0%, #FDF6E4 100%);
             border: 2px solid #C5A059;
@@ -737,7 +996,6 @@
         .kakao-btn { background-color: #FEE500; color: #3C1E1E; border: 1.5px solid #FAD000; padding: 12px; font-size: 14px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 8px; width: 100%; display: block; text-decoration: none; text-align: center; box-shadow: var(--shadow-card); transition: filter 0.2s, transform 0.15s; }
         .kakao-btn:hover { filter: brightness(0.97); transform: translateY(-1px); }
 
-        /* 프리미엄 딥 차콜 & 샴페인 골드 시크릿 이벤트 영역 */
         .secret-code-card {
             background: linear-gradient(180deg, #FBF8F0 0%, #F6F0E2 100%);
             border: 1.5px solid #DFC793;
@@ -1015,12 +1273,65 @@
 </head>
 <body>
 
+<!-- 고급스러운 최초 진입 카카오 로그인 & 4자리 인증 게이트 -->
+<div id="kakaoGateOverlay">
+    <div class="kakao-gate-card">
+        <div class="kakao-gate-ribbon">
+            <span>✦</span>
+            <span>JANGNAL DONGCHEON MEMBER PASS</span>
+        </div>
+        <h2 class="kakao-gate-title">카카오로 시작하는<br>장날동천 전용 예약</h2>
+        <p class="kakao-gate-desc">
+            정성껏 준비한 수제 돈가스를 안정적으로 전달해 드리기 위해<br>
+            <b>카카오 회원 인증</b> 후 예약을 진행합니다.
+        </p>
+
+        <div class="kakao-gate-perks">
+            <div class="kakao-gate-perk-item">
+                <span class="kakao-gate-perk-icon">01</span>
+                <span>카카오 계정 고유 회원번호로 <b>단골 방문 이력</b>을 안전하게 연동합니다.</span>
+            </div>
+            <div class="kakao-gate-perk-item">
+                <span class="kakao-gate-perk-icon">02</span>
+                <span>기기를 바꾸셔도 <b>3초 재주문</b>과 내 예약 확인·수정이 이어집니다.</span>
+            </div>
+            <div class="kakao-gate-perk-item">
+                <span class="kakao-gate-perk-icon">03</span>
+                <span>중복·허위 예약을 방지하여 <b>정확한 픽업 시간</b>을 지켜드립니다.</span>
+            </div>
+        </div>
+
+        <button type="button" id="kakaoGateLoginBtn" class="kakao-gate-btn" onclick="startKakaoLoginFlow()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3C6.477 3 2 6.463 2 10.734c0 2.742 1.825 5.149 4.573 6.515-.153.547-.986 3.52-1.02 3.744 0 0-.02.167.088.23.108.063.235.014.235.014.31-.043 3.59-2.35 4.157-2.753.635.093 1.29.142 1.974.142 5.523 0 10-3.463 10-7.734C22 6.463 17.523 3 12 3Z" fill="#191919"/>
+            </svg>
+            <span>카카오톡으로 1초 로그인</span>
+        </button>
+
+        <div id="kakaoPhone4Panel" class="kakao-phone4-panel">
+            <div class="kakao-phone4-badge" id="kakaoVerifiedNickBadge">카카오 닉네임 확인됨</div>
+            <label for="kakaoPhone4Input" style="font-size: 13.5px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+                휴대폰 번호 뒷자리 4자리를 입력해 주세요 *
+            </label>
+            <input type="text" id="kakaoPhone4Input" class="kakao-phone4-input" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+            <div id="kakaoPreviewIdentText" style="margin-top: 8px; font-size: 12px; font-weight: 700; color: #7A5C18;">
+                등록될 예약 식별명: -
+            </div>
+            <button type="button" id="kakaoPhone4SubmitBtn" class="kakao-phone4-submit" onclick="completeKakaoRegistration()">
+                회원 등록 완료하고 예약하기
+            </button>
+        </div>
+
+        <div id="kakaoGateStatus" class="kakao-gate-status"></div>
+    </div>
+</div>
+
 <div id="blockedOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--bg-color); z-index: 999999; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; text-align: center;">
     <div style="background: #ffffff; border-radius: var(--radius-lg); padding: 36px 20px; max-width: 420px; width: 100%; box-shadow: var(--shadow-float); border: 1.5px solid #FECDD3;">
         <div style="font-size: 46px; margin-bottom: 14px;">🚫</div>
         <h2 style="font-size: 20px; color: #BE123C; font-weight: 800; margin-bottom: 10px; word-break: keep-all;">예약 페이지 이용이 제한되었습니다</h2>
         <p id="blockedReasonText" style="font-size: 14px; color: var(--text-sub); line-height: 1.6; margin-bottom: 20px; word-break: keep-all;">
-            장기간 미구매 또는 관리자 정책에 의해 현재 기기에서의 온라인 예약 접근이 제한되었습니다.
+            장기간 미구매 또는 관리자 정책에 의해 현재 온라인 예약 접근이 제한되었습니다.
         </p>
         <div style="background: #FFF1F2; border: 1px solid #FFE4E6; border-radius: var(--radius-sm); padding: 14px; font-size: 13px; color: #9F1239; margin-bottom: 20px; line-height: 1.5; font-weight: 600;">
             💡 정상 이용을 원하시는 고객님께서는 아래 버튼을 눌러 삼촌에게 1:1 문의를 남겨주시면 확인 후 해제해 드립니다.
@@ -1052,6 +1363,17 @@
         <div class="brand-badge">PREMIUM TONKATSU</div>
         <h1>장날동천 돈가스 예약</h1>
         <div class="subtitle">정성을 다해 준비하는 프리미엄 수제 돈가스</div>
+    </div>
+
+    <div id="kakaoMemberBar" class="kakao-member-bar">
+        <div class="kakao-member-left">
+            <span class="kakao-mark-box">K</span>
+            <div style="min-width: 0;">
+                <div id="kakaoMemberBarTitle" class="kakao-member-label">카카오 회원 인증 완료</div>
+                <div id="kakaoMemberBarSub" class="kakao-member-sub">단골 이력 연동됨</div>
+            </div>
+        </div>
+        <button type="button" class="kakao-account-btn" onclick="openKakaoAccountModal()">카카오 계정</button>
     </div>
 
     <div id="pageLoadingOverlay" class="menu-grid" style="display: none;">
@@ -1180,7 +1502,6 @@
             <button class="modal-btn" style="background-color: var(--accent-dark); margin-top: 12px; margin-bottom: 2px; padding: 13px; font-size: 15px; border-radius: var(--radius-sm); white-space: nowrap; font-weight: 800;" onclick="openSearchModal()">✏️ 내 예약 내용 수정하기</button>
         </div>
 
-        <!-- 예약 완료 화면 독립 샴페인 골드 조리·데우기 가이드 카드 -->
         <div id="completedCookGuideCard" class="completed-guide-card" role="button" tabindex="0" onclick="openCookingGuideModal('reheat')">
             <div class="completed-guide-info">
                 <div id="completedCookGuideBadge" class="completed-guide-badge">🍗 데우기 가이드</div>
@@ -1275,10 +1596,10 @@
 
         <div class="form-group">
             <label for="nickname">2. 카톡 닉네임+전화번호 뒷자리 *</label>
-            <input type="text" id="nickname" placeholder="예: 장날삼촌5353" required>
+            <input type="text" id="nickname" placeholder="예: 장날삼촌5353" readonly required>
             <div style="margin-top: 8px; font-size: 12.5px; color: #B45309; background: var(--accent-gold-bg); padding: 10px 12px; border-radius: var(--radius-sm); border: 1.5px solid #F3E6C8; line-height: 1.5; font-weight: 500;">
                 <b>단골 고객님을 위한 꿀팁!</b><br>
-                꾸준히 찾아주시는 단골분들께 보답하기 위해 닉네임으로 방문 횟수를 체크하고 있어요. 닉네임을 변경하시면 초기화되어 혜택이 사라질 수 있으니 변경하지 말고 쭉 유지해 주세요!
+                카카오 회원번호 기준으로 방문 횟수가 안전하게 적립됩니다. 같은 카카오 계정을 유지하시면 단골 혜택과 주문 이력이 그대로 이어집니다!
             </div>
         </div>
 
@@ -1338,6 +1659,33 @@
     </form>
 </div>
 
+<!-- 카카오 계정 관리 모달 -->
+<div id="kakaoAccountModal" class="modal" style="z-index: 10038;">
+    <div class="modal-content" style="text-align: left;">
+        <h3 style="color: var(--text-main); text-align: center; margin-bottom: 12px;">카카오 회원 정보</h3>
+        <div class="order-info-card" style="margin-bottom: 14px;">
+            <div class="order-info-row">
+                <span class="order-info-label">예약 식별명</span>
+                <span class="order-info-value" id="modalKakaoIdent">-</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">카톡 닉네임</span>
+                <span class="order-info-value" id="modalKakaoNick">-</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">뒷자리 4자리</span>
+                <span class="order-info-value" id="modalKakaoPhone4">-</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">회원 고유번호</span>
+                <span class="order-info-value" id="modalKakaoId" style="font-size: 12.5px; color: var(--text-sub);">-</span>
+            </div>
+        </div>
+        <button type="button" class="modal-btn" style="background-color: var(--kakao-yellow); color: var(--kakao-brown); border: 1px solid #E5CE00; margin-top: 0;" onclick="switchKakaoAccount()">다른 카카오 계정으로 로그인</button>
+        <button type="button" class="modal-btn close-btn" onclick="hideModal('kakaoAccountModal')">닫기</button>
+    </div>
+</div>
+
 <!-- 조리 & 데우기 안내 팝업 -->
 <div id="cookingGuideModal" class="modal" style="z-index: 10036;">
     <div class="modal-content" style="max-width: 440px; padding: 22px 15px;">
@@ -1352,7 +1700,6 @@
             <button type="button" id="guideTabRaw" class="guide-tab-btn" onclick="switchCookingGuideTab('raw')">🥩 생고기(세트별) 조리법</button>
         </div>
 
-        <!-- 탭 1: 튀겨서 나간 돈가스 데우기 -->
         <div id="guideContentReheat" class="guide-section-box">
             <div class="guide-highlight-card">
                 <b>핵심 포인트:</b> 수분이 갇혀 눅눅해지지 않도록 <b>뚜껑이나 랩을 씌우지 않고</b> 열기를 날려주며 데우는 것이 가장 바삭합니다.
@@ -1392,7 +1739,6 @@
             </div>
         </div>
 
-        <!-- 탭 2: 생고기(미조리) 세트별 조리법 -->
         <div id="guideContentRaw" class="guide-section-box" style="display: none;">
             <div class="guide-highlight-card">
                 <b>필수 사전 준비 (에어프라이어 조리 시):</b><br>
@@ -1694,7 +2040,184 @@
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
-    
+    const KAKAO_JS_KEY = "db06049bca3d739bbf1d8d9d0cad1b5b";
+
+    const KakaoAuthManager = {
+        sdkReady: false,
+        session: {
+            kakaoId: "",
+            kakaoNickname: "",
+            phone4: "",
+            identifier: ""
+        },
+
+        initSDK: function() {
+            if (!window.Kakao) return false;
+            try {
+                if (!window.Kakao.isInitialized()) {
+                    window.Kakao.init(KAKAO_JS_KEY);
+                }
+                this.sdkReady = !!window.Kakao.isInitialized();
+                return this.sdkReady;
+            } catch (e) {
+                return false;
+            }
+        },
+
+        normalizeId: function(raw) {
+            if (raw === null || raw === undefined) return "";
+            let s = String(raw).trim();
+            if (!s) return "";
+            if (s.startsWith("kakao_")) s = s.slice(6).trim();
+            return s;
+        },
+
+        formatClientId: function(raw) {
+            const norm = this.normalizeId(raw);
+            if (!norm) return "";
+            return /^\d+$/.test(norm) ? ("kakao_" + norm) : norm;
+        },
+
+        saveSession: function(data) {
+            const normId = this.normalizeId(data.kakaoId || this.session.kakaoId);
+            const kNick = (data.kakaoNickname !== undefined ? String(data.kakaoNickname).trim() : this.session.kakaoNickname);
+            const p4 = (data.phone4 !== undefined ? String(data.phone4).replace(/[^0-9]/g, "").slice(-4) : this.session.phone4);
+            const ident = (data.identifier !== undefined ? String(data.identifier).trim() : (kNick && p4 ? (kNick + p4) : this.session.identifier));
+
+            this.session = {
+                kakaoId: normId,
+                kakaoNickname: kNick,
+                phone4: p4,
+                identifier: ident
+            };
+
+            if (normId) {
+                TripleStorage.save("donkatsu_kakao_id", normId);
+                TripleStorage.save("donkatsu_client_id", this.formatClientId(normId));
+            }
+            if (kNick) TripleStorage.save("donkatsu_kakao_nick", kNick);
+            if (p4) TripleStorage.save("donkatsu_phone4", p4);
+            if (ident) {
+                TripleStorage.save("savedNickname", ident);
+                globalUserNickname = ident;
+            }
+            return this.session;
+        },
+
+        async restoreSession() {
+            const savedKakaoId = await TripleStorage.load("donkatsu_kakao_id");
+            const savedKakaoNick = await TripleStorage.load("donkatsu_kakao_nick");
+            const savedPhone4 = await TripleStorage.load("donkatsu_phone4");
+            const savedIdent = await TripleStorage.load("savedNickname");
+
+            const normId = this.normalizeId(savedKakaoId);
+            this.session = {
+                kakaoId: normId,
+                kakaoNickname: savedKakaoNick ? String(savedKakaoNick).trim() : "",
+                phone4: savedPhone4 ? String(savedPhone4).replace(/[^0-9]/g, "").slice(-4) : "",
+                identifier: savedIdent ? String(savedIdent).trim() : ""
+            };
+            return this.session;
+        },
+
+        clearLocalSessionOnly: function() {
+            this.session = { kakaoId: "", kakaoNickname: "", phone4: "", identifier: "" };
+            try {
+                localStorage.removeItem("donkatsu_kakao_id");
+                localStorage.removeItem("donkatsu_kakao_nick");
+                localStorage.removeItem("donkatsu_phone4");
+                localStorage.removeItem("savedNickname");
+                localStorage.removeItem("donkatsu_cached_state");
+            } catch (e) {}
+            TripleStorage.setCookie("donkatsu_kakao_id", "", -1);
+            TripleStorage.setCookie("donkatsu_kakao_nick", "", -1);
+            TripleStorage.setCookie("donkatsu_phone4", "", -1);
+            TripleStorage.setCookie("savedNickname", "", -1);
+            TripleStorage.setCookie("donkatsu_cached_state", "", -1);
+        },
+
+        authorizeViaKakao: function() {
+            return new Promise((resolve, reject) => {
+                if (!this.initSDK()) {
+                    reject(new Error("카카오 SDK를 초기화할 수 없습니다. 페이지를 새로고침해 주세요."));
+                    return;
+                }
+
+                const onAuthSuccess = (authObj) => {
+                    try {
+                        if (authObj && authObj.access_token && window.Kakao.Auth.getAccessToken() !== authObj.access_token) {
+                            window.Kakao.Auth.setAccessToken(authObj.access_token);
+                        }
+                    } catch (e) {}
+
+                    window.Kakao.API.request({
+                        url: "/v2/user/me",
+                        success: (res) => {
+                            const rawId = res && res.id ? String(res.id).trim() : "";
+                            const profileNick = res && res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname
+                                ? String(res.kakao_account.profile.nickname).trim()
+                                : (res && res.properties && res.properties.nickname ? String(res.properties.nickname).trim() : "");
+
+                            if (!rawId) {
+                                reject(new Error("카카오 회원번호를 확인할 수 없습니다."));
+                                return;
+                            }
+                            resolve({
+                                kakaoId: rawId,
+                                kakaoNickname: profileNick || "카카오고객"
+                            });
+                        },
+                        fail: (apiErr) => {
+                            reject(new Error("카카오 프로필 정보를 불러오지 못했습니다."));
+                        }
+                    });
+                };
+
+                const onAuthFail = (err) => {
+                    reject(new Error("카카오 로그인이 취소되었거나 완료되지 않았습니다."));
+                };
+
+                try {
+                    if (window.Kakao.Auth.getAccessToken()) {
+                        window.Kakao.API.request({
+                            url: "/v2/user/me",
+                            success: (res) => {
+                                const rawId = res && res.id ? String(res.id).trim() : "";
+                                const profileNick = res && res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname
+                                    ? String(res.kakao_account.profile.nickname).trim()
+                                    : (res && res.properties && res.properties.nickname ? String(res.properties.nickname).trim() : "");
+                                if (rawId) {
+                                    resolve({ kakaoId: rawId, kakaoNickname: profileNick || "카카오고객" });
+                                } else {
+                                    window.Kakao.Auth.login({
+                                        scope: "profile_nickname",
+                                        success: onAuthSuccess,
+                                        fail: onAuthFail
+                                    });
+                                }
+                            },
+                            fail: () => {
+                                window.Kakao.Auth.login({
+                                    scope: "profile_nickname",
+                                    success: onAuthSuccess,
+                                    fail: onAuthFail
+                                });
+                            }
+                        });
+                    } else {
+                        window.Kakao.Auth.login({
+                            scope: "profile_nickname",
+                            success: onAuthSuccess,
+                            fail: onAuthFail
+                        });
+                    }
+                } catch (e) {
+                    reject(new Error("카카오 로그인 호출 중 오류가 발생했습니다."));
+                }
+            });
+        }
+    };
+
     const TripleStorage = {
         dbName: 'DonkatsuBackupDB',
         storeName: 'backupStore',
@@ -1794,14 +2317,7 @@
         }
     };
 
-    let persistentClientId = null;
-    try { persistentClientId = localStorage.getItem('donkatsu_client_id'); } catch (e) {}
-    if (!persistentClientId) persistentClientId = TripleStorage.getCookie('donkatsu_client_id');
-    if (!persistentClientId) {
-        persistentClientId = 'client_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
-    }
-    TripleStorage.save('donkatsu_client_id', persistentClientId);
-    let clientId = persistentClientId;
+    let clientId = "";
 
     let serverMaintenanceCode = "5333";
     let serverSecretCode = ""; 
@@ -1844,9 +2360,8 @@
     let userInteractedWithForm = false;
     let isBackgroundSyncing = false;
 
-    // 5초 간격 '미확인 <-> 확인' 상태 양방향 폴링 상태 관리 (과부하 방지용)
     const STATUS_POLL_INTERVAL_MS = 5000;
-    const STATUS_POLL_MAX_DURATION_MS = 60 * 60 * 1000; // 화면 방치 시 최대 1시간 뒤 자동 종료
+    const STATUS_POLL_MAX_DURATION_MS = 60 * 60 * 1000;
     let statusPollTimer = null;
     let isStatusPollingRequest = false;
     let statusPollStartedAt = 0;
@@ -1857,6 +2372,236 @@
     const newPickupSelect = document.getElementById('newPickupTime');
 
     let scrollPosition = 0;
+
+    function syncNicknameUI() {
+        const sess = KakaoAuthManager.session;
+        const nickInput = document.getElementById('nickname');
+        const memberBar = document.getElementById('kakaoMemberBar');
+        const memberTitle = document.getElementById('kakaoMemberBarTitle');
+        const memberSub = document.getElementById('kakaoMemberBarSub');
+
+        if (sess && sess.kakaoId) {
+            clientId = KakaoAuthManager.formatClientId(sess.kakaoId);
+            if (sess.identifier) {
+                globalUserNickname = sess.identifier;
+                if (nickInput) nickInput.value = sess.identifier;
+            }
+            if (memberBar) {
+                memberBar.style.display = 'flex';
+                if (memberTitle) {
+                    memberTitle.textContent = sess.identifier || (sess.kakaoNickname + (sess.phone4 || ""));
+                }
+                if (memberSub) {
+                    memberSub.textContent = sess.kakaoNickname ? ("카톡 " + sess.kakaoNickname + " · 단골 연동") : "카카오 회원 연동됨";
+                }
+            }
+        } else {
+            clientId = "";
+            if (memberBar) memberBar.style.display = 'none';
+            if (nickInput && !userInteractedWithForm) nickInput.value = "";
+        }
+    }
+
+    function showKakaoGateOverlay(stepMode = "login", statusMessage = "") {
+        stopOrderStatusPolling();
+        const gate = document.getElementById('kakaoGateOverlay');
+        const loginBtn = document.getElementById('kakaoGateLoginBtn');
+        const phonePanel = document.getElementById('kakaoPhone4Panel');
+        const badge = document.getElementById('kakaoVerifiedNickBadge');
+        const phoneInput = document.getElementById('kakaoPhone4Input');
+        const statusEl = document.getElementById('kakaoGateStatus');
+
+        if (gate) gate.style.display = 'flex';
+        if (statusEl) statusEl.textContent = statusMessage || "";
+
+        if (stepMode === "phone4") {
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (phonePanel) phonePanel.style.display = 'block';
+            if (badge) badge.textContent = "카카오 닉네임: " + (KakaoAuthManager.session.kakaoNickname || "확인됨");
+            if (phoneInput) {
+                phoneInput.value = KakaoAuthManager.session.phone4 || "";
+                updatePhone4Preview();
+                setTimeout(() => phoneInput.focus(), 80);
+            }
+        } else {
+            if (loginBtn) {
+                loginBtn.style.display = 'flex';
+                loginBtn.disabled = false;
+            }
+            if (phonePanel) phonePanel.style.display = 'none';
+        }
+    }
+
+    function hideKakaoGateOverlay() {
+        const gate = document.getElementById('kakaoGateOverlay');
+        if (gate) gate.style.display = 'none';
+    }
+
+    function updatePhone4Preview() {
+        const phoneInput = document.getElementById('kakaoPhone4Input');
+        const previewEl = document.getElementById('kakaoPreviewIdentText');
+        if (!phoneInput || !previewEl) return;
+        const digits = phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4);
+        phoneInput.value = digits;
+        const kNick = KakaoAuthManager.session.kakaoNickname || "고객";
+        previewEl.textContent = digits.length === 4
+            ? ("등록될 예약 식별명: " + kNick + digits)
+            : ("등록될 예약 식별명: " + kNick + (digits || "____"));
+    }
+
+    async function startKakaoLoginFlow() {
+        const loginBtn = document.getElementById('kakaoGateLoginBtn');
+        const statusEl = document.getElementById('kakaoGateStatus');
+        if (loginBtn) loginBtn.disabled = true;
+        if (statusEl) statusEl.textContent = "카카오톡 인증 창을 여는 중입니다...";
+
+        try {
+            const authUser = await KakaoAuthManager.authorizeViaKakao();
+            KakaoAuthManager.saveSession({
+                kakaoId: authUser.kakaoId,
+                kakaoNickname: authUser.kakaoNickname
+            });
+            clientId = KakaoAuthManager.formatClientId(authUser.kakaoId);
+
+            if (statusEl) statusEl.textContent = "회원 정보를 확인하고 있습니다...";
+
+            const res = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'syncKakaoMember',
+                    clientId: clientId,
+                    kakaoId: authUser.kakaoId,
+                    kakaoNickname: authUser.kakaoNickname
+                })
+            });
+            const text = await res.text();
+            let payload = null;
+            try { payload = JSON.parse(text); } catch (e) {}
+
+            if (payload && (payload.result === "blocked" || (payload.settings && payload.settings.isBlocked))) {
+                hideKakaoGateOverlay();
+                enforceBlockedOverlay(payload.message || (payload.settings && payload.settings.blockReason));
+                return;
+            }
+
+            if (payload && payload.settings) {
+                saveSettingsCache(payload.settings);
+                applySettingsToGlobals(payload.settings);
+            }
+
+            const profile = payload && payload.memberProfile ? payload.memberProfile : null;
+            if (profile && profile.isRegistered && profile.identifier && profile.phone4) {
+                KakaoAuthManager.saveSession({
+                    kakaoId: authUser.kakaoId,
+                    kakaoNickname: profile.kakaoNickname || authUser.kakaoNickname,
+                    phone4: profile.phone4,
+                    identifier: profile.identifier
+                });
+                syncNicknameUI();
+                hideKakaoGateOverlay();
+                checkAndRenderState(false);
+            } else {
+                showKakaoGateOverlay("phone4", "");
+            }
+        } catch (err) {
+            if (loginBtn) loginBtn.disabled = false;
+            if (statusEl) statusEl.textContent = err && err.message ? err.message : "카카오 로그인 중 문제가 발생했습니다.";
+        }
+    }
+
+    async function completeKakaoRegistration() {
+        const phoneInput = document.getElementById('kakaoPhone4Input');
+        const submitBtn = document.getElementById('kakaoPhone4SubmitBtn');
+        const statusEl = document.getElementById('kakaoGateStatus');
+
+        const digits = phoneInput ? phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4) : "";
+        if (digits.length !== 4) {
+            if (statusEl) statusEl.textContent = "휴대폰 번호 뒷자리 숫자 4자리를 정확히 입력해 주세요.";
+            if (phoneInput) phoneInput.focus();
+            return;
+        }
+
+        const kNick = KakaoAuthManager.session.kakaoNickname || "카카오고객";
+        const kId = KakaoAuthManager.session.kakaoId;
+        if (!kId) {
+            showKakaoGateOverlay("login", "카카오 회원번호가 없습니다. 먼저 카카오 로그인을 진행해 주세요.");
+            return;
+        }
+
+        const identifier = kNick + digits;
+        const formattedId = KakaoAuthManager.formatClientId(kId);
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "회원 등록 중...";
+        }
+        if (statusEl) statusEl.textContent = "";
+
+        try {
+            const res = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'syncKakaoMember',
+                    clientId: formattedId,
+                    kakaoId: kId,
+                    kakaoNickname: kNick,
+                    phone4: digits,
+                    nickname: identifier
+                })
+            });
+            const text = await res.text();
+            let payload = null;
+            try { payload = JSON.parse(text); } catch (e) {}
+
+            if (payload && payload.result === "blocked") {
+                hideKakaoGateOverlay();
+                enforceBlockedOverlay(payload.message);
+                return;
+            }
+
+            KakaoAuthManager.saveSession({
+                kakaoId: kId,
+                kakaoNickname: kNick,
+                phone4: digits,
+                identifier: identifier
+            });
+            syncNicknameUI();
+            hideKakaoGateOverlay();
+            checkAndRenderState(false);
+        } catch (err) {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "회원 등록 완료하고 예약하기";
+            }
+            if (statusEl) statusEl.textContent = "회원 정보 저장 중 오류가 발생했습니다. 다시 시도해 주세요.";
+        }
+    }
+
+    function openKakaoAccountModal() {
+        const sess = KakaoAuthManager.session;
+        document.getElementById('modalKakaoIdent').textContent = sess.identifier || "-";
+        document.getElementById('modalKakaoNick').textContent = sess.kakaoNickname || "-";
+        document.getElementById('modalKakaoPhone4').textContent = sess.phone4 || "-";
+        document.getElementById('modalKakaoId').textContent = sess.kakaoId ? ("kakao_" + sess.kakaoId) : "-";
+        showModal('kakaoAccountModal');
+    }
+
+    function switchKakaoAccount() {
+        hideModal('kakaoAccountModal');
+        KakaoAuthManager.clearLocalSessionOnly();
+        syncNicknameUI();
+        try {
+            if (window.Kakao && window.Kakao.Auth && window.Kakao.Auth.getAccessToken()) {
+                window.Kakao.Auth.logout(() => {
+                    showKakaoGateOverlay("login", "다른 카카오 계정으로 로그인해 주세요.");
+                });
+                return;
+            }
+        } catch (e) {}
+        showKakaoGateOverlay("login", "다른 카카오 계정으로 로그인해 주세요.");
+    }
 
     function isAlreadyOrderedScreenVisible() {
         const el = document.getElementById('alreadyOrderedNotice');
@@ -1910,7 +2655,7 @@
             return;
         }
 
-        const savedNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
+        const savedNick = KakaoAuthManager.session.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
         if (!savedNick && !clientId) {
             return;
         }
@@ -1923,7 +2668,10 @@
                 body: JSON.stringify({
                     action: 'checkSimple',
                     nickname: savedNick,
-                    clientId: clientId
+                    clientId: clientId,
+                    kakaoId: KakaoAuthManager.session.kakaoId,
+                    kakaoNickname: KakaoAuthManager.session.kakaoNickname,
+                    phone4: KakaoAuthManager.session.phone4
                 })
             });
             const text = await res.text();
@@ -1973,7 +2721,6 @@
                 checkClosedTimeAndRender(loadSettingsCache());
             }
         } catch (e) {
-            // 일시적 네트워크 오류 시 다음 5초 주기에 자연스럽게 재시도
         } finally {
             isStatusPollingRequest = false;
         }
@@ -2121,6 +2868,7 @@
 
     function enforceBlockedOverlay(reasonText) {
         stopOrderStatusPolling();
+        hideKakaoGateOverlay();
         const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
         if (isAdminPassed) return;
 
@@ -2245,8 +2993,11 @@
 
     function renderActiveOrderView(data, savedNick) {
         const orderStatus = String(data.status || "").trim();
-        globalUserNickname = data.nickname || savedNick || data.recoveredNickname || "";
-        if (globalUserNickname) TripleStorage.save('savedNickname', globalUserNickname);
+        globalUserNickname = data.nickname || savedNick || data.recoveredNickname || KakaoAuthManager.session.identifier || "";
+        if (globalUserNickname) {
+            KakaoAuthManager.saveSession({ identifier: globalUserNickname });
+            syncNicknameUI();
+        }
 
         document.getElementById('displayNick').textContent = globalUserNickname;
         document.getElementById('displayCookType').textContent = formatCookType(data.cookType);
@@ -2311,6 +3062,18 @@
         updateMainCookGuideBanner();
         updateEditCookGuideBanner();
         updateCompletedCookGuideCard("🍗 튀겨서 포장");
+        KakaoAuthManager.initSDK();
+
+        const phoneInput = document.getElementById('kakaoPhone4Input');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', updatePhone4Preview);
+            phoneInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    completeKakaoRegistration();
+                }
+            });
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('out')) {
@@ -2320,14 +3083,7 @@
             return;
         }
 
-        const restoredClientId = await TripleStorage.load('donkatsu_client_id');
-        if (restoredClientId && restoredClientId !== clientId) {
-            clientId = restoredClientId;
-            persistentClientId = restoredClientId;
-            TripleStorage.save('donkatsu_client_id', clientId);
-        }
-
-        const savedNick = await TripleStorage.load('savedNickname');
+        await KakaoAuthManager.restoreSession();
         await TripleStorage.load('lastOrderSummary');
         await TripleStorage.load('lastOrderSauce');
         await TripleStorage.load('lastOrderPrice');
@@ -2336,10 +3092,19 @@
         await TripleStorage.load('donkatsu_cached_settings');
         await TripleStorage.load('donkatsu_cached_state');
 
-        if (savedNick) {
-            document.getElementById('nickname').value = savedNick;
+        const sess = KakaoAuthManager.session;
+        if (!sess.kakaoId) {
+            showKakaoGateOverlay("login", "");
+            return;
         }
 
+        if (!sess.phone4 || sess.phone4.length !== 4 || !sess.identifier) {
+            showKakaoGateOverlay("phone4", "");
+            return;
+        }
+
+        syncNicknameUI();
+        hideKakaoGateOverlay();
         checkAndRenderState(false);
     });
 
@@ -2504,7 +3269,7 @@
         const lastSauce = localStorage.getItem('lastOrderSauce') || TripleStorage.getCookie('lastOrderSauce') || "없음";
         const lastPrice = localStorage.getItem('lastOrderPrice') || TripleStorage.getCookie('lastOrderPrice') || "0원";
         const lastPickupTime = localStorage.getItem('lastOrderPickupTime') || TripleStorage.getCookie('lastOrderPickupTime');
-        const lastNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || document.getElementById('nickname').value.trim() || "단골고객";
+        const lastNick = KakaoAuthManager.session.identifier || document.getElementById('nickname').value.trim() || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "단골고객";
         const lastCookType = localStorage.getItem('lastOrderCookType') || TripleStorage.getCookie('lastOrderCookType') || "🍗 튀겨서 포장";
 
         const quickSecretInput = document.getElementById('quickSecretCodeInput');
@@ -2691,7 +3456,12 @@
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getSettings', clientId: clientId, nickname: localStorage.getItem('savedNickname') || '' })
+            body: JSON.stringify({
+                action: 'getSettings',
+                clientId: clientId,
+                kakaoId: KakaoAuthManager.session.kakaoId,
+                nickname: KakaoAuthManager.session.identifier || localStorage.getItem('savedNickname') || ''
+            })
         })
         .then(res => res.text())
         .then(settingsText => {
@@ -2723,1240 +3493,1069 @@
         const isReallyValid = (serverSecretCode && inputCode !== "" && inputCode === serverSecretCode);
 
         if (inputCode !== "" && !isReallyValid) {
-            hideModal('orderSubmittingModal');
-            hideModal('rouletteModal');
-            
+            pendingOrderPayload = orderData;
             isSubmitting = false;
             isQuickSubmitting = false;
             const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
+            if (submitBtn) submitBtn.disabled = false;
             const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-            if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-            
-            pendingOrderPayload = { orderData: orderData, secretCode: inputCode };
+            if (quickSubmitBtn) quickSubmitBtn.disabled = false;
+            hideModal('orderSubmittingModal');
             showModal('secretCodeConfirmModal');
             return;
         }
 
-        orderData.secretCode = isReallyValid ? inputCode : "";
+        const isRouletteMode = isReallyValid;
+
+        if (isRouletteMode) {
+            hideModal('orderSubmittingModal');
+            showModal('rouletteModal');
+            document.getElementById('rouletteStatusText').textContent = "주방에 예약을 접수하고 선물 상자를 여는 중...";
+        } else {
+            document.getElementById('submittingModalTitle').textContent = "예약을 안전하게 접수하고 있어요";
+            document.getElementById('submittingModalDesc').textContent = "잠시만 기다려 주세요. 튀김기 현장으로 전달 중입니다!";
+            showModal('orderSubmittingModal');
+        }
+
+        const payload = Object.assign({
+            clientId: clientId,
+            kakaoId: KakaoAuthManager.session.kakaoId,
+            kakaoNickname: KakaoAuthManager.session.kakaoNickname,
+            phone4: KakaoAuthManager.session.phone4
+        }, orderData);
 
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(orderData)
+            body: JSON.stringify(payload)
         })
         .then(res => res.text())
         .then(text => {
-            let data;
-            try { data = JSON.parse(text); } catch(e) {}
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-            const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
-            const quickBox = document.getElementById('quickReorderBox');
-            
-            hideModal('orderSubmittingModal');
-            if (hasValidSecretCode || isReallyValid) {
+            let result;
+            try { result = JSON.parse(text); } catch (e) { throw new Error("서버 응답 오류"); }
+
+            if (result.result === "blocked") {
+                hideModal('orderSubmittingModal');
                 hideModal('rouletteModal');
-            }
-
-            isSubmitting = false;
-            isQuickSubmitting = false;
-
-            if (data && data.result === "blocked") {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                if (quickLoadBtn) quickLoadBtn.disabled = false;
-                enforceBlockedOverlay(data.reason || data.message);
+                enforceBlockedOverlay(result.message);
                 return;
             }
 
-            if (data && data.result === "closed") {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                if (quickLoadBtn) quickLoadBtn.disabled = false;
-                showCustomAlert('영업 마감 시간이 지나 예약을 접수할 수 없습니다.', '예약 마감');
+            if (result.result === "duplicate_nickname") {
+                hideModal('orderSubmittingModal');
+                hideModal('rouletteModal');
+                isSubmitting = false;
+                isQuickSubmitting = false;
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) submitBtn.disabled = false;
+                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+                if (quickSubmitBtn) quickSubmitBtn.disabled = false;
+                showCustomAlert(result.message || "이미 접수된 예약이 존재합니다. 중복 예약은 불가능합니다!", '중복 예약 불가 안내');
                 return;
             }
 
-            if (data && data.result === "out_of_stock") {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                if (quickLoadBtn) quickLoadBtn.disabled = false;
-                refreshSoldOutStateSilently(data.menuName);
-                showCustomAlert(`아쉽게도 방금 다른 고객님이 <b>${data.menuName}</b> 항목을 먼저 예약하여 품절되었습니다!`, '품절 안내');
+            if (result.result === "closed") {
+                hideModal('orderSubmittingModal');
+                hideModal('rouletteModal');
+                isSubmitting = false;
+                isQuickSubmitting = false;
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) submitBtn.disabled = false;
+                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+                if (quickSubmitBtn) quickSubmitBtn.disabled = false;
+                showCustomAlert('방금 예약 가능 시간이 종료되었습니다! 온라인 예약 시간 외에는 접수가 불가능합니다.', '예약 시간 종료');
+                checkAndRenderState(false);
                 return;
             }
 
-            if (data && data.result === "duplicate_nickname") {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-                if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-                if (quickLoadBtn) quickLoadBtn.disabled = false;
-                showCustomAlert(data.message || '이미 동일한 닉네임으로 접수된 예약이 존재합니다. 다른 닉네임을 사용하거나 기존 예약을 확인해 주세요!', '중복 닉네임 예약 불가');
+            if (result.result === "out_of_stock") {
+                hideModal('orderSubmittingModal');
+                hideModal('rouletteModal');
+                isSubmitting = false;
+                isQuickSubmitting = false;
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) submitBtn.disabled = false;
+                const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+                if (quickSubmitBtn) quickSubmitBtn.disabled = false;
+                const soldOutName = result.menuName || "선택하신 메뉴";
+                refreshSoldOutStateSilently(soldOutName);
+                showCustomAlert(`<b>${soldOutName}</b> 항목이 방금 품절되었습니다.<br><br>다른 메뉴를 선택해 주세요!`, '품절 안내');
                 return;
             }
 
-            if (data && data.syncedClientId) {
-                clientId = data.syncedClientId;
-                persistentClientId = data.syncedClientId;
-                TripleStorage.save('donkatsu_client_id', clientId);
-            }
+            if (result.result === "success") {
+                TripleStorage.save('savedNickname', orderData.nickname);
+                globalUserNickname = orderData.nickname;
+                KakaoAuthManager.saveSession({ identifier: orderData.nickname });
+                TripleStorage.save('lastOrderSummary', orderData.menuSummary);
+                TripleStorage.save('lastOrderSauce', orderData.sauce);
+                TripleStorage.save('lastOrderPrice', orderData.totalPrice);
+                TripleStorage.save('lastOrderPickupTime', orderData.pickupTime);
+                TripleStorage.save('lastOrderCookType', orderData.cookType);
 
-            const isEventWinner = !!(isReallyValid && data && data.isWinner);
-            saveCustomerStateCache({
-                type: 'active_order',
-                reservation: {
-                    result: 'found',
-                    status: '대기',
-                    nickname: orderData.nickname,
-                    cookType: orderData.cookType,
-                    menu: orderData.menuSummary,
-                    sauce: orderData.sauce,
-                    pickupTime: orderData.pickupTime,
-                    totalPrice: orderData.totalPrice,
-                    eventPrize: isEventWinner ? '선택대기' : ''
+                saveCustomerStateCache({
+                    type: 'active_order',
+                    reservation: {
+                        status: '미확인',
+                        nickname: orderData.nickname,
+                        cookType: orderData.cookType,
+                        menu: orderData.menuSummary,
+                        sauce: orderData.sauce,
+                        pickupTime: orderData.pickupTime,
+                        totalPrice: orderData.totalPrice,
+                        eventPrize: result.isWinner ? "당첨 (선택대기)" : ""
+                    }
+                });
+
+                if (result.eventMenuList && result.eventMenuList.length > 0) {
+                    cachedEventMenuList = result.eventMenuList;
                 }
-            });
 
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
-            if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-            if (quickLoadBtn) quickLoadBtn.disabled = false;
-            if (quickBox) quickBox.style.display = 'none';
-
-            if (isReallyValid) {
-                if (data && data.isWinner) {
-                    openEventWinModal(data.eventMenuList);
+                if (isRouletteMode) {
+                    setTimeout(() => {
+                        hideModal('rouletteModal');
+                        if (result.isWinner) {
+                            openEventWinModal(cachedEventMenuList);
+                        } else {
+                            showModal('eventFailModal');
+                        }
+                    }, 1500);
                 } else {
-                    showModal('eventFailModal');
+                    hideModal('orderSubmittingModal');
+                    showSuccessModal();
                 }
             } else {
-                showSuccessModal();
+                throw new Error(result.message || "예약 처리 실패");
             }
         })
         .catch(err => {
-            console.error(err);
+            hideModal('orderSubmittingModal');
+            hideModal('rouletteModal');
             isSubmitting = false;
             isQuickSubmitting = false;
-
             const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "예약 완료하기"; }
+            if (submitBtn) submitBtn.disabled = false;
             const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-            if (quickSubmitBtn) { quickSubmitBtn.disabled = false; quickSubmitBtn.textContent = "⚡ 3초 만에 직전 메뉴 그대로 예약하기"; }
-            const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
-            if (quickLoadBtn) quickLoadBtn.disabled = false;
-            hideModal('orderSubmittingModal');
-            if (hasValidSecretCode || isReallyValid) {
-                hideModal('rouletteModal');
-            }
-            showCustomAlert('예약 저장 중 통신 오류가 발생했습니다.', '오류 발생');
+            if (quickSubmitBtn) quickSubmitBtn.disabled = false;
+            showCustomAlert("예약 접수 중 오류가 발생했습니다: " + (err.message || err));
         });
     }
 
-    function processOrderSubmission(orderData, secretCode) {
-        const cleanCode = secretCode ? secretCode.trim() : "";
-
-        if (cleanCode === "") {
-            sendOrderRequest(orderData, false);
-            return;
-        }
-
-        const rouletteModal = document.getElementById('rouletteModal');
-        const statusText = document.getElementById('rouletteStatusText');
-        rouletteModal.style.display = 'flex';
-        rouletteModal.offsetHeight;
-        rouletteModal.classList.add('active');
-        
-        if (!document.body.classList.contains('modal-open')) {
-            scrollPosition = window.pageYOffset;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollPosition}px`;
-            document.body.style.width = '100%';
-            document.body.classList.add('modal-open');
-        }
-
-        statusText.textContent = "당첨 여부를 확인하고 있습니다! 둑구둑구...";
-
-        setTimeout(() => {
-            sendOrderRequest(orderData, true);
-        }, 1200);
-    }
-
-    let _warningMode = ""; 
-    let _warningConfirmed = false;
-
-    function executeQuickReorder() {
-        if (isQuickSubmitting) return;
-
-        const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-
-        const lastOrderStr = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
-        const lastSauce = localStorage.getItem('lastOrderSauce') || TripleStorage.getCookie('lastOrderSauce') || "없음";
-        const unavailableItems = validatePreviousOrderItems(lastOrderStr, lastSauce);
-        if (unavailableItems.length > 0) {
-            showCustomAlert(`직전 예약하신 <b>${unavailableItems.join(', ')}</b> 항목이 현재 품절 또는 판매 종료되어 바로 예약할 수 없습니다.<br><br><b>[직전 메뉴 불러와서 수정하기]</b>를 눌러 변경해 주세요!`, '예약 불가 안내');
-            checkQuickReorderData();
-            return;
-        }
-
-        const nickname = document.getElementById('nickname').value.trim() || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname');
-        const selectedTime = quickPickupSelect.value;
-        const secretCode = document.getElementById('quickSecretCodeInput') ? document.getElementById('quickSecretCodeInput').value.trim() : "";
-        const cookTypeElem = localStorage.getItem('lastOrderCookType') || "🍗 튀겨서 포장";
-
-        if (!nickname) {
-            showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
-            return;
-        }
-
-        if (!selectedTime || selectedTime.includes("선택") || selectedTime.includes("없습니다")) {
-            showCustomAlert('픽업 시간을 먼저 선택해 주세요!', '픽업 시간 선택 필요');
-            return;
-        }
-
-        const selectedMinCheck = parseTimeToMinutes(selectedTime);
-        const warningThresholdMin = 18 * 60 + 35;
-
-        if (selectedMinCheck >= warningThresholdMin && !_warningConfirmed) {
-            openLatePickupWarning(selectedTime, "quick");
-            return;
-        }
-        _warningConfirmed = false;
-
-        const nowCheck = new Date();
-        const currentMinCheck = nowCheck.getHours() * 60 + nowCheck.getMinutes();
-        const limitMinCheck = currentMinCheck + (globalPrepMinutes || 0);
-
-        if (selectedMinCheck < limitMinCheck) {
-            showCustomAlert('선택하신 시간대는 지연 시간(준비중)에 포함되어 예약할 수 없습니다. 픽업 시간을 다시 확인해 주세요!', '시간 선택 오류');
-            isInitializingPickupSelect = true;
-            initPickupOptions(quickPickupSelect, 'quickReorderBox');
-            isInitializingPickupSelect = false;
-            return;
-        }
-
-        const lastPrice = localStorage.getItem('lastOrderPrice') || TripleStorage.getCookie('lastOrderPrice') || "0원";
-
-        const orderData = {
-            action: 'create',
-            time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
-            cookType: cookTypeElem,
-            nickname: nickname,
-            phone: "", 
-            menuSummary: lastOrderStr,
-            sauce: lastSauce,
-            pickupTime: selectedTime,
-            totalPrice: lastPrice,
-            secretCode: secretCode,
-            clientId: clientId
-        };
-
-        globalUserNickname = nickname;
-        TripleStorage.save('savedNickname', nickname);
-        TripleStorage.save('lastOrderPickupTime', selectedTime);
-        TripleStorage.save('donkatsu_client_id', clientId);
-
-        if (secretCode !== "" && secretCode !== serverSecretCode) {
-            pendingOrderPayload = { orderData: orderData, secretCode: secretCode };
-            showModal('secretCodeConfirmModal');
-            return;
-        }
-
-        isQuickSubmitting = true;
-        if (quickSubmitBtn) {
-            quickSubmitBtn.disabled = true;
-            quickSubmitBtn.textContent = "예약 접수 중...";
-        }
-        const quickLoadBtn = document.querySelector('#quickReorderBox button[onclick="loadPreviousToForm()"]');
-        if (quickLoadBtn) quickLoadBtn.disabled = true;
-
-        if (secretCode === "") {
-            showModal('orderSubmittingModal');
-            const subTitle1 = document.getElementById('submittingModalTitle');
-            const subDesc1 = document.getElementById('submittingModalDesc');
-            if (subTitle1) subTitle1.textContent = "직전 메뉴로 바로예약을 접수하고 있어요";
-            if (subDesc1) subDesc1.textContent = "잠시만 기다려 주세요. 3초 만에 빠르게 처리 중입니다!";
-        }
-
-        processOrderSubmission(orderData, secretCode);
-    }
-
-    function handleSecretCodeChoice(isProceedGeneral) {
+    function handleSecretCodeChoice(proceedAsNormal) {
         hideModal('secretCodeConfirmModal');
-        if (isProceedGeneral && pendingOrderPayload) {
-            isSubmitting = true;
-            isQuickSubmitting = true;
-
-            const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn && document.getElementById('orderForm').style.display !== 'none') {
-                submitBtn.disabled = true;
-                submitBtn.textContent = "예약 접수 중...";
+        if (!proceedAsNormal) {
+            const quickBox = document.getElementById('quickReorderBox');
+            if (quickBox && quickBox.style.display !== 'none') {
+                const qInput = document.getElementById('quickSecretCodeInput');
+                if (qInput) {
+                    qInput.focus();
+                    qInput.select();
+                }
+            } else {
+                const mInput = document.getElementById('secretCodeInput');
+                if (mInput) {
+                    mInput.focus();
+                    mInput.select();
+                }
             }
-            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
-            if (quickSubmitBtn && document.getElementById('quickReorderBox').style.display !== 'none') {
-                quickSubmitBtn.disabled = true;
-                quickSubmitBtn.textContent = "예약 접수 중...";
-            }
-            showModal('orderSubmittingModal');
-            const subTitle1 = document.getElementById('submittingModalTitle');
-            const subDesc1 = document.getElementById('submittingModalDesc');
-            if (subTitle1) subTitle1.textContent = "일반 예약으로 접수하고 있어요";
-            if (subDesc1) subDesc1.textContent = "잠시만 기다려 주세요. 안전하게 처리 중입니다!";
-
-            pendingOrderPayload.orderData.secretCode = "";
-            pendingOrderPayload.secretCode = "";
-            processOrderSubmission(pendingOrderPayload.orderData, "");
+            return;
         }
-        pendingOrderPayload = null;
-    }
-
-    function shareStoreLink() {
-        const shareUrl = "https://open.kakao.com/o/gJ1aTBMi";
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                showCustomAlert("카카오톡 오픈채팅방 링크가 복사되었습니다!<br>친구에게 카카오톡으로 붙여넣어 주세요.", "링크 복사 완료");
-            }).catch(err => {
-                fallbackCopyTextToClipboard(shareUrl);
-            });
-        } else {
-            fallbackCopyTextToClipboard(shareUrl);
+        if (pendingOrderPayload) {
+            const payloadToRun = Object.assign({}, pendingOrderPayload, { secretCode: "" });
+            pendingOrderPayload = null;
+            sendOrderRequest(payloadToRun, false);
         }
     }
 
-    function fallbackCopyTextToClipboard(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";  
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showCustomAlert("카카오톡 오픈채팅방 링크가 복사되었습니다!<br>친구에게 카카오톡으로 붙여넣어 주세요.", "링크 복사 완료");
-        } catch (err) {
-            showCustomAlert("링크 복사에 실패했습니다. 주소창을 복사해 주세요!", "안내");
+    function closeEventFailModal() {
+        hideModal('eventFailModal');
+        setTimeout(() => {
+            showSuccessModal();
+        }, 320);
+    }
+
+    function openEventWinModal(eventMenus) {
+        let container = document.getElementById('eventOptionsContainer');
+        if (!container) return;
+
+        let html = '';
+        let list = (eventMenus && eventMenus.length > 0) ? eventMenus : cachedEventMenuList;
+        list.forEach((item, idx) => {
+            let menuLabel = item.trim();
+            html += `
+                <label style="display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-bottom: 1px solid #F0EFEA; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text-main);">
+                    <input type="radio" name="eventChoiceRadio" value="${menuLabel}" ${idx === 0 ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #B45309; cursor: pointer;">
+                    <span>${menuLabel}</span>
+                </label>
+            `;
+        });
+        container.innerHTML = html;
+
+        let btn = document.getElementById('eventSubmitBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "선택 완료 및 확인";
         }
-        document.body.removeChild(textArea);
+
+        showModal('eventWinModal');
+    }
+
+    function submitEventPrizeChoice() {
+        let selectedRadio = document.querySelector('input[name="eventChoiceRadio"]:checked');
+        if (!selectedRadio) {
+            showCustomAlert("서비스 메뉴를 하나 선택해 주세요!");
+            return;
+        }
+        let chosenPrize = selectedRadio.value;
+        let nickToUse = globalUserNickname || KakaoAuthManager.session.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "";
+
+        let btn = document.getElementById('eventSubmitBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "저장 중...";
+        }
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'selectEventPrize',
+                nickname: nickToUse,
+                prize: chosenPrize
+            })
+        })
+        .then(res => res.text())
+        .then(text => {
+            let result;
+            try { result = JSON.parse(text); } catch (e) { result = { result: "error" }; }
+            
+            if (result.result === "success") {
+                hideModal('eventWinModal');
+                const cachedState = loadCustomerStateCache();
+                if (cachedState && cachedState.reservation) {
+                    cachedState.reservation.eventPrize = "당첨 (" + chosenPrize + ")";
+                    saveCustomerStateCache(cachedState);
+                }
+                setTimeout(() => {
+                    showSuccessModal();
+                }, 320);
+            } else {
+                showCustomAlert("저장 중 오류가 발생했습니다. 다시 시도해 주세요.");
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = "선택 완료 및 확인";
+                }
+            }
+        })
+        .catch(() => {
+            showCustomAlert("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "선택 완료 및 확인";
+            }
+        });
+    }
+
+    function reloadAfterSuccess() {
+        hideModal('successModal');
+        setTimeout(() => {
+            const cachedState = loadCustomerStateCache();
+            if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
+                renderActiveOrderView(cachedState.reservation, globalUserNickname);
+            }
+            checkAndRenderState(true);
+        }, 320);
     }
 
     function formatCookType(rawType) {
-        if (!rawType) return "튀겨서 포장";
+        if (!rawType) return "🍗 튀겨서 포장";
         let str = String(rawType).trim();
-        if (isRawCookType(str)) {
-            return "생고기(반죽+빵가루)";
+        if (str.includes("비튀김") || str.includes("생고기") || str.includes("안튀김")) {
+            return "🥩 생고기(반죽+빵가루)";
         }
-        return "튀겨서 포장";
+        if (str.includes("튀김") || str.includes("튀겨서")) {
+            return "🍗 튀겨서 포장";
+        }
+        return str;
     }
 
-    function showCustomAlert(message, title = "안내", isCanceled = false) {
+    function parseMenuStringToObj(menuStr, targetObj) {
+        for (let key in targetObj) delete targetObj[key];
+        if (!menuStr) return;
+
+        let parts = menuStr.split(',');
+        parts.forEach(part => {
+            part = part.trim();
+            if (!part) return;
+            for (let i = 0; i < menuList.length; i++) {
+                let sName = menuList[i].shortName;
+                if (part.startsWith(sName)) {
+                    let countMatch = part.match(/(\d+)개/);
+                    let count = countMatch ? parseInt(countMatch[1]) : 1;
+                    targetObj[i] = count;
+                    break;
+                }
+            }
+        });
+    }
+
+    function parseSauceStringToObj(sauceStr, targetObj) {
+        for (let key in targetObj) delete targetObj[key];
+        if (!sauceStr || sauceStr === "없음") return;
+
+        let parts = sauceStr.split(',');
+        parts.forEach(part => {
+            part = part.trim();
+            if (!part) return;
+            for (let i = 0; i < sauceList.length; i++) {
+                let targetName = sauceList[i].shortName || sauceList[i].name;
+                if (part.startsWith(targetName)) {
+                    let countMatch = part.match(/(\d+)개/);
+                    let count = countMatch ? parseInt(countMatch[1]) : 1;
+                    targetObj[i] = count;
+                    break;
+                }
+            }
+        });
+    }
+
+    function showCustomAlert(message, title = '안내') {
         document.getElementById('customAlertTitle').textContent = title;
         document.getElementById('customAlertMessage').innerHTML = message;
-        isCanceledOrNotFound = isCanceled;
         showModal('customAlertModal');
     }
 
     function closeCustomAlert() {
         hideModal('customAlertModal');
-        if (isCanceledOrNotFound) {
-            saveCustomerStateCache({ type: 'quick_reorder' });
-            document.getElementById('alreadyOrderedNotice').style.display = 'none';
-            document.getElementById('pickupCompletedNotice').style.display = 'none';
-            checkQuickReorderData();
-        }
     }
 
-    function reloadAfterSuccess() {
-        hideModal('successModal');
-        userInteractedWithForm = false;
-        checkAndRenderState(false);
-    }
-
-    function resetToNewOrder() {
-        stopOrderStatusPolling();
-        sessionStorage.setItem('skipCompletedCheckOnce', 'true');
-        saveCustomerStateCache({ type: 'quick_reorder' });
-        userInteractedWithForm = false;
-        document.getElementById('pickupCompletedNotice').style.display = 'none';
-        checkAndRenderState(false);
-    }
-
-    function closeEventFailModal() {
-        hideModal('eventFailModal');
-        showSuccessModal();
-    }
-
-    function parseTimeToMinutes(timeStr) {
-        try {
-            let str = String(timeStr).trim();
-            let isPM = str.includes("오후");
-            let cleanStr = str.replace("오전", "").replace("오후", "").trim();
-            let parts = cleanStr.split(":");
-            let h = parseInt(parts[0]) || 0;
-            let m = parseInt(parts[1]) || 0;
-            if (isPM && h < 12) h += 12;
-            if (!isPM && h === 12) h = 0;
-            return h * 60 + m;
-        } catch(e) {
-            return 0;
-        }
-    }
-
-    function getCombinedCountForSlot(slotMin) {
-        let count = 0;
-        globalPickupTimesList.forEach(itemMin => {
-            if (itemMin >= slotMin - 10 && itemMin <= slotMin + 10) {
-                count++;
-            }
-        });
-        return count;
-    }
-
-    function initPickupOptions(selectElem, groupElemId, originalExistingTime = "") {
-        if (!selectElem) return;
-        selectElem.innerHTML = '';
-        
-        const now = new Date();
-        const currentTotalMin = now.getHours() * 60 + now.getMinutes();
-        const limitTotalMin = currentTotalMin + (globalPrepMinutes || 0);
-        
-        const pickupStartHour = globalPickupStartHour;
-        const pickupStartMin = globalPickupStartMin;
-        const pickupCloseHour = globalPickupCloseHour;
-        const pickupCloseMin = globalPickupCloseMin;
-
-        const closeTotalMin = pickupCloseHour * 60 + pickupCloseMin;
-        
-        let availableCount = 0;
-        let firstSelectableVal = "";
-        let originalTimeIncluded = false;
-
-        for (let h = pickupStartHour; h <= pickupCloseHour; h++) {
-            let mStart = (h === pickupStartHour) ? pickupStartMin : 0;
-            let mEnd = (h === pickupCloseHour) ? pickupCloseMin : 55;
-
-            for (let m = mStart; m <= mEnd; m += 5) {
-                const slotTotalMin = h * 60 + m;
-                if (slotTotalMin > closeTotalMin) break; 
-                if (slotTotalMin < currentTotalMin) continue;
-
-                const ampm = h < 12 ? "오전" : "오후";
-                const displayHour = h === 0 ? 12 : (h > 12 ? h - 12 : h);
-                const rawTimeStr = `${ampm} ${displayHour}:${m.toString().padStart(2, '0')}`;
-                
-                if (originalExistingTime && rawTimeStr === originalExistingTime) {
-                    originalTimeIncluded = true;
-                }
-
-                const count = getCombinedCountForSlot(slotTotalMin);
-                let statusBadge = "";
-                if (count >= 8) statusBadge = ` (🔥 예약 폭주)`;
-                else if (count >= 6) statusBadge = ` (🔴 몰림)`;
-                else if (count >= 4) statusBadge = ` (🟠 혼잡)`;
-
-                const option = document.createElement('option');
-                option.value = rawTimeStr;
-                
-                if (slotTotalMin < limitTotalMin) {
-                    option.textContent = `${rawTimeStr} (준비중)`;
-                    option.disabled = true;
-                    option.style.color = "#aaa";
-                    option.style.backgroundColor = "#f1f1f1";
-                } else {
-                    option.textContent = rawTimeStr + statusBadge;
-                    if (!firstSelectableVal) firstSelectableVal = rawTimeStr;
-                    
-                    if (count >= 8) {
-                        option.style.backgroundColor = "#FFF1F2";
-                        option.style.color = "#BE123C";
-                        option.style.fontWeight = "bold";
-                    } else if (count >= 6) {
-                        option.style.backgroundColor = "#FFF7ED";
-                        option.style.color = "#C2410C";
-                        option.style.fontWeight = "bold";
-                    } else if (count >= 4) {
-                        option.style.backgroundColor = "#FEFCE8";
-                        option.style.color = "#A16207";
-                        option.style.fontWeight = "bold";
-                    }
-                }
-
-                selectElem.appendChild(option);
-                availableCount++;
-            }
-        }
-        
-        if (originalExistingTime && !originalTimeIncluded) {
-            const option = document.createElement('option');
-            option.value = originalExistingTime;
-            option.textContent = originalExistingTime + " (현재 내 예약 시간)";
-            option.disabled = false;
-            option.style.fontWeight = "bold";
-            option.style.color = "var(--accent-dark)";
-            selectElem.insertBefore(option, selectElem.firstChild);
-            selectElem.value = originalExistingTime;
-        } else if (originalExistingTime && originalTimeIncluded) {
-            for (let i = 0; i < selectElem.options.length; i++) {
-                if (selectElem.options[i].value === originalExistingTime) {
-                    selectElem.options[i].disabled = false;
-                    selectElem.options[i].textContent = originalExistingTime + " (현재 내 예약 시간)";
-                    selectElem.options[i].style.fontWeight = "bold";
-                    selectElem.options[i].style.color = "var(--accent-dark)";
-                    break;
-                }
-            }
-            selectElem.value = originalExistingTime;
-        }
-
-        if (availableCount === 0 && !originalExistingTime) {
-            const option = document.createElement('option');
-            option.value = "";
-            option.textContent = "예약 가능한 시간이 없습니다";
-            option.disabled = true;
-            selectElem.appendChild(option);
-        } else if (!originalExistingTime && firstSelectableVal) {
-            selectElem.value = firstSelectableVal;
-        }
-    }
-
-    let isInitializingPickupSelect = false;
-
-    function openLatePickupWarning(timeStr, mode) {
-        const badgeEl = document.getElementById('warningSelectedTimeBadge');
-        const confirmBtn = document.getElementById('warningConfirmBtn');
-        if (badgeEl) {
-            badgeEl.textContent = timeStr || "오후 6:35 이후";
-        }
-        if (confirmBtn) {
-            if (mode === "select_only") {
-                confirmBtn.textContent = "확인했어요";
-            } else {
-                confirmBtn.textContent = "확인했어요 · 예약 진행";
-            }
-        }
-        _warningMode = mode || "select_only";
-        hideModal('warningModal');
-        showModal('warningModal');
-    }
-
-    function handleTimeChange(selectElem, infoBoxId) {
-        const infoBox = document.getElementById(infoBoxId);
-        if (!infoBox) return;
-
-        const val = selectElem.value;
-        const slotMin = parseTimeToMinutes(val);
-        const count = getCombinedCountForSlot(slotMin);
-
-        if (count >= 8) {
-            infoBox.className = "busy-info-box busy-level-red";
-            infoBox.innerHTML = `🔥 <b>[예약 폭주]</b> 선택하신 ${val} 시각 전후로 예약이 꽉 차 있어 조리 및 대기 시간이 많이 지연될 수 있습니다.`;
-            infoBox.style.display = "block";
-        } else if (count >= 6) {
-            infoBox.className = "busy-info-box busy-level-orange";
-            infoBox.innerHTML = `🔴 <b>[예약 몰림]</b> 선택하신 ${val} 시각 전후로 튀김기가 쉴 새 없이 돌아가고 있습니다.`;
-            infoBox.style.display = "block";
-        } else if (count >= 4) {
-            infoBox.className = "busy-info-box busy-level-yellow";
-            infoBox.innerHTML = `🟠 <b>[조리 혼잡]</b> 선택하신 ${val} 시각 전후로 예약이 조금씩 몰리고 있습니다.`;
-            infoBox.style.display = "block";
-        } else {
-            infoBox.style.display = "none";
-            infoBox.innerHTML = "";
-        }
-
-        const warningThresholdMin = 18 * 60 + 35;
-        if (!isInitializingPickupSelect && val && !val.includes("선택") && !val.includes("없습니다") && slotMin >= warningThresholdMin) {
-            _warningConfirmed = false;
-            openLatePickupWarning(val, "select_only");
-        }
-    }
-
-    function formatMenuName(fullName) {
-        let match = fullName.match(/^(세트\d+|모듬세트)(.*)$/);
-        if (match) {
-            let prefix = match[1].trim();
-            let rest = match[2].trim();
-            if (rest) {
-                return `<div class="menu-set-prefix">${prefix}</div><div class="menu-title">${rest}</div>`;
-            } else {
-                return `<div class="menu-title">${prefix}</div>`;
-            }
-        }
-        return `<div class="menu-title">${fullName}</div>`;
-    }
-
-    function renderSauceCards() {
-        const sauceContainer = document.getElementById('sauceCardContainer');
-        const editSauceContainer = document.getElementById('editSauceCardContainer');
-
-        if (sauceContainer) sauceContainer.innerHTML = '';
-        if (editSauceContainer) editSauceContainer.innerHTML = '';
-        if (typeof sauceList === 'undefined' || !sauceList) return;
-
-        sauceList.forEach((sauce, idx) => {
-            const card = document.createElement('div');
-            card.classList.add('sauce-item-card');
-
-            let currentQty = 0;
-            if (typeof sauceItems !== 'undefined' && sauceItems[idx]) {
-                currentQty = sauceItems[idx];
-            } else if (typeof sauceOrderItems !== 'undefined' && sauceOrderItems[idx]) {
-                currentQty = sauceOrderItems[idx];
-            }
-            if (currentQty > 0) {
-                card.classList.add('selected-item');
-            }
-            let formattedPriceStr = formatPriceText(sauce.price);
-            let isSoldOut = sauce.isSoldOut;
-            let alreadyReserved = (typeof editSauceOrderItems !== 'undefined' && editSauceOrderItems[idx] && editSauceOrderItems[idx] > 0);
-
-            let safeUrl = "";
-            if (sauce.imageUrl) {
-                safeUrl = sauce.imageUrl;
-                if (safeUrl.includes("drive.google.com/uc") || safeUrl.includes("drive.google.com/file/d/")) {
-                    let match = safeUrl.match(/id=([a-zA-Z0-9_-]+)/) || safeUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                    if (match && match[1]) safeUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
-                }
-            }
-
-            const topFlexDiv = document.createElement('div');
-            topFlexDiv.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 4px; width: 100%;";
-
-            if (safeUrl) {
-                const img = document.createElement('img');
-                img.src = safeUrl.split(',')[0].trim();
-                img.style.cssText = "width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); cursor: pointer; flex-shrink: 0;";
-                img.onerror = function() { this.onerror = null; this.src = "https://via.placeholder.com/32x32?text=이미지"; };
-                img.onclick = function() { openImageModal(sauce.imageUrl); };
-                topFlexDiv.appendChild(img);
-            } else {
-                const noImg = document.createElement('div');
-                noImg.style.cssText = "width: 32px; height: 32px; border-radius: 50%; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-muted); flex-shrink: 0; border: 1.5px solid var(--border-color); font-weight: bold;";
-                noImg.textContent = "사진";
-                topFlexDiv.appendChild(noImg);
-            }
-
-            const textDiv = document.createElement('div');
-            textDiv.style.cssText = "display: flex; flex-direction: column; flex: 1; min-width: 0; text-align: left; gap: 1px;";
-            textDiv.innerHTML = `
-                <div style="font-weight: 700; font-size: 13px; color: var(--text-main); line-height: 1.2;">${sauce.name}</div>
-                <div style="font-size: 12px; color: var(--text-sub); font-weight: 600;">${formattedPriceStr}</div>
-            `;
-            topFlexDiv.appendChild(textDiv);
-            card.appendChild(topFlexDiv);
-
-            const bottomDiv = document.createElement('div');
-            bottomDiv.classList.add('sauce-card-bottom');
-            bottomDiv.style.cssText = "display: flex; justify-content: center; width: 100%; margin-top: 2px;";
-            
-            const qtyControl = document.createElement('div');
-            qtyControl.classList.add('item-qty-control');
-            qtyControl.style.cssText = "display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 4px;";
-
-            const minusBtn = document.createElement('button');
-            minusBtn.type = 'button';
-            minusBtn.classList.add('item-q-btn');
-            minusBtn.textContent = '-';
-            minusBtn.style.cssText = "flex: 1; height: 26px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 6px;";
-            minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
-            minusBtn.onclick = function() { updateSauceQty(idx, -1); };
-
-            const qtyLabel = document.createElement('div');
-            qtyLabel.id = `qty_sauce_${idx}`;
-            qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--text-main);";
-            qtyLabel.textContent = currentQty;
-
-            const plusBtn = document.createElement('button');
-            plusBtn.type = 'button';
-            plusBtn.classList.add('item-q-btn');
-            plusBtn.textContent = '+';
-            plusBtn.style.cssText = "flex: 1; height: 26px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 6px;";
-            plusBtn.disabled = (isSoldOut && !alreadyReserved);
-            plusBtn.onclick = function() { updateSauceQty(idx, 1); };
-
-            qtyControl.appendChild(minusBtn);
-            qtyControl.appendChild(qtyLabel);
-            qtyControl.appendChild(plusBtn);
-            bottomDiv.appendChild(qtyControl);
-            card.appendChild(bottomDiv);
-
-            if (isSoldOut && !alreadyReserved) {
-                card.classList.add('sold-out');
-                const badgeOverlay = document.createElement('div');
-                badgeOverlay.classList.add('sold-out-badge-overlay');
-                badgeOverlay.innerHTML = `<div class="sold-out-badge-text">SOLD OUT</div>`;
-                card.appendChild(badgeOverlay);
-            }
-            if (sauceContainer) sauceContainer.appendChild(card);
-
-            const editCard = card.cloneNode(true);
-            let editQty = (typeof editSauceItems !== 'undefined' && editSauceItems[idx]) ? editSauceItems[idx] : 0;
-            if (editQty > 0) {
-                editCard.classList.add('selected-item');
-            } else {
-                editCard.classList.remove('selected-item');
-            }
-            
-            let editLabel = editCard.querySelector(`#qty_sauce_${idx}`);
-            if (editLabel) {
-                editLabel.id = `qty_edit_sauce_${idx}`;
-                editLabel.textContent = editQty;
-            }
-
-            if (safeUrl) {
-                let editImg = editCard.querySelector('img');
-                if (editImg) editImg.onclick = function() { openImageModal(sauce.imageUrl); };
-            }
-
-            let editBtns = editCard.querySelectorAll('.item-q-btn');
-            if (editBtns[0]) {
-                editBtns[0].disabled = (editQty <= 0);
-                editBtns[0].onclick = function() {
-                    let origQty = (originalReservedItems['sauce_' + idx] || 0);
-                    if (editAlreadyReserved && isSoldOut && editQty === origQty) {
-                        tryReduceReservedItem('sauce', idx);
-                    } else {
-                        updateEditSauceQty(idx, -1);
-                    }
-                };
-            }
-            if (editBtns[1]) {
-                editBtns[1].disabled = (isSoldOut && (!editAlreadyReserved || editQty >= (originalReservedItems['sauce_' + idx] || 0)));
-                editBtns[1].onclick = function() {
-                    if (editAlreadyReserved && isSoldOut && editQty >= (originalReservedItems['sauce_' + idx] || 0)) {
-                        handleSoldOutClick(sauce.name);
-                    } else {
-                        updateEditSauceQty(idx, 1);
-                    }
-                };
-            }
-            if (editSauceContainer) editSauceContainer.appendChild(editCard);
-        });
-    }
-
-    function renderMenuCards() {
-        const mainContainer = document.getElementById('menuCardContainer');
-        const editContainer = document.getElementById('editMenuCardContainer');
-
-        if (mainContainer) mainContainer.innerHTML = '';
-        if (editContainer) editContainer.innerHTML = '';
-        if (typeof menuList === 'undefined' || !menuList) return;
-
-        const sortedMenuEntries = menuList.map((item, idx) => ({ item, idx }));
-        sortedMenuEntries.sort((a, b) => {
-            const aHot = a.item.isHot ? 1 : 0;
-            const bHot = b.item.isHot ? 1 : 0;
-            if (aHot !== bHot) return bHot - aHot;
-            if (aHot === 1 && bHot === 1) {
-                const diff = (Number(b.item.hotOrder) || 0) - (Number(a.item.hotOrder) || 0);
-                if (diff !== 0) return diff;
-            }
-            return a.idx - b.idx;
-        });
-
-        sortedMenuEntries.forEach(({ item, idx }) => {
-            const card = document.createElement('div');
-            card.classList.add('menu-item-card');
-            if (item.isHot) {
-                card.classList.add('hot-menu');
-            }
-            
-            let safeUrl = "";
-            if (item.imageUrl) {
-                safeUrl = item.imageUrl;
-                if (safeUrl.includes("drive.google.com/uc") || safeUrl.includes("drive.google.com/file/d/")) {
-                    let match = safeUrl.match(/id=([a-zA-Z0-9_-]+)/) || safeUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                    if (match && match[1]) safeUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
-                }
-            }
-
-            let currentQty = (typeof orderItems !== 'undefined' && orderItems[idx]) ? orderItems[idx] : 0;
-            if (currentQty > 0) {
-                card.classList.add('selected-item');
-            }
-            let formattedPriceStr = formatPriceText(item.price);
-            let isSoldOut = item.isSoldOut;
-            let alreadyReserved = (typeof editOrderItems !== 'undefined' && editOrderItems[idx] && editOrderItems[idx] > 0);
-
-            const topDiv = document.createElement('div');
-            topDiv.classList.add('menu-card-top');
-
-            const imgElem = document.createElement('div');
-            if (safeUrl) {
-                const img = document.createElement('img');
-                img.src = safeUrl.split(',')[0].trim();
-                img.classList.add('menu-thumb');
-                img.loading = 'eager';
-                img.onerror = function() { this.onerror = null; this.src = "https://via.placeholder.com/50x50?text=이미지"; };
-                img.onclick = function() { openImageModal(item.imageUrl); };
-                imgElem.appendChild(img);
-            } else {
-                const noImg = document.createElement('div');
-                noImg.classList.add('menu-thumb');
-                noImg.style.cssText = "background:var(--surface-sub); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-muted); font-weight:600;";
-                noImg.textContent = "사진없음";
-                imgElem.appendChild(noImg);
-            }
-            topDiv.appendChild(imgElem);
-
-            const detailsDiv = document.createElement('div');
-            detailsDiv.classList.add('menu-details');
-            const hotBadgeHtml = item.isHot
-                ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span> 인기추천 HOT</div>`
-                : '';
-            detailsDiv.innerHTML = hotBadgeHtml + formatMenuName(item.name) + '<div class="menu-price">' + formattedPriceStr + '</div>';
-            topDiv.appendChild(detailsDiv);
-            card.appendChild(topDiv);
-
-            const bottomDiv = document.createElement('div');
-            bottomDiv.classList.add('menu-card-bottom');
-            bottomDiv.style.cssText = "display: flex; justify-content: center; width: 100%; margin-top: 2px;";
-            
-            const qtyControl = document.createElement('div');
-            qtyControl.classList.add('item-qty-control');
-            qtyControl.style.cssText = "display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 6px;";
-
-            const minusBtn = document.createElement('button');
-            minusBtn.type = 'button';
-            minusBtn.classList.add('item-q-btn');
-            minusBtn.textContent = '-';
-            minusBtn.style.cssText = "flex: 1; height: 28px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 6px;";
-            minusBtn.disabled = (currentQty <= 0 || (isSoldOut && !alreadyReserved));
-            minusBtn.onclick = function() { updateMainQty(idx, -1); };
-
-            const qtyLabel = document.createElement('div');
-            qtyLabel.id = `qty_main_${idx}`;
-            qtyLabel.style.cssText = "flex: 1; text-align: center; font-size: 14px; font-weight: 700; color: var(--text-main);";
-            qtyLabel.textContent = currentQty;
-
-            const plusBtn = document.createElement('button');
-            plusBtn.type = 'button';
-            plusBtn.classList.add('item-q-btn');
-            plusBtn.textContent = '+';
-            plusBtn.style.cssText = "flex: 1; height: 28px; font-weight: bold; cursor: pointer; border: 1.5px solid var(--border-color); background: var(--surface-sub); border-radius: 6px;";
-            plusBtn.disabled = (isSoldOut && !alreadyReserved);
-            plusBtn.onclick = function() { updateMainQty(idx, 1); };
-
-            qtyControl.appendChild(minusBtn);
-            qtyControl.appendChild(qtyLabel);
-            qtyControl.appendChild(plusBtn);
-            bottomDiv.appendChild(qtyControl);
-            card.appendChild(bottomDiv);
-
-            if (isSoldOut && !alreadyReserved) {
-                card.classList.add('sold-out');
-                const badgeOverlay = document.createElement('div');
-                badgeOverlay.classList.add('sold-out-badge-overlay');
-                badgeOverlay.innerHTML = `<div class="sold-out-badge-text">SOLD OUT</div>`;
-                card.appendChild(badgeOverlay);
-            }
-            if (mainContainer) mainContainer.appendChild(card);
-
-            const editCard = card.cloneNode(true);
-            let editQty = (typeof editOrderItems !== 'undefined' && editOrderItems[idx]) ? editOrderItems[idx] : 0;
-            if (editQty > 0) {
-                editCard.classList.add('selected-item');
-            } else {
-                editCard.classList.remove('selected-item');
-            }
-            
-            let editLabel = editCard.querySelector(`#qty_main_${idx}`);
-            if (editLabel) {
-                editLabel.id = `qty_edit_${idx}`;
-                editLabel.textContent = editQty;
-            }
-
-            if (safeUrl) {
-                let editImg = editCard.querySelector('img');
-                if (editImg) editImg.onclick = function() { openImageModal(item.imageUrl); };
-            }
-
-            let editBtns = editCard.querySelectorAll('.item-q-btn');
-            if (editBtns[0]) {
-                editBtns[0].disabled = (editQty <= 0);
-                editBtns[0].onclick = function() {
-                    let origQty = (originalReservedItems['menu_' + idx] || 0);
-                    if (editAlreadyReserved && isSoldOut && editQty === origQty) {
-                        tryReduceReservedItem('menu', idx);
-                    } else {
-                        updateEditQty(idx, -1);
-                    }
-                };
-            }
-            if (editBtns[1]) {
-                editBtns[1].disabled = (isSoldOut && (!editAlreadyReserved || editQty >= (originalReservedItems['menu_' + idx] || 0)));
-                editBtns[1].onclick = function() {
-                    let origQty = (originalReservedItems['menu_' + idx] || 0);
-                    if (editAlreadyReserved && isSoldOut && editQty >= origQty) {
-                        handleSoldOutClick(item.name);
-                    } else {
-                        updateEditQty(idx, 1);
-                    }
-                };
-            }
-            if (editContainer) editContainer.appendChild(editCard);
-        });
-
-        if (typeof renderSauceCards === 'function') renderSauceCards();
-        if (typeof updateMainTotalPrice === 'function') updateMainTotalPrice();
-        if (typeof updateEditTotalPrice === 'function') updateEditTotalPrice();
-    }
-
-    function handleSoldOutClick(itemName) {
-        showCustomAlert(`<b>${itemName}</b> 항목은 현재 매장 품절 상태여서 수량을 늘릴 수 없습니다.`, '품절 안내');
-    }
-
-    function tryReduceReservedItem(type, idx) {
-        pendingReduceAction = { type: type, idx: idx };
-        let itemName = "";
-        if (type === 'menu') itemName = menuList[idx] ? menuList[idx].shortName : "메뉴";
-        else itemName = sauceList[idx] ? sauceList[idx].shortName : "소스";
-
-        document.getElementById('confirmReduceText').innerHTML = `
-            현재 재고가 <b>품절 상태</b>인 메뉴(<b>${itemName}</b>)입니다.<br><br>
-            수량을 0으로 내리면 다시 선택하실 수 없습니다. 정말 변경하시겠습니까?
-        `;
-        showModal('confirmReduceModal');
-    }
-
-    function closeConfirmReduce(isYes) {
+    function closeConfirmReduce(confirmed) {
         hideModal('confirmReduceModal');
-        if (isYes && pendingReduceAction) {
-            let type = pendingReduceAction.type;
-            let idx = pendingReduceAction.idx;
-            if (type === 'menu') updateEditQty(idx, -1);
-            else if (type === 'sauce') updateEditSauceQty(idx, -1);
+        if (confirmed && pendingReduceAction) {
+            pendingReduceAction();
         }
         pendingReduceAction = null;
     }
 
-    function calculateMainTotal() {
-        let total = 0;
-        Object.keys(orderItems).forEach(idx => {
-            let qty = orderItems[idx] || 0;
-            if (qty > 0 && menuList[idx]) {
-                let priceNum = parseInt(String(menuList[idx].price).replace(/[^0-9]/g, '')) || 0;
-                total += priceNum * qty;
-            }
-        });
-        Object.keys(sauceItems).forEach(idx => {
-            let qty = sauceItems[idx] || 0;
-            if (qty > 0 && sauceList[idx]) {
-                let priceNum = parseInt(String(sauceList[idx].price).replace(/[^0-9]/g, '')) || 0;
-                total += priceNum * qty;
-            }
-        });
-        return total;
-    }
+    function executeQuickReorder() {
+        if (isQuickSubmitting || isSubmitting) return;
+        const quickBtn = document.getElementById('quickSubmitBtn');
+        if (quickBtn && quickBtn.disabled) return;
 
-    function calculateEditTotal() {
-        let total = 0;
-        Object.keys(editOrderItems).forEach(idx => {
-            let qty = editOrderItems[idx] || 0;
-            if (qty > 0 && menuList[idx]) {
-                let priceNum = parseInt(String(menuList[idx].price).replace(/[^0-9]/g, '')) || 0;
-                total += priceNum * qty;
-            }
-        });
-        Object.keys(editSauceItems).forEach(idx => {
-            let qty = editSauceItems[idx] || 0;
-            if (qty > 0 && sauceList[idx]) {
-                let priceNum = parseInt(String(sauceList[idx].price).replace(/[^0-9]/g, '')) || 0;
-                total += priceNum * qty;
-            }
-        });
-        return total;
-    }
+        const lastOrderStr = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
+        const lastSauce = localStorage.getItem('lastOrderSauce') || TripleStorage.getCookie('lastOrderSauce') || "없음";
+        const lastPrice = localStorage.getItem('lastOrderPrice') || TripleStorage.getCookie('lastOrderPrice') || "0원";
+        const lastNick = KakaoAuthManager.session.identifier || document.getElementById('nickname').value.trim() || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "";
+        const lastCookType = localStorage.getItem('lastOrderCookType') || TripleStorage.getCookie('lastOrderCookType') || "🍗 튀겨서 포장";
+        const selectedTime = quickPickupSelect.value;
 
-    function updateMainTotalPrice() {
-        document.getElementById('mainTotalPrice').textContent = calculateMainTotal().toLocaleString();
-        updateMainSummaryDisplay();
-    }
-
-    function updateEditTotalPrice() {
-        document.getElementById('editTotalPrice').textContent = calculateEditTotal().toLocaleString();
-        updateEditSummaryDisplay();
-    }
-
-    function updateMainQty(idx, delta) {
-        userInteractedWithForm = true;
-        if (!orderItems[idx]) orderItems[idx] = 0;
-        orderItems[idx] += delta;
-        if (orderItems[idx] < 0) orderItems[idx] = 0;
-        if (orderItems[idx] === 0) delete orderItems[idx];
-        renderMenuCards();
-    }
-
-    function updateEditQty(idx, delta) {
-        if (!editOrderItems[idx]) editOrderItems[idx] = 0;
-        editOrderItems[idx] += delta;
-        if (editOrderItems[idx] < 0) editOrderItems[idx] = 0;
-        if (editOrderItems[idx] === 0) delete editOrderItems[idx];
-        renderMenuCards();
-    }
-
-    function updateSauceQty(idx, delta) {
-        userInteractedWithForm = true;
-        if (typeof sauceOrderItems === 'undefined') sauceOrderItems = {};
-        if (typeof sauceItems === 'undefined') sauceItems = {};
-        let current = sauceOrderItems[idx] || sauceItems[idx] || 0;
-        current += delta;
-        if (current < 0) current = 0;
-        if (current === 0) {
-            delete sauceOrderItems[idx];
-            delete sauceItems[idx];
-        } else {
-            sauceOrderItems[idx] = current;
-            sauceItems[idx] = current;
+        if (!lastOrderStr) {
+            showCustomAlert("직전 예약 정보가 없습니다. 폼을 이용해 주세요.");
+            return;
         }
-        renderSauceCards();
-        if (typeof updateMainTotalPrice === 'function') updateMainTotalPrice();
-    }
-
-    function updateEditSauceQty(idx, delta) {
-        if (!editSauceItems[idx]) editSauceItems[idx] = 0;
-        editSauceItems[idx] += delta;
-        if (editSauceItems[idx] < 0) editSauceItems[idx] = 0;
-        if (editSauceItems[idx] === 0) delete editSauceItems[idx];
-        renderSauceCards();
-        updateEditTotalPrice();
-    }
-
-    function buildVerticalSummaryHtml(itemsObj, sauceObj) {
-        let lines = [];
-        Object.keys(itemsObj).forEach(idx => {
-            if (itemsObj[idx] > 0 && menuList[idx]) {
-                lines.push(`<span class="summary-item-line">• ${menuList[idx].shortName} ${itemsObj[idx]}개</span>`);
-            }
-        });
-        Object.keys(sauceObj).forEach(idx => {
-            if (sauceObj[idx] > 0 && sauceList[idx]) {
-                lines.push(`<span class="summary-item-line" style="color:var(--accent-gold);">• ${sauceList[idx].shortName} ${sauceObj[idx]}개</span>`);
-            }
-        });
-        if (lines.length === 0) return "선택된 메뉴가 없습니다.";
-        return lines.join('');
-    }
-
-    function updateMainSummaryDisplay() {
-        document.getElementById('mainSelectedSummaryList').innerHTML = buildVerticalSummaryHtml(orderItems, sauceItems);
-    }
-
-    function updateEditSummaryDisplay() {
-        document.getElementById('editSelectedSummary').innerHTML = buildVerticalSummaryHtml(editOrderItems, editSauceItems);
-    }
-
-    function openImageModal(urlStr) {
-        var container = document.getElementById('modalImageContainer');
-        container.innerHTML = ""; 
-        if (!urlStr || urlStr.trim() === "" || urlStr === "undefined") {
-            container.innerHTML = "<div style='color:#fff; padding:16px;'>등록된 상세 이미지가 없습니다.</div>";
-        } else {
-            var urls = urlStr.split(',');
-            for (var i = 0; i < urls.length; i++) {
-                var imgUrl = urls[i].trim();
-                if (imgUrl !== "") {
-                    if (imgUrl.includes("drive.google.com/uc") || imgUrl.includes("drive.google.com/file/d/")) {
-                        let match = imgUrl.match(/id=([a-zA-Z0-9_-]+)/) || imgUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                        if (match && match[1]) imgUrl = "https://lh3.googleusercontent.com/d/" + match[1] + "=s800";
-                    }
-                    var imgTag = document.createElement('img');
-                    imgTag.src = imgUrl;
-                    container.appendChild(imgTag);
-                }
-            }
+        if (!lastNick) {
+            showCustomAlert("카카오 회원 정보를 먼저 확인해 주세요.");
+            return;
         }
-        showModal('imageModal');
-        requestAnimationFrame(() => { container.scrollLeft = 0; });
-        setTimeout(() => { container.scrollLeft = 0; }, 10);
+        if (!selectedTime) {
+            showCustomAlert("픽업 시간을 선택해 주세요!");
+            return;
+        }
+
+        const unavailableItems = validatePreviousOrderItems(lastOrderStr, lastSauce);
+        if (unavailableItems.length > 0) {
+            checkQuickReorderData();
+            showCustomAlert(`직전 예약하신 <b>${unavailableItems.join(', ')}</b> 항목이 현재 품절되었습니다.<br><br><b>[직전 메뉴 불러와서 수정하기]</b>를 눌러 다른 메뉴로 변경해 주세요!`, '품절 메뉴 포함 안내');
+            return;
+        }
+
+        const slotMinutes = parseTimeToMinutes(selectedTime);
+        const warningThreshold = (18 * 60) + 35;
+
+        const quickSecretCodeVal = document.getElementById('quickSecretCodeInput') ? document.getElementById('quickSecretCodeInput').value.trim() : "";
+
+        const orderData = {
+            action: "create",
+            cookType: lastCookType,
+            nickname: lastNick,
+            menuSummary: lastOrderStr,
+            sauce: lastSauce,
+            pickupTime: selectedTime,
+            totalPrice: lastPrice,
+            secretCode: quickSecretCodeVal
+        };
+
+        if (slotMinutes >= warningThreshold && !_warningConfirmed) {
+            pendingOrderPayload = orderData;
+            const badge = document.getElementById('warningSelectedTimeBadge');
+            if (badge) badge.textContent = selectedTime;
+            showModal('warningModal');
+            return;
+        }
+
+        isQuickSubmitting = true;
+        if (quickBtn) {
+            quickBtn.disabled = true;
+            quickBtn.textContent = "예약 처리 중...";
+        }
+
+        sendOrderRequest(orderData, false);
     }
 
-    function closeImageModal() { hideModal('imageModal'); }
-
-    function buildMenuSummary(itemsObj) {
-        let summaryList = [];
-        Object.keys(itemsObj).forEach(idx => {
-            if (itemsObj[idx] > 0 && menuList[idx]) summaryList.push(`${menuList[idx].shortName} ${itemsObj[idx]}개`);
-        });
-        return summaryList.join(', ');
-    }
-
-    function buildSauceSummary(sauceObj) {
-        let summaryList = [];
-        Object.keys(sauceObj).forEach(idx => {
-            if (sauceObj[idx] > 0 && sauceList[idx]) summaryList.push(`${sauceList[idx].shortName} ${sauceObj[idx]}개`);
-        });
-        return summaryList.length > 0 ? summaryList.join(', ') : "없음";
-    }
-
-    function parseMenuStringToObj(menuStr, itemsObj) {
-        for (let key in itemsObj) delete itemsObj[key]; 
-        if (!menuStr) return;
-        let parts = menuStr.split(',');
-        parts.forEach(part => {
-            part = part.trim();
-            menuList.forEach((menu, idx) => {
-                if (part.startsWith(menu.shortName)) {
-                    let qtyStr = part.replace(menu.shortName, '').replace('개', '').trim(); 
-                    itemsObj[idx] = parseInt(qtyStr) || 1;
-                }
-            });
-        });
-    }
-
-    function parseSauceStringToObj(sauceStr, sauceObj) {
-        for (let key in sauceObj) delete sauceObj[key];
-        if (!sauceStr || sauceStr === "없음") return;
-        let parts = sauceStr.split(',');
-        parts.forEach(part => {
-            part = part.trim();
-            sauceList.forEach((sauce, idx) => {
-                let targetName = sauce.shortName || sauce.name;
-                if (part.startsWith(targetName) || part.startsWith(sauce.name)) {
-                    let qtyStr = part.replace(targetName, '').replace(sauce.name, '').replace('개', '').trim();
-                    sauceObj[idx] = parseInt(qtyStr) || 1;
-                }
-            });
-        });
-    }
-
-    function checkAndRenderState(forceBlockingLoading = false) {
+    function resetToNewOrder() {
         stopOrderStatusPolling();
-        const savedNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "";
-        const cachedSettings = loadSettingsCache();
-        const cachedState = loadCustomerStateCache();
-        const skipCheckOnce = sessionStorage.getItem('skipCompletedCheckOnce') === 'true';
+        userInteractedWithForm = true;
+        saveCustomerStateCache({ type: 'new' });
+        document.getElementById('pickupCompletedNotice').style.display = 'none';
+        document.getElementById('alreadyOrderedNotice').style.display = 'none';
+        checkClosedTimeAndRender(loadSettingsCache());
+    }
 
-        let renderedImmediately = false;
+    function shareStoreLink() {
+        playClickSound();
+        const storeUrl = window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: '장날동천 돈가스 예약',
+                text: '수제 돈가스, 이제 톡으로 간편하게 예약하고 픽업하세요!',
+                url: storeUrl
+            }).catch((err) => {
+                copyToClipboard(storeUrl);
+            });
+        } else {
+            copyToClipboard(storeUrl);
+        }
+    }
 
-        // 1단계: 기기 캐시가 있으면 서버(exec) 대기 없이 0.01초 만에 고객 상태 맞춤 화면을 즉시 렌더링
-        if (!forceBlockingLoading && cachedSettings && cachedSettings.menuList && cachedSettings.menuList.length > 0) {
-            applySettingsToGlobals(cachedSettings);
-            renderMenuCards();
-            isInitializingPickupSelect = true;
-            initPickupOptions(pickupSelect, 'pickupFormGroup');
-            initPickupOptions(quickPickupSelect, 'quickReorderBox');
-            isInitializingPickupSelect = false;
+    function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCustomAlert('예약 링크가 클립보드에 복사되었습니다!<br>카카오톡 채팅방에 붙여넣기 해서 공유해 보세요. 😊', '링크 복사 완료');
+            }).catch(() => {
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    }
 
-            const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
-            if (cachedSettings.isMaintenance && !isAdminPassed) {
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
-                document.getElementById('maintenanceOverlay').style.display = 'flex';
-                renderedImmediately = true;
-            } else if (!skipCheckOnce && cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
-                renderActiveOrderView(cachedState.reservation, savedNick);
-                renderedImmediately = true;
-            } else if (!skipCheckOnce && cachedState && cachedState.type === 'completed') {
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
-                document.getElementById('pickupCompletedNotice').style.display = 'block';
-                document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                document.getElementById('topNoticeBox').style.display = 'none';
-                document.getElementById('orderForm').style.display = 'none';
-                document.getElementById('quickReorderBox').style.display = 'none';
-                document.getElementById('closedNotice').style.display = 'none';
-                renderedImmediately = true;
-            } else {
-                checkClosedTimeAndRender(cachedSettings);
-                renderedImmediately = true;
+    function fallbackCopy(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showCustomAlert('예약 링크가 복사되었습니다! 😊', '링크 복사 완료');
+        } catch (err) {
+            showCustomAlert('링크 복사에 실패했습니다. 주소창의 주소를 복사해 주세요.');
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function parsePrice(priceStr) {
+        if (!priceStr) return 0;
+        let num = parseInt(String(priceStr).replace(/[^0-9]/g, ''));
+        return isNaN(num) ? 0 : num;
+    }
+
+    function formatDisplayTitle(rawName) {
+        if (!rawName) return { prefix: '', title: '' };
+        let clean = rawName.trim();
+        let match = clean.match(/^(세트\d+|모듬메뉴)\s*(.*)/);
+        if (match) {
+            return { prefix: match[1], title: match[2].trim() };
+        }
+        return { prefix: '', title: clean };
+    }
+
+    function renderMenuCards() {
+        const container = document.getElementById('menuCardContainer');
+        const editContainer = document.getElementById('editMenuCardContainer');
+        const sauceContainer = document.getElementById('sauceCardContainer');
+        const editSauceContainer = document.getElementById('editSauceCardContainer');
+
+        let sortedEntries = menuList.map((item, idx) => ({ item, idx }));
+        sortedEntries.sort((a, b) => {
+            const aHot = !!a.item.isHot;
+            const bHot = !!b.item.isHot;
+            if (aHot && !bHot) return -1;
+            if (!aHot && bHot) return 1;
+            if (aHot && bHot) {
+                const aOrder = Number(a.item.hotOrder) || (a.idx + 1);
+                const bOrder = Number(b.item.hotOrder) || (b.idx + 1);
+                if (aOrder !== bOrder) return aOrder - bOrder;
+            }
+            return a.idx - b.idx;
+        });
+
+        let mainHtml = '';
+        let editHtml = '';
+
+        sortedEntries.forEach(({ item, idx }) => {
+            let count = orderItems[idx] || 0;
+            let editCount = editOrderItems[idx] || 0;
+            let isSoldOut = !!item.isSoldOut;
+            let isHot = !!item.isHot;
+            
+            let urls = [];
+            if (item.imageUrl && item.imageUrl.trim() !== "") {
+                urls = item.imageUrl.split(',').map(u => u.trim()).filter(u => u !== "");
+            }
+            let firstUrl = urls.length > 0 ? urls[0] : "";
+
+            let formatted = formatDisplayTitle(item.name);
+            let priceDisplay = item.price ? item.price.trim() : "가격문의";
+            let isSelectedMain = count > 0;
+            let isSelectedEdit = editCount > 0;
+
+            let hotBadgeHtml = isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>HOT · 인기메뉴</span></div>` : ``;
+            let prefixHtml = formatted.prefix ? `<div class="menu-set-prefix">${formatted.prefix}</div>` : ``;
+            let mainQtyBadge = isSelectedMain ? `<span class="selected-qty-badge">${count}개 선택됨</span>` : ``;
+            let editQtyBadge = isSelectedEdit ? `<span class="selected-qty-badge">${editCount}개 선택됨</span>` : ``;
+
+            let imgHtml = firstUrl 
+                ? `<img src="${firstUrl}" class="menu-thumb" onclick="openImageModal('${encodeURIComponent(urls.join(','))}')" onerror="this.style.display='none'">` 
+                : ``;
+
+            let soldOutOverlayHtml = isSoldOut 
+                ? `<div class="sold-out-badge-overlay"><div class="sold-out-badge-text">품절</div></div>` 
+                : ``;
+
+            let mainCardClass = `menu-item-card${isHot ? ' hot-menu' : ''}${isSoldOut ? ' sold-out' : ''}${isSelectedMain ? ' selected-item' : ''}`;
+            let editCardClass = `menu-item-card${isHot ? ' hot-menu' : ''}${isSoldOut ? ' sold-out' : ''}${isSelectedEdit ? ' selected-item' : ''}`;
+
+            mainHtml += `
+                <div class="${mainCardClass}" id="mainCard_${idx}">
+                    ${soldOutOverlayHtml}
+                    <div class="menu-card-top">
+                        ${imgHtml}
+                        <div class="menu-details">
+                            ${hotBadgeHtml}
+                            ${prefixHtml}
+                            <div class="menu-title">${formatted.title}${mainQtyBadge}</div>
+                            <div class="menu-price">${priceDisplay}</div>
+                        </div>
+                    </div>
+                    <div class="menu-card-bottom">
+                        <div class="item-qty-control">
+                            <button type="button" class="item-q-btn" ${isSoldOut ? 'disabled' : ''} onclick="adjustItemQty('main', ${idx}, -1)">-</button>
+                            <span id="mainQtyDisplay_${idx}" style="min-width:24px; text-align:center; font-weight:700; font-size:15px;">${count}</span>
+                            <button type="button" class="item-q-btn" ${isSoldOut ? 'disabled' : ''} onclick="adjustItemQty('main', ${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let editMinusDisabled = isSoldOut && editCount === 0;
+            let editPlusDisabled = isSoldOut;
+
+            editHtml += `
+                <div class="${editCardClass}" id="editCard_${idx}">
+                    ${soldOutOverlayHtml}
+                    <div class="menu-card-top">
+                        ${imgHtml}
+                        <div class="menu-details">
+                            ${hotBadgeHtml}
+                            ${prefixHtml}
+                            <div class="menu-title">${formatted.title}${editQtyBadge}</div>
+                            <div class="menu-price">${priceDisplay}</div>
+                        </div>
+                    </div>
+                    <div class="menu-card-bottom">
+                        <div class="item-qty-control">
+                            <button type="button" class="item-q-btn" ${editMinusDisabled ? 'disabled' : ''} onclick="adjustItemQty('edit', ${idx}, -1)">-</button>
+                            <span id="editQtyDisplay_${idx}" style="min-width:24px; text-align:center; font-weight:700; font-size:15px;">${editCount}</span>
+                            <button type="button" class="item-q-btn" ${editPlusDisabled ? 'disabled' : ''} onclick="adjustItemQty('edit', ${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (container) container.innerHTML = mainHtml;
+        if (editContainer) editContainer.innerHTML = editHtml;
+
+        let sauceHtml = '';
+        let editSauceHtml = '';
+
+        sauceList.forEach((sauce, idx) => {
+            let sCount = sauceItems[idx] || 0;
+            let sEditCount = editSauceItems[idx] || 0;
+            let isSoldOut = !!sauce.isSoldOut;
+            let isSelectedMain = sCount > 0;
+            let isSelectedEdit = sEditCount > 0;
+            
+            let sPriceDisplay = sauce.price ? sauce.price.trim() : "₩500";
+            let sBadgeMain = isSelectedMain ? `<span class="selected-qty-badge">${sCount}개</span>` : ``;
+            let sBadgeEdit = isSelectedEdit ? `<span class="selected-qty-badge">${sEditCount}개</span>` : ``;
+
+            let sSoldOutOverlayHtml = isSoldOut 
+                ? `<div class="sold-out-badge-overlay"><div class="sold-out-badge-text" style="padding: 4px 12px; font-size: 11.5px;">품절</div></div>` 
+                : ``;
+
+            let sCardClass = `sauce-item-card${isSoldOut ? ' sold-out' : ''}${isSelectedMain ? ' selected-item' : ''}`;
+            let sEditCardClass = `sauce-item-card${isSoldOut ? ' sold-out' : ''}${isSelectedEdit ? ' selected-item' : ''}`;
+
+            sauceHtml += `
+                <div class="${sCardClass}" id="sauceCard_${idx}">
+                    ${sSoldOutOverlayHtml}
+                    <div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); line-height: 1.25;">${sauce.name}${sBadgeMain}</div>
+                        <div style="font-size: 12.5px; color: var(--text-sub); font-weight: 700; margin-top: 2px;">${sPriceDisplay}</div>
+                    </div>
+                    <div class="sauce-card-bottom">
+                        <div class="item-qty-control">
+                            <button type="button" class="item-q-btn" ${isSoldOut ? 'disabled' : ''} onclick="adjustSauceQty('main', ${idx}, -1)">-</button>
+                            <span id="sauceQtyDisplay_${idx}" style="min-width:20px; text-align:center; font-weight:700; font-size:14px;">${sCount}</span>
+                            <button type="button" class="item-q-btn" ${isSoldOut ? 'disabled' : ''} onclick="adjustSauceQty('main', ${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let sEditMinusDisabled = isSoldOut && sEditCount === 0;
+            let sEditPlusDisabled = isSoldOut;
+
+            editSauceHtml += `
+                <div class="${sEditCardClass}" id="editSauceCard_${idx}">
+                    ${sSoldOutOverlayHtml}
+                    <div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); line-height: 1.25;">${sauce.name}${sBadgeEdit}</div>
+                        <div style="font-size: 12.5px; color: var(--text-sub); font-weight: 700; margin-top: 2px;">${sPriceDisplay}</div>
+                    </div>
+                    <div class="sauce-card-bottom">
+                        <div class="item-qty-control">
+                            <button type="button" class="item-q-btn" ${sEditMinusDisabled ? 'disabled' : ''} onclick="adjustSauceQty('edit', ${idx}, -1)">-</button>
+                            <span id="editSauceQtyDisplay_${idx}" style="min-width:20px; text-align:center; font-weight:700; font-size:14px;">${sEditCount}</span>
+                            <button type="button" class="item-q-btn" ${sEditPlusDisabled ? 'disabled' : ''} onclick="adjustSauceQty('edit', ${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (sauceContainer) sauceContainer.innerHTML = sauceHtml;
+        if (editSauceContainer) editSauceContainer.innerHTML = editSauceHtml;
+
+        updateMainSummaryAndPrice();
+        updateEditSummaryAndPrice();
+    }
+
+    function adjustItemQty(mode, idx, delta) {
+        userInteractedWithForm = true;
+        playClickSound();
+        let targetObj = (mode === 'main') ? orderItems : editOrderItems;
+        let current = targetObj[idx] || 0;
+        let nextVal = current + delta;
+
+        if (nextVal < 0) nextVal = 0;
+
+        if (mode === 'edit' && delta < 0 && editAlreadyReserved) {
+            let origCount = originalReservedItems[idx] || 0;
+            if (current === origCount && origCount > 0) {
+                pendingReduceAction = () => {
+                    targetObj[idx] = nextVal;
+                    if (nextVal === 0) delete targetObj[idx];
+                    renderMenuCards();
+                    updateEditSummaryAndPrice();
+                };
+                showModal('confirmReduceModal');
+                return;
             }
         }
 
-        if (!renderedImmediately) {
-            document.getElementById('pageLoadingOverlay').style.display = 'flex';
+        targetObj[idx] = nextVal;
+        if (nextVal === 0) delete targetObj[idx];
+
+        renderMenuCards();
+        if (mode === 'main') {
+            updateMainSummaryAndPrice();
+        } else {
+            updateEditSummaryAndPrice();
+        }
+    }
+
+    function adjustSauceQty(mode, idx, delta) {
+        userInteractedWithForm = true;
+        playClickSound();
+        let targetObj = (mode === 'main') ? sauceItems : editSauceItems;
+        let current = targetObj[idx] || 0;
+        let nextVal = current + delta;
+        if (nextVal < 0) nextVal = 0;
+
+        targetObj[idx] = nextVal;
+        if (nextVal === 0) delete targetObj[idx];
+
+        renderMenuCards();
+        if (mode === 'main') {
+            updateMainSummaryAndPrice();
+        } else {
+            updateEditSummaryAndPrice();
+        }
+    }
+
+    function getMenuSummaryAndPrice(itemsObj, saucesObj) {
+        let lines = [];
+        let totalPrice = 0;
+        let hasItems = false;
+
+        Object.keys(itemsObj).forEach(idx => {
+            let count = itemsObj[idx] || 0;
+            if (count > 0 && menuList[idx]) {
+                hasItems = true;
+                let item = menuList[idx];
+                lines.push(`${item.shortName} ${count}개`);
+                totalPrice += parsePrice(item.price) * count;
+            }
+        });
+
+        let sauceLines = [];
+        Object.keys(saucesObj).forEach(idx => {
+            let count = saucesObj[idx] || 0;
+            if (count > 0 && sauceList[idx]) {
+                let s = sauceList[idx];
+                let sName = s.shortName || s.name;
+                sauceLines.push(`${sName} ${count}개`);
+                totalPrice += parsePrice(s.price) * count;
+            }
+        });
+
+        return {
+            hasItems: hasItems,
+            menuSummaryStr: lines.join(', '),
+            sauceSummaryStr: sauceLines.length > 0 ? sauceLines.join(', ') : "없음",
+            totalPrice: totalPrice,
+            lines: lines,
+            sauceLines: sauceLines
+        };
+    }
+
+    function updateMainSummaryAndPrice() {
+        let res = getMenuSummaryAndPrice(orderItems, sauceItems);
+        let listElem = document.getElementById('mainSelectedSummaryList');
+        let priceElem = document.getElementById('mainTotalPrice');
+
+        if (!res.hasItems && res.sauceLines.length === 0) {
+            listElem.innerHTML = `<span style="color:var(--text-muted); font-weight:normal;">선택된 메뉴가 없습니다.</span>`;
+        } else {
+            let html = res.lines.map(l => `<span class="summary-item-line">• ${l}</span>`).join('');
+            if (res.sauceLines.length > 0) {
+                html += `<span class="summary-item-line" style="color:var(--text-sub); font-size:12px; margin-top:2px;">(소스: ${res.sauceLines.join(', ')})</span>`;
+            }
+            listElem.innerHTML = html;
+        }
+        priceElem.textContent = res.totalPrice.toLocaleString();
+    }
+
+    function updateEditSummaryAndPrice() {
+        let res = getMenuSummaryAndPrice(editOrderItems, editSauceItems);
+        let listElem = document.getElementById('editSelectedSummary');
+        let priceElem = document.getElementById('editTotalPrice');
+
+        if (!res.hasItems && res.sauceLines.length === 0) {
+            listElem.innerHTML = `<span style="color:var(--text-muted); font-weight:normal;">선택된 메뉴가 없습니다.</span>`;
+        } else {
+            let html = res.lines.map(l => `<span class="summary-item-line">• ${l}</span>`).join('');
+            if (res.sauceLines.length > 0) {
+                html += `<span class="summary-item-line" style="color:var(--text-sub); font-size:12px; margin-top:2px;">(소스: ${res.sauceLines.join(', ')})</span>`;
+            }
+            listElem.innerHTML = html;
+        }
+        priceElem.textContent = res.totalPrice.toLocaleString();
+    }
+
+    function openImageModal(encodedUrls) {
+        let urls = decodeURIComponent(encodedUrls).split(',');
+        let container = document.getElementById('modalImageContainer');
+        container.innerHTML = '';
+        urls.forEach(u => {
+            let img = document.createElement('img');
+            img.src = u;
+            container.appendChild(img);
+        });
+        let imgModal = document.getElementById('imageModal');
+        imgModal.style.display = 'flex';
+        imgModal.offsetHeight;
+        imgModal.classList.add('active');
+    }
+
+    function closeImageModal() {
+        let imgModal = document.getElementById('imageModal');
+        imgModal.classList.remove('active');
+        setTimeout(() => {
+            if (!imgModal.classList.contains('active')) {
+                imgModal.style.display = 'none';
+            }
+        }, 300);
+    }
+
+    function parseTimeToMinutes(timeStr) {
+        if (!timeStr) return 9999;
+        let isPM = timeStr.indexOf('오후') !== -1;
+        let isAM = timeStr.indexOf('오전') !== -1;
+        let clean = timeStr.replace('오전', '').replace('오후', '').trim();
+        let parts = clean.split(':');
+        if (parts.length < 2) return 9999;
+
+        let hours = parseInt(parts[0], 10);
+        let minutes = parseInt(parts[1], 10);
+
+        if (isAM && hours === 12) hours = 0;
+        else if (isPM && hours < 12) hours += 12;
+
+        return hours * 60 + minutes;
+    }
+
+    function handleTimeChange(selectElem, boxId) {
+        userInteractedWithForm = true;
+        const selectedVal = selectElem.value;
+        const infoBox = document.getElementById(boxId);
+        if (!infoBox) return;
+
+        if (!selectedVal) {
+            infoBox.style.display = 'none';
+            return;
+        }
+
+        const slotMinutes = parseTimeToMinutes(selectedVal);
+        const count = globalPickupTimesList.filter(t => Math.abs(t - slotMinutes) <= 10).length;
+
+        infoBox.classList.remove('busy-level-yellow', 'busy-level-orange', 'busy-level-red');
+        infoBox.style.display = 'block';
+
+        if (count >= 4) {
+            infoBox.classList.add('busy-level-red');
+            infoBox.innerHTML = `🔴 <b>혼잡 주의!</b> 해당 시간대에 현재 <b>${count}건</b>의 픽업 예약이 잡혀 있습니다. 수령 시 대기가 발생할 수 있으니 여유로운 시간대를 권장합니다.`;
+        } else if (count >= 2) {
+            infoBox.classList.add('busy-level-orange');
+            infoBox.innerHTML = `🟠 <b>주문 증가 중!</b> 해당 시간대에 현재 <b>${count}건</b>의 예약이 있습니다. 조리가 다소 붐빌 수 있습니다.`;
+        } else if (count === 1) {
+            infoBox.classList.add('busy-level-yellow');
+            infoBox.innerHTML = `🟡 <b>조리 시작 예정!</b> 해당 시간대에 현재 <b>1건</b>의 예약이 잡혀 있어 튀김기가 가동되는 시간입니다.`;
+        } else {
+            infoBox.classList.add('busy-level-yellow');
+            infoBox.innerHTML = `🟢 <b>여유로운 시간대!</b> 해당 시간대에 현재 잡힌 예약이 없어 비교적 빠른 수령이 가능합니다.`;
+        }
+    }
+
+    function populateTimeOptions(selectElement, minStartTime = null) {
+        if (!selectElement) return;
+        let currentSelection = selectElement.value;
+        selectElement.innerHTML = '<option value="">-- 픽업 시간을 선택하세요 --</option>';
+
+        let now = new Date();
+        let currentTotalMin = now.getHours() * 60 + now.getMinutes();
+        let limitTotalMin = currentTotalMin + (globalPrepMinutes || 0);
+
+        if (minStartTime !== null) {
+            let minSlot = parseTimeToMinutes(minStartTime);
+            if (minSlot > limitTotalMin) limitTotalMin = minSlot;
+        }
+
+        let startMin = globalPickupStartHour * 60 + globalPickupStartMin;
+        let endMin = globalPickupCloseHour * 60 + globalPickupCloseMin;
+
+        let activeCount = 0;
+
+        for (let m = startMin; m <= endMin; m += 5) {
+            let h = Math.floor(m / 60);
+            let min = m % 60;
+            let ampm = h >= 12 ? '오후' : '오전';
+            let dispH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+            let timeStr = `${ampm} ${dispH}:${String(min).padStart(2, '0')}`;
+
+            let option = document.createElement('option');
+            option.value = timeStr;
+
+            let isPast = (m < limitTotalMin);
+            if (isPast) {
+                option.textContent = `${timeStr} (마감)`;
+                option.disabled = true;
+            } else {
+                option.textContent = timeStr;
+                activeCount++;
+            }
+
+            selectElement.appendChild(option);
+        }
+
+        if (activeCount === 0) {
+            selectElement.innerHTML = '<option value="">-- 오늘 예약 가능한 시간이 없습니다 --</option>';
+        } else if (currentSelection) {
+            for (let i = 0; i < selectElement.options.length; i++) {
+                if (selectElement.options[i].value === currentSelection && !selectElement.options[i].disabled) {
+                    selectElement.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    function checkClosedTimeAndRender(settingsData) {
+        stopOrderStatusPolling();
+        let dataToUse = settingsData || loadSettingsCache();
+        if (!dataToUse) return;
+
+        applySettingsToGlobals(dataToUse);
+
+        const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
+
+        if (dataToUse.isBlocked && !isAdminPassed) {
+            enforceBlockedOverlay(dataToUse.blockReason);
+            return;
+        }
+
+        if (dataToUse.isMaintenance && !isAdminPassed) {
+            document.getElementById("maintenanceOverlay").style.display = "flex";
+            document.getElementById("pageLoadingOverlay").style.display = "none";
+            return;
+        } else {
+            document.getElementById("maintenanceOverlay").style.display = "none";
+        }
+
+        let isClosedNow = false;
+        if (typeof dataToUse.isClosed !== 'undefined') {
+            isClosedNow = dataToUse.isClosed;
+        } else {
+            let now = new Date();
+            let currentTimeVal = now.getHours() * 60 + now.getMinutes();
+            let openTimeVal = globalOpenHour * 60 + globalOpenMin;
+            let closeTimeVal = globalCloseHour * 60 + globalCloseMin;
+
+            if (closeTimeVal < openTimeVal) {
+                isClosedNow = (currentTimeVal > closeTimeVal && currentTimeVal < openTimeVal);
+            } else {
+                isClosedNow = (currentTimeVal < openTimeVal || currentTimeVal > closeTimeVal);
+            }
+        }
+
+        if (isClosedNow && !isAdminPassed) {
+            let openAmpm = globalOpenHour >= 12 ? '오후' : '오전';
+            let openDispH = globalOpenHour > 12 ? globalOpenHour - 12 : (globalOpenHour === 0 ? 12 : globalOpenHour);
+            let openStr = `${openAmpm} ${openDispH}:${String(globalOpenMin).padStart(2, '0')}`;
+
+            let closeAmpm = globalCloseHour >= 12 ? '오후' : '오전';
+            let closeDispH = globalCloseHour > 12 ? globalCloseHour - 12 : (globalCloseHour === 0 ? 12 : globalCloseHour);
+            let closeStr = `${closeAmpm} ${closeDispH}:${String(globalCloseMin).padStart(2, '0')}`;
+
+            document.getElementById("closedTimeRange").textContent = `${openStr} ~ ${closeStr}`;
+            document.getElementById("closedNotice").style.display = "block";
+            document.getElementById("pageLoadingOverlay").style.display = "none";
+            document.getElementById("topNoticeBox").style.display = "none";
+            document.getElementById("orderForm").style.display = "none";
+            document.getElementById("quickReorderBox").style.display = "none";
+            return;
+        }
+
+        document.getElementById("closedNotice").style.display = "none";
+        document.getElementById("pageLoadingOverlay").style.display = "none";
+
+        populateTimeOptions(pickupSelect);
+        populateTimeOptions(quickPickupSelect);
+        renderMenuCards();
+
+        const cachedState = loadCustomerStateCache();
+        if (cachedState && cachedState.type === 'completed') {
+            document.getElementById('pickupCompletedNotice').style.display = 'block';
             document.getElementById('topNoticeBox').style.display = 'none';
-            document.getElementById('alreadyOrderedNotice').style.display = 'none';
-            document.getElementById('pickupCompletedNotice').style.display = 'none';
             document.getElementById('orderForm').style.display = 'none';
             document.getElementById('quickReorderBox').style.display = 'none';
-            document.getElementById('closedNotice').style.display = 'none';
+            return;
         }
 
-        // 2단계: 백그라운드에서 조용히 서버(exec) 호출하여 품절·혼잡도·삼촌 확인 상태 최신화
-        isBackgroundSyncing = renderedImmediately;
+        if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
+            renderActiveOrderView(cachedState.reservation, globalUserNickname);
+            return;
+        }
+
+        const lastOrderStr = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
+        if (lastOrderStr) {
+            checkQuickReorderData();
+        } else {
+            document.getElementById("quickReorderBox").style.display = "none";
+            document.getElementById("topNoticeBox").style.display = "block";
+            document.getElementById("orderForm").style.display = "block";
+        }
+    }
+
+    function checkAndRenderState(isRetry = false) {
+        if (!KakaoAuthManager.session.kakaoId || !KakaoAuthManager.session.phone4 || KakaoAuthManager.session.phone4.length !== 4) {
+            showKakaoGateOverlay(KakaoAuthManager.session.kakaoId ? "phone4" : "login", "");
+            return;
+        }
+
+        let savedNick = KakaoAuthManager.session.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
+        if (savedNick) {
+            globalUserNickname = savedNick;
+            document.getElementById('nickname').value = savedNick;
+            syncNicknameUI();
+        }
+
+        const cachedSettings = loadSettingsCache();
+        const cachedState = loadCustomerStateCache();
+
+        let renderedFromCache = false;
+        if (cachedSettings) {
+            applySettingsToGlobals(cachedSettings);
+            checkClosedTimeAndRender(cachedSettings);
+            renderedFromCache = true;
+        } else if (!isRetry) {
+            document.getElementById('pageLoadingOverlay').style.display = 'flex';
+        }
+
+        isBackgroundSyncing = renderedFromCache;
 
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'initAll',
+                nickname: savedNick,
                 clientId: clientId,
-                nickname: savedNick
+                kakaoId: KakaoAuthManager.session.kakaoId,
+                kakaoNickname: KakaoAuthManager.session.kakaoNickname,
+                phone4: KakaoAuthManager.session.phone4
             })
         })
         .then(res => res.text())
-        .then(resText => {
-            let payload = null;
-            try { payload = JSON.parse(resText); } catch(e) {}
+        .then(text => {
+            let initData;
+            try { initData = JSON.parse(text); } catch (e) { throw new Error("데이터 파싱 오류"); }
 
-            let settings = (payload && payload.settings) ? payload.settings : { openHour: 13, openMin: 0, closeHour: 18, closeMin: 30, prepMinutes: 0, menuList: [], sauceList: [], isMaintenance: false, maintenanceCode: "5333", secretCode: "" };
-            let data = (payload && payload.reservation) ? payload.reservation : null;
+            const settings = initData.settings;
+            const res = initData.reservation;
 
-            if ((settings && (settings.result === "blocked" || settings.isBlocked)) || (data && data.result === "blocked")) {
-                const reasonMsg = (settings && (settings.reason || settings.blockReason)) ? (settings.reason || settings.blockReason) : (data ? (data.reason || data.message) : "");
-                enforceBlockedOverlay(reasonMsg);
-                isBackgroundSyncing = false;
+            if (initData.memberProfile) {
+                KakaoAuthManager.saveSession({
+                    kakaoId: KakaoAuthManager.session.kakaoId,
+                    kakaoNickname: initData.memberProfile.kakaoNickname || KakaoAuthManager.session.kakaoNickname,
+                    phone4: initData.memberProfile.phone4 || KakaoAuthManager.session.phone4,
+                    identifier: initData.memberProfile.identifier || savedNick
+                });
+                syncNicknameUI();
+            }
+
+            if (settings) {
+                saveSettingsCache(settings);
+                applySettingsToGlobals(settings);
+            }
+
+            if ((settings && settings.isBlocked) || (res && res.result === "blocked")) {
+                const reason = (res && res.message) || (settings && settings.blockReason);
+                enforceBlockedOverlay(reason);
                 return;
             }
 
-            saveSettingsCache(settings);
-            applySettingsToGlobals(settings);
-
-            const isAdminPassed = localStorage.getItem("isDonkatsuAdmin") === "true";
-            if (settings.isMaintenance && !isAdminPassed) {
-                stopOrderStatusPolling();
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
-                document.getElementById('maintenanceOverlay').style.display = 'flex';
-                isBackgroundSyncing = false;
-                return;
-            } else {
-                document.getElementById('maintenanceOverlay').style.display = 'none';
+            if (res && res.recoveredNickname) {
+                savedNick = res.recoveredNickname;
+                globalUserNickname = savedNick;
+                KakaoAuthManager.saveSession({ identifier: savedNick });
+                syncNicknameUI();
             }
 
-            const prevMainTime = pickupSelect.value;
-            const prevQuickTime = quickPickupSelect.value;
-
-            renderMenuCards();
-            isInitializingPickupSelect = true;
-            initPickupOptions(pickupSelect, 'pickupFormGroup');
-            initPickupOptions(quickPickupSelect, 'quickReorderBox');
-            if (prevMainTime) {
-                for (let i = 0; i < pickupSelect.options.length; i++) {
-                    if (pickupSelect.options[i].value === prevMainTime && !pickupSelect.options[i].disabled) {
-                        pickupSelect.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
-            if (prevQuickTime) {
-                for (let i = 0; i < quickPickupSelect.options.length; i++) {
-                    if (quickPickupSelect.options[i].value === prevQuickTime && !quickPickupSelect.options[i].disabled) {
-                        quickPickupSelect.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
-            isInitializingPickupSelect = false;
-
-            if (data && data.recoveredNickname) {
-                TripleStorage.save('savedNickname', data.recoveredNickname);
-                const nickField = document.getElementById('nickname');
-                if (nickField && !nickField.value.trim()) {
-                    nickField.value = data.recoveredNickname;
-                }
-            }
-
-            document.getElementById('pageLoadingOverlay').style.display = 'none';
-
-            if (skipCheckOnce) {
-                sessionStorage.removeItem('skipCompletedCheckOnce');
-                saveCustomerStateCache({ type: 'new' });
-                if (!renderedImmediately || !userInteractedWithForm) {
-                    checkClosedTimeAndRender(settings);
-                }
-                isBackgroundSyncing = false;
-                return;
-            }
-
-            if (data && data.result === "found") {
-                const orderStatus = String(data.status || "").trim();
-
+            if (res && res.result === "found") {
+                const orderStatus = String(res.status || "").trim();
                 if (orderStatus === "완료") {
                     stopOrderStatusPolling();
                     saveCustomerStateCache({ type: 'completed' });
@@ -3966,521 +4565,354 @@
                     document.getElementById('orderForm').style.display = 'none';
                     document.getElementById('quickReorderBox').style.display = 'none';
                     document.getElementById('closedNotice').style.display = 'none';
-                    isBackgroundSyncing = false;
-                    return;
+                    document.getElementById('pageLoadingOverlay').style.display = 'none';
+                } else {
+                    saveCustomerStateCache({ type: 'active_order', reservation: res });
+                    renderActiveOrderView(res, savedNick);
                 }
-
-                saveCustomerStateCache({ type: 'active_order', reservation: data });
-                renderActiveOrderView(data, savedNick);
             } else {
-                stopOrderStatusPolling();
                 const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
                 saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
-
-                const wasShowingActiveOrCompleted =
-                    document.getElementById('alreadyOrderedNotice').style.display === 'block' ||
-                    document.getElementById('pickupCompletedNotice').style.display === 'block';
-
-                if (!renderedImmediately || wasShowingActiveOrCompleted) {
-                    checkClosedTimeAndRender(settings);
-                } else {
-                    const now = new Date();
-                    const currentTimeVal = now.getHours() * 60 + now.getMinutes();
-                    const openTimeVal = globalOpenHour * 60 + globalOpenMin;
-                    const closeTimeVal = globalCloseHour * 60 + globalCloseMin;
-                    if (currentTimeVal < openTimeVal || currentTimeVal > closeTimeVal) {
-                        checkClosedTimeAndRender(settings);
-                    } else if (document.getElementById('quickReorderBox').style.display === 'block') {
-                        checkQuickReorderData();
-                    }
-                }
+                checkClosedTimeAndRender(settings);
             }
             isBackgroundSyncing = false;
-        }).catch(err => {
+        })
+        .catch(() => {
             isBackgroundSyncing = false;
-            if (!renderedImmediately) {
+            if (!renderedFromCache) {
                 document.getElementById('pageLoadingOverlay').style.display = 'none';
                 document.getElementById('topNoticeBox').style.display = 'block';
                 document.getElementById('orderForm').style.display = 'block';
-                updateMainCookGuideBanner();
+                populateTimeOptions(pickupSelect);
+                populateTimeOptions(quickPickupSelect);
+                renderMenuCards();
             }
         });
     }
 
-    function checkClosedTimeAndRender(settings) {
-        stopOrderStatusPolling();
-        const now = new Date();
-        const currentTimeVal = now.getHours() * 60 + now.getMinutes();
-        const openTimeVal = globalOpenHour * 60 + globalOpenMin;
-        const closeTimeVal = globalCloseHour * 60 + globalCloseMin;
-
-        if (currentTimeVal < openTimeVal || currentTimeVal > closeTimeVal) {
-            document.getElementById('pageLoadingOverlay').style.display = 'none';
-            document.getElementById('orderForm').style.display = 'none';
-            document.getElementById('alreadyOrderedNotice').style.display = 'none';
-            document.getElementById('pickupCompletedNotice').style.display = 'none';
-            document.getElementById('quickReorderBox').style.display = 'none';
-            document.getElementById('topNoticeBox').style.display = 'none';
-
-            const closedNotice = document.getElementById('closedNotice');
-            const openAmPm = globalOpenHour < 12 ? "오전" : "오후";
-            const openDispHour = globalOpenHour === 0 ? 12 : (globalOpenHour > 12 ? globalOpenHour - 12 : globalOpenHour);
-            const openFormatted = `${openAmPm} ${openDispHour}:${globalOpenMin.toString().padStart(2, '0')}`;
-
-            const closeAmPm = globalCloseHour < 12 ? "오전" : "오후";
-            const closeDispHour = globalCloseHour === 0 ? 12 : (globalCloseHour > 12 ? globalCloseHour - 12 : globalCloseHour);
-            const closeFormatted = `${closeAmPm} ${closeDispHour}:${globalCloseMin.toString().padStart(2, '0')}`;
-            
-            document.getElementById('closedTimeRange').textContent = `${openFormatted} ~ ${closeFormatted}`;
-            closedNotice.style.display = 'block';
-            return;
-        }
-
-        document.getElementById('pageLoadingOverlay').style.display = 'none';
-        document.getElementById('closedNotice').style.display = 'none';
-        document.getElementById('topNoticeBox').style.display = 'block';
-        document.getElementById('alreadyOrderedNotice').style.display = 'none';
-        document.getElementById('pickupCompletedNotice').style.display = 'none';
-        document.getElementById('orderForm').style.display = 'block';
-        updateMainCookGuideBanner();
-        checkQuickReorderData();
-    }
-
-    document.addEventListener('click', function(event) {
-        const targetBtn = event.target.closest('button, .radio-btn, input[type="button"], input[type="submit"]');
-        if (targetBtn) playClickSound();
-    });
-
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (isSubmitting) return;
-
-        const submitBtn = document.getElementById('submitBtn');
-
-        const nickname = document.getElementById('nickname').value.trim();
-        if (!nickname) {
-            showCustomAlert('닉네임과 전화번호를 입력해 주세요!<br>(예: 장날삼촌5353)', '정보 입력 필요');
-            return;
-        }
-
-        let summary = buildMenuSummary(orderItems);
-        if (!summary) {
-            showCustomAlert('최소 1개 이상의 메뉴를 선택해주세요!', '메뉴 선택 필요');
-            return;
-        }
-
-        const selectedTime = pickupSelect.value;
-        const selectedMinCheck = parseTimeToMinutes(selectedTime);
-        const warningThresholdMin = 18 * 60 + 35;
-
-        if (selectedMinCheck >= warningThresholdMin && !_warningConfirmed) {
-            openLatePickupWarning(selectedTime, "main");
-            return;
-        }
-        _warningConfirmed = false;
-
-        const nowCheck = new Date();
-        const currentMinCheck = nowCheck.getHours() * 60 + nowCheck.getMinutes();
-        const limitMinCheck = currentMinCheck + (globalPrepMinutes || 0);
-
-        if (selectedMinCheck < limitMinCheck) {
-            showCustomAlert('선택하신 픽업 시간은 현재 지연 시간(준비중) 구간에 포함되어 예약하실 수 없습니다. 시간을 다시 선택해 주세요!', '시간 선택 오류');
-            isInitializingPickupSelect = true;
-            initPickupOptions(pickupSelect, 'pickupFormGroup');
-            isInitializingPickupSelect = false;
-            return;
-        }
-
-        const secretCode = document.getElementById('secretCodeInput') ? document.getElementById('secretCodeInput').value.trim() : "";
-        const cookTypeElem = document.querySelector('input[name="cookType"]:checked');
-        const cookTypeValue = cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장";
-        const menuSummaryText = buildMenuSummary(orderItems);
-        const sauceSummaryText = buildSauceSummary(sauceItems);
-        const priceText = calculateMainTotal().toLocaleString() + '원';
-        const finalPickupTime = document.getElementById('pickupTime').value;
-
-        const orderData = {
-            action: 'create',
-            time: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
-            cookType: cookTypeValue,
-            nickname: nickname,
-            phone: "", 
-            menuSummary: menuSummaryText,
-            sauce: sauceSummaryText,
-            pickupTime: finalPickupTime,
-            totalPrice: priceText,
-            secretCode: secretCode,
-            clientId: clientId
-        };
-
-        TripleStorage.save('savedNickname', nickname);
-        TripleStorage.save('lastOrderSummary', menuSummaryText);
-        TripleStorage.save('lastOrderSauce', sauceSummaryText);
-        TripleStorage.save('lastOrderPrice', priceText);
-        TripleStorage.save('lastOrderPickupTime', finalPickupTime);
-        TripleStorage.save('lastOrderCookType', cookTypeValue);
-        TripleStorage.save('donkatsu_client_id', clientId);
-        globalUserNickname = nickname;
-
-        if (secretCode !== "" && secretCode !== serverSecretCode) {
-            pendingOrderPayload = { orderData: orderData, secretCode: secretCode };
-            showModal('secretCodeConfirmModal');
-            return;
-        }
-
-        isSubmitting = true;
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = "예약 접수 중...";
-        }
-
-        if (secretCode === "") {
-            showModal('orderSubmittingModal');
-            const subTitle2 = document.getElementById('submittingModalTitle');
-            const subDesc2 = document.getElementById('submittingModalDesc');
-            if (subTitle2) subTitle2.textContent = "예약을 안전하게 접수하고 있어요";
-            if (subDesc2) subDesc2.textContent = "잠시만 기다려 주세요. 튀김기 현장으로 전달 중입니다!";
-        }
-
-        processOrderSubmission(orderData, secretCode);
-    });
+    let _warningConfirmed = false;
 
     function cancelWarningOrder() {
-        _warningConfirmed = false;
-        _warningMode = "";
         hideModal('warningModal');
+        isSubmitting = false;
+        isQuickSubmitting = false;
+        pendingOrderPayload = null;
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = false;
+        const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+        if (quickSubmitBtn) quickSubmitBtn.disabled = false;
+        _warningConfirmed = false;
     }
 
     function confirmOrder() {
         hideModal('warningModal');
         _warningConfirmed = true;
-        const currentMode = _warningMode;
-        _warningMode = "";
-        if (currentMode === "select_only") {
+        if (pendingOrderPayload) {
+            const payloadToRun = pendingOrderPayload;
+            pendingOrderPayload = null;
+            sendOrderRequest(payloadToRun, false);
+        }
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (isSubmitting || isQuickSubmitting) return;
+
+        let nickname = document.getElementById('nickname').value.trim() || KakaoAuthManager.session.identifier || "";
+        if (!nickname) {
+            showKakaoGateOverlay(KakaoAuthManager.session.kakaoId ? "phone4" : "login", "카카오 회원 인증 후 예약해 주세요.");
             return;
         }
-        if (currentMode === "quick") {
-            executeQuickReorder();
-        } else if (currentMode === "edit") {
-            updateReservation();
-        } else {
-            const form = document.getElementById('orderForm');
-            if (form) {
-                if (typeof form.requestSubmit === 'function') {
-                    form.requestSubmit();
-                } else {
-                    form.dispatchEvent(new Event('submit', { cancelable: true }));
-                }
-            }
+
+        let menuResult = getMenuSummaryAndPrice(orderItems, sauceItems);
+        if (!menuResult.hasItems) {
+            showCustomAlert("메뉴를 최소 1개 이상 선택해 주세요!");
+            return;
         }
-    }
 
-    function openEventWinModal(menuList) {
-        const container = document.getElementById('eventOptionsContainer');
-        container.innerHTML = "";
-        const list = (menuList && menuList.length > 0) ? menuList : cachedEventMenuList;
+        let pickupTime = pickupSelect.value;
+        if (!pickupTime) {
+            showCustomAlert("픽업 시간을 선택해 주세요!");
+            return;
+        }
 
-        list.forEach((menuName, idx) => {
-            let lbl = document.createElement('label');
-            lbl.style.display = "flex";
-            lbl.style.alignItems = "center";
-            lbl.style.gap = "8px";
-            lbl.style.padding = "8px 0";
-            lbl.style.fontSize = "14px";
-            lbl.style.cursor = "pointer";
-            lbl.innerHTML = `<input type="radio" name="eventPrizeOption" value="${menuName}" ${idx === 0 ? 'checked' : ''} style="transform: scale(1.1);"> ${menuName} 무료 받기`;
-            container.appendChild(lbl);
-        });
+        let cookType = document.querySelector('input[name="cookType"]:checked').value;
+        let totalPrice = menuResult.totalPrice.toLocaleString() + "원";
+        let secretCodeVal = document.getElementById('secretCodeInput') ? document.getElementById('secretCodeInput').value.trim() : "";
 
-        const eventSubmitBtn = document.getElementById('eventSubmitBtn');
-        eventSubmitBtn.disabled = false;
-        eventSubmitBtn.textContent = "선택 완료 및 확인";
-        showModal('eventWinModal');
-    }
+        const orderData = {
+            action: "create",
+            cookType: cookType,
+            nickname: nickname,
+            menuSummary: menuResult.menuSummaryStr,
+            sauce: menuResult.sauceSummaryStr,
+            pickupTime: pickupTime,
+            totalPrice: totalPrice,
+            secretCode: secretCodeVal
+        };
 
-    function submitEventPrizeChoice() {
-        const eventSubmitBtn = document.getElementById('eventSubmitBtn');
-        eventSubmitBtn.disabled = true;
-        eventSubmitBtn.textContent = "저장 중입니다...";
+        const slotMinutes = parseTimeToMinutes(pickupTime);
+        const warningThreshold = (18 * 60) + 35;
 
-        const selectedRadio = document.querySelector('input[name="eventPrizeOption"]:checked');
-        const prize = selectedRadio ? selectedRadio.value : "서비스 상품";
+        if (slotMinutes >= warningThreshold && !_warningConfirmed) {
+            pendingOrderPayload = orderData;
+            const badge = document.getElementById('warningSelectedTimeBadge');
+            if (badge) badge.textContent = pickupTime;
+            showModal('warningModal');
+            return;
+        }
+
+        isSubmitting = true;
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = true;
+
+        sendOrderRequest(orderData, false);
+    });
+
+    function openSearchModal() {
+        stopOrderStatusPolling();
+        let nickname = globalUserNickname || KakaoAuthManager.session.identifier || document.getElementById('nickname').value.trim() || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "";
+        if (!nickname) {
+            showKakaoGateOverlay(KakaoAuthManager.session.kakaoId ? "phone4" : "login", "카카오 회원 인증 후 예약 내역을 확인해 주세요.");
+            return;
+        }
+
+        document.getElementById('modalLoadingBox').style.display = 'flex';
+        document.getElementById('searchResultArea').style.display = 'none';
+        document.getElementById('searchModalActionBtns').style.display = 'none';
+        showModal('searchModal');
 
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
-                action: "selectEventPrize",
-                nickname: globalUserNickname,
-                phone: "",
-                prize: prize
+                action: 'check',
+                nickname: nickname,
+                clientId: clientId,
+                kakaoId: KakaoAuthManager.session.kakaoId,
+                kakaoNickname: KakaoAuthManager.session.kakaoNickname,
+                phone4: KakaoAuthManager.session.phone4
             })
-        })
-        .then(res => res.text())
-        .then(() => {
-            const prevState = loadCustomerStateCache();
-            if (prevState && prevState.reservation) {
-                prevState.reservation.eventPrize = `(${prize})`;
-                saveCustomerStateCache(prevState);
-            }
-            hideModal('eventWinModal');
-            showCustomAlert(`서프라이즈 이벤트 당첨을 축하드립니다!<br><b>[${prize}]</b>가 서비스로 제공됩니다.`, "이벤트 당첨 완료");
-            showSuccessModal();
-        })
-        .catch(err => {
-            console.error("이벤트 선택 에러:", err);
-            eventSubmitBtn.disabled = false;
-            eventSubmitBtn.textContent = "선택 완료 및 확인";
-            hideModal('eventWinModal');
-            showSuccessModal();
-        });
-    }
-
-    function openSearchModal() {
-        const savedNick = localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname');
-        if (!savedNick && !clientId) return;
-
-        showModal('searchModal');
-        document.getElementById('modalLoadingBox').style.display = 'block';
-        document.getElementById('searchResultArea').style.display = 'none';
-
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'checkSimple', nickname: savedNick || "", clientId: clientId })
         })
         .then(res => res.text())
         .then(text => {
             let data;
-            try { data = JSON.parse(text); } catch (e) { return; }
+            try { data = JSON.parse(text); } catch (e) { throw new Error("파싱 오류"); }
 
-            if (data && data.result === "blocked") {
+            document.getElementById('modalLoadingBox').style.display = 'none';
+
+            if (data.result === "blocked") {
                 closeSearchModal();
-                enforceBlockedOverlay(data.reason || data.message);
+                enforceBlockedOverlay(data.message);
                 return;
             }
 
-            if (data && data.result === "found") {
+            if (data.result === "found") {
                 if (data.status === "확인") {
-                    applyStatusBadgeUI("확인");
                     closeSearchModal();
                     showModal('lockedModal');
-                } else if (data.status === "완료") {
-                    stopOrderStatusPolling();
-                    saveCustomerStateCache({ type: 'completed' });
-                    closeSearchModal();
-                    document.getElementById('pickupCompletedNotice').style.display = 'block';
-                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                    document.getElementById('orderForm').style.display = 'none';
-                    document.getElementById('quickReorderBox').style.display = 'none';
-                } else {
-                    applyStatusBadgeUI(data.status || "대기");
-                    currentFoundRowIndex = data.rowIndex;
-                    editAlreadyReserved = true;
-                    
-                    let cleanPickupTime = data.pickupTime || "";
-                    if (cleanPickupTime.includes("GMT") || cleanPickupTime.length > 20) {
-                        let match = cleanPickupTime.match(/(오전|오후)\s*\d+:\d+/);
-                        if (match) cleanPickupTime = match[0];
-                    }
-                    document.getElementById('resTime').textContent = cleanPickupTime;
-                    
-                    const savedCookType = String(data.cookType || "").trim();
-                    if (isRawCookType(savedCookType)) {
-                        document.getElementById('editCook2').checked = true;
-                    } else {
-                        document.getElementById('editCook1').checked = true;
-                    }
-                    updateEditCookGuideBanner();
-
-                    parseMenuStringToObj(data.menu, editOrderItems);
-                    parseSauceStringToObj(data.sauce, editSauceItems);
-                    
-                    for (let k in editOrderItems) originalReservedItems['menu_' + k] = editOrderItems[k];
-                    for (let k in editSauceItems) originalReservedItems['sauce_' + k] = editSauceItems[k];
-
-                    renderMenuCards();
-                    updateEditTotalPrice();
-                    isInitializingPickupSelect = true;
-                    initPickupOptions(newPickupSelect, 'editPickupFormGroup', cleanPickupTime);
-                    isInitializingPickupSelect = false;
-
-                    document.getElementById('modalLoadingBox').style.display = 'none';
-                    document.getElementById('searchResultArea').style.display = 'block';
-                    const actionBtns = document.getElementById('searchModalActionBtns');
-                    if (actionBtns) actionBtns.style.display = 'block';
+                    return;
                 }
+
+                currentFoundRowIndex = data.rowIndex;
+
+                let cleanTime = data.pickupTime || "";
+                if (cleanTime.includes("GMT") || cleanTime.length > 20) {
+                    let match = cleanTime.match(/(오전|오후)\s*\d+:\d+/);
+                    if (match) cleanTime = match[0];
+                }
+                document.getElementById('resTime').textContent = cleanTime;
+
+                let cookRaw = data.cookType || "";
+                if (isRawCookType(cookRaw)) {
+                    document.getElementById('editCook2').checked = true;
+                } else {
+                    document.getElementById('editCook1').checked = true;
+                }
+                updateEditCookGuideBanner();
+
+                parseMenuStringToObj(data.menu, editOrderItems);
+                parseSauceStringToObj(data.sauce, editSauceItems);
+
+                editAlreadyReserved = true;
+                for (let k in originalReservedItems) delete originalReservedItems[k];
+                Object.keys(editOrderItems).forEach(k => { originalReservedItems[k] = editOrderItems[k]; });
+
+                populateTimeOptions(newPickupSelect);
+                renderMenuCards();
+
+                if (cleanTime) {
+                    for (let i = 0; i < newPickupSelect.options.length; i++) {
+                        if (newPickupSelect.options[i].value === cleanTime) {
+                            newPickupSelect.options[i].disabled = false;
+                            if (newPickupSelect.options[i].textContent.endsWith(' (마감)')) {
+                                newPickupSelect.options[i].textContent = cleanTime;
+                            }
+                            newPickupSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                handleTimeChange(newPickupSelect, 'editBusyInfoBox');
+
+                document.getElementById('searchResultArea').style.display = 'block';
+                document.getElementById('searchModalActionBtns').style.display = 'block';
             } else {
-                stopOrderStatusPolling();
-                saveCustomerStateCache({ type: 'quick_reorder' });
                 closeSearchModal();
-                showCustomAlert("관리자에 의해 기존 예약건이 마감 또는 정리되었습니다.<br><br>작성하시던 직전 예약 내역과 닉네임이 그대로 복원되었으니 확인 후 다시 예약해 주세요!", "예약 내역 복원 안내", true);
+                showCustomAlert("진행 중인 예약 내역을 찾을 수 없습니다.");
             }
         })
-        .catch(err => {
+        .catch(() => {
             document.getElementById('modalLoadingBox').style.display = 'none';
             closeSearchModal();
-            showCustomAlert('예약 정보를 불러오는 중 오류가 발생했습니다.', '통신 오류');
+            showCustomAlert("조회 중 오류가 발생했습니다.");
+        });
+    }
+
+    function updateReservation() {
+        if (!currentFoundRowIndex) return;
+        let res = getMenuSummaryAndPrice(editOrderItems, editSauceItems);
+        if (!res.hasItems) {
+            showCustomAlert("메뉴를 최소 1개 이상 선택해 주세요!");
+            return;
+        }
+
+        let newPickupTime = newPickupSelect.value;
+        let currentResTime = document.getElementById('resTime').textContent.trim();
+        let finalPickupTime = newPickupTime || currentResTime;
+
+        if (!finalPickupTime) {
+            showCustomAlert("픽업 시간을 선택해 주세요!");
+            return;
+        }
+
+        let newCookType = document.querySelector('input[name="editCookType"]:checked').value;
+        let newTotalPriceStr = res.totalPrice.toLocaleString() + "원";
+
+        const updateBtn = document.getElementById('updateBtn');
+        if (updateBtn) {
+            updateBtn.disabled = true;
+            updateBtn.textContent = "저장 중...";
+        }
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: "update",
+                rowIndex: currentFoundRowIndex,
+                newCookType: newCookType,
+                newMenu: res.menuSummaryStr,
+                newSauce: res.sauceSummaryStr,
+                newPickupTime: finalPickupTime,
+                newTotalPrice: newTotalPriceStr
+            })
+        })
+        .then(res => res.text())
+        .then(text => {
+            let result;
+            try { result = JSON.parse(text); } catch (e) { throw new Error("파싱 오류"); }
+
+            if (updateBtn) {
+                updateBtn.disabled = false;
+                updateBtn.textContent = "변경된 내용 저장하기";
+            }
+
+            if (result.result === "closed") {
+                showCustomAlert("방금 예약 가능 시간이 종료되었습니다! 온라인 예약 시간 외에는 변경이 불가능합니다.", "예약 시간 종료");
+                return;
+            }
+
+            if (result.result === "locked") {
+                closeSearchModal();
+                showModal('lockedModal');
+                return;
+            }
+
+            if (result.result === "out_of_stock") {
+                const soldOutName = result.menuName || "선택하신 메뉴";
+                refreshSoldOutStateSilently(soldOutName);
+                showCustomAlert(`<b>${soldOutName}</b> 항목이 방금 품절되어 수량 추가가 불가능합니다.<br><br>수량을 줄이거나 다른 메뉴를 선택해 주세요!`, '품절 안내');
+                return;
+            }
+
+            if (result.result === "updated") {
+                TripleStorage.save('lastOrderSummary', res.menuSummaryStr);
+                TripleStorage.save('lastOrderSauce', res.sauceSummaryStr);
+                TripleStorage.save('lastOrderPrice', newTotalPriceStr);
+                TripleStorage.save('lastOrderPickupTime', finalPickupTime);
+                TripleStorage.save('lastOrderCookType', newCookType);
+
+                const cachedState = loadCustomerStateCache();
+                if (cachedState && cachedState.reservation) {
+                    cachedState.reservation.cookType = newCookType;
+                    cachedState.reservation.menu = res.menuSummaryStr;
+                    cachedState.reservation.sauce = res.sauceSummaryStr;
+                    cachedState.reservation.pickupTime = finalPickupTime;
+                    cachedState.reservation.totalPrice = newTotalPriceStr;
+                    saveCustomerStateCache(cachedState);
+                }
+
+                closeSearchModal();
+                showCustomAlert("예약 내용이 성공적으로 변경되었습니다!", "수정 완료");
+                checkAndRenderState(true);
+            } else {
+                showCustomAlert("수정 처리 중 오류가 발생했습니다.");
+            }
+        })
+        .catch(() => {
+            if (updateBtn) {
+                updateBtn.disabled = false;
+                updateBtn.textContent = "변경된 내용 저장하기";
+            }
+            showCustomAlert("네트워크 오류가 발생했습니다.");
         });
     }
 
     function closeSearchModal() {
         hideModal('searchModal');
-        editAlreadyReserved = false;
-        originalReservedItems = {};
-        const actionBtns = document.getElementById('searchModalActionBtns');
-        if (actionBtns) actionBtns.style.display = 'none';
+        if (isAlreadyOrderedScreenVisible()) {
+            startOrderStatusPolling(false);
+        }
     }
 
-    function closeLockedModal() { hideModal('lockedModal'); }
-
-    function updateReservation() {
-        const newSummary = buildMenuSummary(editOrderItems);
-        if (!newSummary) {
-            showCustomAlert('변경할 메뉴를 최소 1개 이상 유지해주세요!', '메뉴 확인');
-            return;
+    function closeLockedModal() {
+        hideModal('lockedModal');
+        if (isAlreadyOrderedScreenVisible()) {
+            startOrderStatusPolling(false);
         }
+    }
 
-        const newTime = document.getElementById('newPickupTime').value;
-        const cleanOriginalTime = document.getElementById('resTime').textContent.trim();
-        const selectedMinCheck = parseTimeToMinutes(newTime);
-        const warningThresholdMin = 18 * 60 + 35;
-
-        if (selectedMinCheck >= warningThresholdMin && !_warningConfirmed) {
-            openLatePickupWarning(newTime, "edit");
-            return;
-        }
-        _warningConfirmed = false;
-
-        const nowCheck = new Date();
-        const currentMinCheck = nowCheck.getHours() * 60 + nowCheck.getMinutes();
-        const limitMinCheck = currentMinCheck + (globalPrepMinutes || 0);
-
-        if (newTime !== cleanOriginalTime && selectedMinCheck < limitMinCheck) {
-            showCustomAlert('선택하신 픽업 시간은 현재 지연 시간(준비중) 구간에 포함되어 변경할 수 없습니다. 시간을 다시 선택해 주세요!', '시간 선택 오류');
-            isInitializingPickupSelect = true;
-            initPickupOptions(newPickupSelect, 'editPickupFormGroup', cleanOriginalTime);
-            isInitializingPickupSelect = false;
-            return;
-        }
-
-        showModal('orderSubmittingModal');
-        const subTitle3 = document.getElementById('submittingModalTitle');
-        const subDesc3 = document.getElementById('submittingModalDesc');
-        if (subTitle3) subTitle3.textContent = "예약 내용을 안전하게 수정하고 있어요";
-        if (subDesc3) subDesc3.textContent = "잠시만 기다려 주세요. 변경된 내역을 반영 중입니다!";
-        const updateBtn = document.getElementById('updateBtn');
-        updateBtn.disabled = true;
-        updateBtn.textContent = "변경 중입니다...";
-
-        const closeBtn = document.getElementById('searchCloseBtn');
-        if (closeBtn) {
-            closeBtn.disabled = true;
-            closeBtn.style.backgroundColor = "#D1CFCD";
-            closeBtn.style.cursor = "not-allowed";
-        }
-
-        const cookTypeElem = document.querySelector('input[name="editCookType"]:checked');
-        const newCookType = cookTypeElem ? cookTypeElem.value : "🍗 튀겨서 포장";
-        const newSauceSummary = buildSauceSummary(editSauceItems);
-        const newTotalPrice = calculateEditTotal().toLocaleString() + '원';
-
+    function sendHeartbeat() {
+        if (!KakaoAuthManager.session.kakaoId) return;
+        const activeId = clientId || KakaoAuthManager.formatClientId(KakaoAuthManager.session.kakaoId);
+        let nick = globalUserNickname || KakaoAuthManager.session.identifier || document.getElementById('nickname').value.trim() || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || "미입력고객";
         fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ 
-                action: 'update', 
-                rowIndex: currentFoundRowIndex, 
-                newCookType: newCookType,
-                newMenu: newSummary,
-                newSauce: newSauceSummary,
-                newPickupTime: newTime,
-                newTotalPrice: newTotalPrice 
+            body: JSON.stringify({
+                action: 'heartbeat',
+                clientId: activeId,
+                kakaoId: KakaoAuthManager.session.kakaoId,
+                nickname: nick,
+                updateSheet: false
             })
         })
         .then(res => res.text())
         .then(text => {
-            if (closeBtn) {
-                closeBtn.disabled = false;
-                closeBtn.style.backgroundColor = "var(--surface-sub)";
-                closeBtn.style.cursor = "pointer";
-            }
-
-            let data;
-            try { data = JSON.parse(text); } catch(e) {}
-
-            if (data && data.result === "blocked") {
-                hideModal('orderSubmittingModal');
-                closeSearchModal();
-                enforceBlockedOverlay(data.reason || data.message);
-                return;
-            }
-            
-            if (data && data.result === "closed") {
-                hideModal('orderSubmittingModal');
-                closeSearchModal();
-                showCustomAlert('영업 마감 시간이 지나 예약 내용을 변경할 수 없습니다.', '변경 불가');
-                updateBtn.disabled = false;
-                updateBtn.textContent = "변경된 내용 저장하기";
-                return;
-            }
-
-            if (data && data.result === "out_of_stock") {
-                hideModal('orderSubmittingModal');
-                closeSearchModal();
-                showCustomAlert(`변경하신 항목(<b>${data.menuName}</b>)이 현재 품절 상태입니다!`, '품절 안내');
-                updateBtn.disabled = false;
-                updateBtn.textContent = "변경된 내용 저장하기";
-                checkAndRenderState(false);
-                return;
-            }
-
-            if (data && data.result === "locked") {
-                applyStatusBadgeUI("확인");
-                hideModal('orderSubmittingModal');
-                closeSearchModal();
-                showModal('lockedModal');
-                updateBtn.disabled = false;
-                updateBtn.textContent = "변경된 내용 저장하기";
-            } else {
-                TripleStorage.save('lastOrderSummary', newSummary);
-                TripleStorage.save('lastOrderSauce', newSauceSummary);
-                TripleStorage.save('lastOrderPrice', newTotalPrice);
-                TripleStorage.save('lastOrderPickupTime', newTime);
-                TripleStorage.save('lastOrderCookType', newCookType);
-
-                const prevState = loadCustomerStateCache();
-                if (prevState && prevState.reservation) {
-                    prevState.reservation.cookType = newCookType;
-                    prevState.reservation.menu = newSummary;
-                    prevState.reservation.sauce = newSauceSummary;
-                    prevState.reservation.pickupTime = newTime;
-                    prevState.reservation.totalPrice = newTotalPrice;
-                    saveCustomerStateCache(prevState);
+            try {
+                const data = JSON.parse(text);
+                if (data.result === "blocked" || (data.restriction && data.restriction.blocked)) {
+                    enforceBlockedOverlay(data.message || (data.restriction && data.restriction.reason));
                 }
-
-                hideModal('orderSubmittingModal');
-                showCustomAlert('예약 내용이 성공적으로 변경되었습니다.', '변경 완료');
-                closeSearchModal();
-                updateBtn.disabled = false;
-                updateBtn.textContent = "변경된 내용 저장하기";
-                checkAndRenderState(false);
-            }
+            } catch (e) {}
         })
-        .catch(err => {
-            hideModal('orderSubmittingModal');
-            if (closeBtn) {
-                closeBtn.disabled = false;
-                closeBtn.style.backgroundColor = "var(--surface-sub)";
-                closeBtn.style.cursor = "pointer";
-            }
-            showCustomAlert('예약 변경 중 통신 오류가 발생했습니다.', '통신 오류');
-            updateBtn.disabled = false;
-            updateBtn.textContent = "변경된 내용 저장하기";
-        });
+        .catch(() => {});
     }
-</script>
 
+    setInterval(sendHeartbeat, 30000);
+    window.addEventListener('load', () => setTimeout(sendHeartbeat, 1000));
+</script>
 </body>
 </html>
