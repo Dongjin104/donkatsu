@@ -3379,6 +3379,8 @@
             forceReloadForOpenCheck('countdown_zero_or_open');
         }
 
+        let __lastCountdownTextMap = {};
+
         function renderOpenCountdownTick() {
             const cardEl = document.getElementById('ddayOpenCountdownCard');
             const daysEl = document.getElementById('ddayDaysNum');
@@ -3390,15 +3392,30 @@
             const headlineEl = document.getElementById('ddayHeadlineEl');
             const subCaptionEl = document.getElementById('ddaySubCaptionEl');
 
+            const setTextIfChanged = (el, key, nextText) => {
+                if (!el) return;
+                const val = String(nextText ?? '');
+                if (__lastCountdownTextMap[key] === val && el.textContent === val) return;
+                __lastCountdownTextMap[key] = val;
+                el.textContent = val;
+            };
+
             const customTargetMs = getScheduledOpenTimestampMs();
             const nowMs = Date.now();
             const hasFutureCustomTarget = (customTargetMs !== null && customTargetMs > 0 && nowMs < customTargetMs);
 
+            const isInitialSettleWindow =
+                typeof __lastCustomerRenderAt === 'number' &&
+                __lastCustomerRenderAt > 0 &&
+                (nowMs - __lastCustomerRenderAt) < 3500;
+
             if (!hasFutureCustomTarget) {
-                if (cardEl) cardEl.style.display = 'none';
+                if (cardEl && cardEl.style.display !== 'none' && !isInitialSettleWindow) {
+                    cardEl.style.display = 'none';
+                }
                 clearCustomOpenTargetState();
 
-                if (typeof checkClosedStatus === 'function' && !checkClosedStatus() && !countdownTransitionInFlight) {
+                if (!isInitialSettleWindow && typeof checkClosedStatus === 'function' && !checkClosedStatus() && !countdownTransitionInFlight) {
                     const closedNoticeEl = document.getElementById('closedNotice');
                     if (closedNoticeEl && closedNoticeEl.style.display !== 'none') {
                         triggerOpenTransitionNow(cardEl);
@@ -3407,7 +3424,13 @@
                 return;
             }
 
-            if (cardEl) cardEl.style.display = '';
+            if (isInitialSettleWindow) {
+                return;
+            }
+
+            if (cardEl && cardEl.style.display === 'none') {
+                cardEl.style.display = '';
+            }
             if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
 
             const diffMs = Math.max(0, customTargetMs - nowMs);
@@ -3417,24 +3440,25 @@
             const mins = Math.floor((totalSeconds % 3600) / 60);
             const secs = totalSeconds % 60;
 
-            daysEl.textContent = days > 0 ? String(days) : '00';
-            hoursEl.textContent = String(hours).padStart(2, '0');
-            minsEl.textContent = String(mins).padStart(2, '0');
-            secsEl.textContent = String(secs).padStart(2, '0');
+            setTextIfChanged(daysEl, 'days', days > 0 ? String(days) : '00');
+            setTextIfChanged(hoursEl, 'hours', String(hours).padStart(2, '0'));
+            setTextIfChanged(minsEl, 'mins', String(mins).padStart(2, '0'));
+            setTextIfChanged(secsEl, 'secs', String(secs).padStart(2, '0'));
 
             if (badgeEl) {
-                badgeEl.textContent = days > 0 ? `D-${days} OPEN` : 'D-DAY OPEN';
+                setTextIfChanged(badgeEl, 'badge', days > 0 ? `D-${days} OPEN` : 'D-DAY OPEN');
             }
             if (targetLabelEl) {
-                targetLabelEl.textContent = formatTargetDateKorean(customTargetMs);
+                setTextIfChanged(targetLabelEl, 'target', formatTargetDateKorean(customTargetMs));
             }
             if (headlineEl) {
-                headlineEl.textContent = diffMs > 0
+                const nextHeadline = diffMs > 0
                     ? (days > 0 ? `예약 오픈까지 D-${days} 남았습니다` : '예약 오픈까지 남은 시간')
                     : '예약 오픈 시간이 되었습니다! 예약 화면으로 이동합니다';
+                setTextIfChanged(headlineEl, 'headline', nextHeadline);
             }
             if (subCaptionEl) {
-                subCaptionEl.textContent = '설정된 오픈 일시까지 카운트다운 후 예약 화면으로 자동 전환됩니다.';
+                setTextIfChanged(subCaptionEl, 'subCaption', '설정된 오픈 일시까지 카운트다운 후 예약 화면으로 자동 전환됩니다.');
             }
 
             if (diffMs === 0 && lastCountdownTargetMs !== customTargetMs && !countdownTransitionInFlight) {
@@ -5908,11 +5932,27 @@ ${safeCode}
             startOpenCountdownTimer();
         }
 
+        let __lastCustomerRenderSig = '';
+        let __lastCustomerRenderAt = 0;
+
         function renderCustomerSectionByState(isClosed, sess) {
             if (enforcePhone4GateIfNeeded(sess)) {
                 setLoadingSkeletonVisible(false);
                 return;
             }
+
+            const cachedState = loadCustomerStateCache();
+            const cachedType = (cachedState && cachedState.state && cachedState.state.type) ? cachedState.state.type : 'none';
+            const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
+            const renderSig = `${Boolean(isClosed)}|${cachedType}|${Boolean(hasPrevOrder)}|${sess && sess.kakaoId ? sess.kakaoId : ''}`;
+            const now = Date.now();
+
+            if (renderSig === __lastCustomerRenderSig && (now - __lastCustomerRenderAt) < 4000) {
+                setLoadingSkeletonVisible(false);
+                return;
+            }
+            __lastCustomerRenderSig = renderSig;
+            __lastCustomerRenderAt = now;
 
             if (isClosed) {
                 setLoadingSkeletonVisible(false);
@@ -5928,7 +5968,6 @@ ${safeCode}
 
             document.getElementById('closedNotice').style.display = 'none';
 
-            const cachedState = loadCustomerStateCache();
             if (cachedState && cachedState.state) {
                 const st = cachedState.state;
                 if (st.type === 'completed') {
@@ -5949,7 +5988,6 @@ ${safeCode}
             setLoadingSkeletonVisible(false);
             document.getElementById('topNoticeBox').style.display = 'block';
 
-            const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
             if (hasPrevOrder) {
                 document.getElementById('quickReorderBox').style.display = 'block';
                 document.getElementById('orderForm').style.display = 'none';
