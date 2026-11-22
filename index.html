@@ -2712,6 +2712,9 @@
         let globalCloseHour = 18;
         let globalCloseMin = 30;
         let globalNextOpenDateTime = "";
+        let globalOpenDateTimestamp = 0;
+        let globalOpenDateRaw = "";
+        let globalIsPreOpenWait = false;
         let globalFortuneEnabled = true;
         let currentFoundRowIndex = null;
         let cachedEventMenuList = ["돈까스 1개", "새우까스 1개", "안심까스 1개"];
@@ -2747,7 +2750,7 @@
         let scrollPosition = 0;
 
         /* =========================================================
-           오픈 D-Day 카운트다운 (I2 자동 변환 포맷 & Date 객체 완전 지원)
+           오픈 D-Day 카운트다운 (I2 오픈일시 & code.gs 연동)
            ========================================================= */
         let openCountdownInterval = null;
         let lastCountdownTargetMs = null;
@@ -2760,6 +2763,10 @@
         function parseKoreanDateTimeToMs(rawVal) {
             if (!rawVal) return null;
 
+            if (typeof rawVal === 'number' && !isNaN(rawVal) && rawVal > 0) {
+                return rawVal;
+            }
+
             if (rawVal instanceof Date) {
                 return isNaN(rawVal.getTime()) ? null : rawVal.getTime();
             }
@@ -2767,7 +2774,11 @@
             const str = String(rawVal).trim();
             if (!str) return null;
 
-            // 예: "2026/12/01 오후 1:00:00" 또는 "2026-12-01 오전 9:30" 또는 "2026. 12. 1. 오후 1:00"
+            if (/^\d{11,15}$/.test(str)) {
+                const numMs = Number(str);
+                if (!isNaN(numMs) && numMs > 0) return numMs;
+            }
+
             const krMatch = str.match(
                 /(\d{4})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})(?:\s*(오전|오후))?\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/
             );
@@ -2786,15 +2797,28 @@
                     hour += 12;
                 }
 
-                // KST (+09:00) 기준 정확한 Epoch ms 계산
                 const utcMs = Date.UTC(year, month, day, hour - 9, min, sec);
                 return isNaN(utcMs) ? null : utcMs;
             }
 
-            // ISO 또는 기타 날짜 문자열 파싱
             const parsedDirect = Date.parse(str);
             if (!isNaN(parsedDirect)) return parsedDirect;
 
+            return null;
+        }
+
+        function getScheduledOpenTimestampMs() {
+            if (typeof globalOpenDateTimestamp === 'number' && !isNaN(globalOpenDateTimestamp) && globalOpenDateTimestamp > 0) {
+                return globalOpenDateTimestamp;
+            }
+            const parsedFromNext = parseKoreanDateTimeToMs(globalNextOpenDateTime);
+            if (parsedFromNext !== null && parsedFromNext > 0) {
+                return parsedFromNext;
+            }
+            const parsedFromRaw = parseKoreanDateTimeToMs(globalOpenDateRaw);
+            if (parsedFromRaw !== null && parsedFromRaw > 0) {
+                return parsedFromRaw;
+            }
             return null;
         }
 
@@ -2812,7 +2836,6 @@
             }
 
             const targetKst = new Date(year, month, day + targetDayOffset, Number(globalOpenHour) || 13, Number(globalOpenMin) || 0, 0);
-            // targetKst는 KST 시각을 로컬 필드처럼 담은 Date이므로 UTC로 변환해 KST(+09:00) 절대 ms 산출
             const targetUtcMs = Date.UTC(
                 targetKst.getFullYear(),
                 targetKst.getMonth(),
@@ -2825,6 +2848,9 @@
         }
 
         function formatTargetDateKorean(targetMs) {
+            if (globalOpenDateRaw && String(globalOpenDateRaw).trim() !== '') {
+                return String(globalOpenDateRaw).trim() + ' 오픈';
+            }
             try {
                 const d = new Date(targetMs);
                 const formatted = d.toLocaleString('ko-KR', {
@@ -2852,8 +2878,9 @@
             const subCaptionEl = document.getElementById('ddaySubCaptionEl');
             if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
 
-            const customTargetMs = parseKoreanDateTimeToMs(globalNextOpenDateTime);
-            const targetMs = (customTargetMs !== null) ? customTargetMs : computeDefaultNextOpenTargetMs();
+            const customTargetMs = getScheduledOpenTimestampMs();
+            const hasFutureCustomTarget = (customTargetMs !== null && Date.now() < customTargetMs);
+            const targetMs = hasFutureCustomTarget ? customTargetMs : computeDefaultNextOpenTargetMs();
             const nowMs = Date.now();
             const diffMs = Math.max(0, targetMs - nowMs);
 
@@ -2869,7 +2896,7 @@
             secsEl.textContent = String(secs).padStart(2, '0');
 
             if (badgeEl) {
-                badgeEl.textContent = days > 0 ? `D-${days} OPEN` : 'TODAY OPEN';
+                badgeEl.textContent = days > 0 ? `D-${days} OPEN` : (hasFutureCustomTarget ? 'D-DAY OPEN' : 'TODAY OPEN');
             }
             if (targetLabelEl) {
                 targetLabelEl.textContent = formatTargetDateKorean(targetMs);
@@ -2880,13 +2907,16 @@
                     : '예약 오픈 시간이 되었습니다! 화면을 갱신합니다';
             }
             if (subCaptionEl) {
-                subCaptionEl.textContent = customTargetMs !== null
-                    ? '설정된 오픈 일시 기준으로 카운트다운 중입니다.'
+                subCaptionEl.textContent = hasFutureCustomTarget
+                    ? '설정된 오픈 일시까지 실시간 카운트다운 중이며, 오픈 후 예약시간 기준으로 자동 전환됩니다.'
                     : '오픈 시각이 되면 예약 화면이 자동으로 열립니다.';
             }
 
             if (diffMs === 0 && lastCountdownTargetMs !== targetMs) {
                 lastCountdownTargetMs = targetMs;
+                globalIsPreOpenWait = false;
+                globalOpenDateTimestamp = 0;
+                globalNextOpenDateTime = "";
                 syncCustomerScreenWithSheet(true);
             }
         }
@@ -3232,10 +3262,12 @@
 
             return [
                 s.isClosed ? 1 : 0,
+                s.isPreOpenWait ? 1 : 0,
                 s.isMaintenance ? 1 : 0,
                 s.isBlocked ? 1 : 0,
                 s.prepMinutes || 0,
                 s.nextOpenDateTime || '',
+                s.openDateTimestamp || 0,
                 menusSig,
                 saucesSig,
                 loadSig,
@@ -4921,7 +4953,7 @@
         }
 
         function checkClosedStatus() {
-            const customTargetMs = parseKoreanDateTimeToMs(globalNextOpenDateTime);
+            const customTargetMs = getScheduledOpenTimestampMs();
             if (customTargetMs !== null && Date.now() < customTargetMs) {
                 return true;
             }
@@ -5168,10 +5200,27 @@
             if (typeof settings.closeHour === 'number') globalCloseHour = settings.closeHour;
             if (typeof settings.closeMin === 'number') globalCloseMin = settings.closeMin;
 
+            if (typeof settings.isPreOpenWait === 'boolean') {
+                globalIsPreOpenWait = settings.isPreOpenWait;
+            }
+            if (typeof settings.openDateTimestamp === 'number' && !isNaN(settings.openDateTimestamp)) {
+                globalOpenDateTimestamp = settings.openDateTimestamp;
+            }
+            if (settings.openDateRaw !== undefined && settings.openDateRaw !== null) {
+                globalOpenDateRaw = String(settings.openDateRaw).trim();
+            }
+
             if (settings.nextOpenDateTime !== undefined && settings.nextOpenDateTime !== null) {
                 globalNextOpenDateTime = (settings.nextOpenDateTime instanceof Date)
                     ? settings.nextOpenDateTime.toISOString()
                     : String(settings.nextOpenDateTime).trim();
+                if (!globalOpenDateTimestamp) {
+                    const parsedNext = parseKoreanDateTimeToMs(globalNextOpenDateTime);
+                    if (parsedNext !== null) globalOpenDateTimestamp = parsedNext;
+                }
+                if (!globalOpenDateRaw && globalNextOpenDateTime) {
+                    globalOpenDateRaw = globalNextOpenDateTime;
+                }
             }
 
             if (typeof settings.pickupStartHour === 'number') globalPickupStartHour = settings.pickupStartHour;
