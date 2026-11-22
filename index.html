@@ -3303,6 +3303,37 @@
             }
         }
 
+        function clearCustomOpenTargetState() {
+            globalIsPreOpenWait = false;
+            globalOpenDateTimestamp = 0;
+            globalNextOpenDateTime = "";
+            globalOpenDateRaw = "";
+        }
+
+        function triggerOpenTransitionNow(cardEl) {
+            if (countdownTransitionInFlight) return;
+            countdownTransitionInFlight = true;
+            clearCustomOpenTargetState();
+            if (cardEl) cardEl.style.display = 'none';
+            stopOpenCountdownTimer();
+
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            const isClosedNow = (typeof checkClosedStatus === 'function') ? checkClosedStatus() : false;
+
+            if (typeof renderCustomerSectionByState === 'function') {
+                renderCustomerSectionByState(isClosedNow, sess);
+            }
+
+            if (typeof syncCustomerScreenWithSheet === 'function') {
+                Promise.resolve(syncCustomerScreenWithSheet(true)).finally(() => {
+                    countdownTransitionInFlight = false;
+                });
+            } else {
+                countdownTransitionInFlight = false;
+            }
+        }
+
         function renderOpenCountdownTick() {
             const cardEl = document.getElementById('ddayOpenCountdownCard');
             const daysEl = document.getElementById('ddayDaysNum');
@@ -3320,19 +3351,12 @@
 
             if (!hasFutureCustomTarget) {
                 if (cardEl) cardEl.style.display = 'none';
+                clearCustomOpenTargetState();
 
                 if (typeof checkClosedStatus === 'function' && !checkClosedStatus() && !countdownTransitionInFlight) {
                     const closedNoticeEl = document.getElementById('closedNotice');
                     if (closedNoticeEl && closedNoticeEl.style.display !== 'none') {
-                        countdownTransitionInFlight = true;
-                        stopOpenCountdownTimer();
-                        if (typeof syncCustomerScreenWithSheet === 'function') {
-                            Promise.resolve(syncCustomerScreenWithSheet(true)).finally(() => {
-                                countdownTransitionInFlight = false;
-                            });
-                        } else {
-                            countdownTransitionInFlight = false;
-                        }
+                        triggerOpenTransitionNow(cardEl);
                     }
                 }
                 return;
@@ -3370,25 +3394,18 @@
 
             if (diffMs === 0 && lastCountdownTargetMs !== customTargetMs && !countdownTransitionInFlight) {
                 lastCountdownTargetMs = customTargetMs;
-                countdownTransitionInFlight = true;
-                globalIsPreOpenWait = false;
-                globalOpenDateTimestamp = 0;
-                globalNextOpenDateTime = "";
-                globalOpenDateRaw = "";
-                if (cardEl) cardEl.style.display = 'none';
-                stopOpenCountdownTimer();
-                if (typeof syncCustomerScreenWithSheet === 'function') {
-                    Promise.resolve(syncCustomerScreenWithSheet(true)).finally(() => {
-                        countdownTransitionInFlight = false;
-                    });
-                } else {
-                    countdownTransitionInFlight = false;
-                }
+                triggerOpenTransitionNow(cardEl);
             }
         }
 
         function startOpenCountdownTimer() {
             renderOpenCountdownTick();
+            const customTargetMs = getScheduledOpenTimestampMs();
+            const hasFutureCustomTarget = (customTargetMs !== null && customTargetMs > 0 && Date.now() < customTargetMs);
+            if (!hasFutureCustomTarget) {
+                stopOpenCountdownTimer();
+                return;
+            }
             stopOpenCountdownTimer();
             openCountdownInterval = setInterval(renderOpenCountdownTick, 1000);
         }
@@ -3838,12 +3855,15 @@ ${safeCode}
                     }
 
                     if (reservationData.result === "not_found") {
-                        if (isAlreadyOrderedScreenVisible()) {
+                        const closedEl = document.getElementById('closedNotice');
+                        const isClosedScreenVisible = !!(closedEl && closedEl.style.display !== 'none');
+                        if (isAlreadyOrderedScreenVisible() || isClosedScreenVisible) {
                             const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
                             saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
                             document.getElementById('alreadyOrderedNotice').style.display = 'none';
                             const isClosed = checkClosedStatus();
                             if (!isClosed && !enforcePhone4GateIfNeeded(sess)) {
+                                document.getElementById('closedNotice').style.display = 'none';
                                 document.getElementById('topNoticeBox').style.display = 'block';
                                 if (hasPrevOrder) {
                                     document.getElementById('quickReorderBox').style.display = 'block';
@@ -3853,6 +3873,8 @@ ${safeCode}
                                     document.getElementById('quickReorderBox').style.display = 'none';
                                     document.getElementById('orderForm').style.display = 'block';
                                     renderMenuAndSauceCards();
+                                    populateTimeSelect('pickupTime', '', false);
+                                    handleMainCookTypeChange();
                                 }
                             }
                         }
