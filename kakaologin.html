@@ -451,7 +451,8 @@
         <div
             style="background: #ffffff; border-radius: var(--radius-lg); padding: 34px 22px; max-width: 420px; width: 100%; box-shadow: var(--shadow-float); border: 1px solid #F3C6CF;">
             <div style="font-size: 42px; margin-bottom: 14px;">🌿</div>
-            <h2 style="font-size: 19.5px; color: #9F1239; font-weight: 800; margin: 0 0 10px 0; word-break: keep-all;">예약
+            <h2 style="font-size: 19.5px; color: #9F1239; font-weight: 800; margin: 0 0 10px 0; word-break: keep-all;">
+                예약
                 페이지 이용 안내가 필요합니다</h2>
             <p id="blockedReasonText"
                 style="font-size: 13.5px; color: var(--text-sub); line-height: 1.62; margin: 0 0 18px 0; word-break: keep-all;">
@@ -895,12 +896,22 @@
             window.handleVerifiedKakaoProfile = async function (profile) {
                 const statusEl = document.getElementById("kakaoGateStatus");
                 const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                const rawNick = String((profile && profile.kakaoNickname) || "").trim();
+
+                if (!rawNick || rawNick === "카카오고객" || /^카카오회원_/.test(rawNick)) {
+                    if (loginBtn) loginBtn.disabled = false;
+                    const msg = "카카오톡 닉네임이 확인되지 않았습니다. 프로필 닉네임을 확인한 뒤 다시 로그인해 주세요.";
+                    if (statusEl) statusEl.textContent = msg;
+                    window.showKakaoGateOverlay("login", msg);
+                    return;
+                }
+
                 if (loginBtn) loginBtn.disabled = true;
                 if (statusEl) statusEl.textContent = "회원 이력을 확인하는 중입니다...";
 
                 authImpl.saveSession({
                     kakaoId: profile.kakaoId,
-                    kakaoNickname: profile.kakaoNickname
+                    kakaoNickname: rawNick
                 });
 
                 const syncRes = await fetch(KAKAO_WEB_APP_URL, {
@@ -909,7 +920,7 @@
                     body: JSON.stringify({
                         action: "syncKakaoMember",
                         kakaoId: profile.kakaoId,
-                        kakaoNickname: profile.kakaoNickname
+                        kakaoNickname: rawNick
                     })
                 });
                 const syncText = await syncRes.text();
@@ -932,12 +943,16 @@
                 }
 
                 const mp = syncData.memberProfile || {};
-                if (mp.isRegistered && mp.phone4 && mp.phone4.length === 4) {
-                    await finishAuthAndEnterApp(syncData, profile.kakaoId, profile.kakaoNickname, mp.phone4);
+                const validServerPhone4 = /^\d{4}$/.test(String(mp.phone4 || "").trim())
+                    ? String(mp.phone4).trim()
+                    : "";
+
+                if (mp.isRegistered && validServerPhone4) {
+                    await finishAuthAndEnterApp(syncData, profile.kakaoId, rawNick, validServerPhone4);
                     return;
                 }
 
-                window.showKakaoGateOverlay("phone4", "");
+                window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
             };
 
             window.startKakaoLoginFlow = async function () {

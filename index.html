@@ -1271,7 +1271,7 @@
             box-shadow: 0 4px 12px rgba(28, 27, 24, 0.04);
         }
 
-        .busy-info-item + .busy-info-item {
+        .busy-info-item+.busy-info-item {
             margin-top: 8px;
             padding-top: 8px;
             border-top: 1px dashed rgba(28, 27, 24, 0.14);
@@ -1858,14 +1858,16 @@
         <div class="luxury-soldout-card">
             <div class="luxury-soldout-badge">✦ SOLD OUT NOTICE</div>
             <div style="font-size: 38px; margin-bottom: 8px;">🍽️</div>
-            <h3 style="color: var(--text-main); font-size: 19px; font-weight: 800; margin: 0 0 6px 0;">준비된 수량이 모두 소진되었습니다</h3>
+            <h3 style="color: var(--text-main); font-size: 19px; font-weight: 800; margin: 0 0 6px 0;">준비된 수량이 모두
+                소진되었습니다</h3>
             <div id="luxurySoldOutBody" class="luxury-soldout-item-box">
                 방금 선택하신 메뉴의 오늘 준비 물량이 모두 마감되었습니다.
             </div>
             <p style="font-size: 12.5px; color: var(--text-sub); line-height: 1.5; margin: 0 0 14px 0;">
                 최신 품절 현황을 실시간으로 반영하여<br>다른 메뉴로 편하게 선택하실 수 있도록 갱신해 드릴게요.
             </p>
-            <button type="button" class="modal-btn" style="margin-top: 0; background: var(--accent-dark); color: #F6DFA4; border: 1.5px solid #C5A059;"
+            <button type="button" class="modal-btn"
+                style="margin-top: 0; background: var(--accent-dark); color: #F6DFA4; border: 1.5px solid #C5A059;"
                 onclick="closeLuxurySoldOutModal()">메뉴 다시 선택하기</button>
         </div>
     </div>
@@ -4639,6 +4641,30 @@
 
         function applySettingsToGlobals(settings) {
             return applySettingsObject(settings);
+        }
+
+        function hasValidPhone4(val) {
+            return /^\d{4}$/.test(String(val || "").trim());
+        }
+
+        function enforcePhone4GateIfNeeded(sess) {
+            if (!sess || !sess.kakaoId) return false;
+            if (!hasValidPhone4(sess.phone4)) {
+                const orderForm = document.getElementById("orderForm");
+                const quickBox = document.getElementById("quickReorderBox");
+                const alreadyBox = document.getElementById("alreadyOrderedNotice");
+                const doneBox = document.getElementById("pickupCompletedNotice");
+                if (orderForm) orderForm.style.display = "none";
+                if (quickBox) quickBox.style.display = "none";
+                if (alreadyBox) alreadyBox.style.display = "none";
+                if (doneBox) doneBox.style.display = "none";
+
+                if (typeof window.showKakaoGateOverlay === "function") {
+                    window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
+                }
+                return true;
+            }
+            return false;
         }
 
         async function checkAndRenderState() {
