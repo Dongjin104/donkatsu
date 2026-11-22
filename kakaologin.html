@@ -374,135 +374,6 @@
             background-color: #F6DC00;
             transform: translateY(-1px);
         }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(26, 25, 22, 0);
-            backdrop-filter: blur(0px);
-            justify-content: center;
-            align-items: center;
-            padding: 14px;
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.28s ease, backdrop-filter 0.28s ease;
-            pointer-events: none;
-        }
-
-        .modal.active {
-            display: flex;
-            opacity: 1;
-            background: rgba(26, 25, 22, 0.56);
-            backdrop-filter: blur(6px);
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background: #FFFFFF;
-            padding: 24px 20px;
-            border-radius: var(--radius-lg);
-            max-width: 420px;
-            text-align: center;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-float);
-            border: 1px solid var(--border-color);
-            transform: translateY(12px) scale(0.98);
-            opacity: 0;
-            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .modal.active .modal-content {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
-
-        .modal-content h3 {
-            font-size: 18.5px;
-            margin-top: 0;
-            font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.02em;
-        }
-
-        .modal-btn {
-            background-color: var(--accent-dark);
-            color: #FFFFFF;
-            border: none;
-            padding: 12.5px 14px;
-            font-size: 14px;
-            border-radius: var(--radius-sm);
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            transition: background-color 0.18s ease, transform 0.16s ease;
-        }
-
-        .modal-btn:hover {
-            background-color: #2E2C27;
-            transform: translateY(-1px);
-        }
-
-        .close-btn {
-            background-color: var(--surface-sub) !important;
-            color: var(--text-sub) !important;
-            margin-top: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .close-btn:hover {
-            background-color: #EAE5DA !important;
-            color: var(--text-main) !important;
-        }
-
-        .order-info-card {
-            background: #FAF8F4;
-            border: 1px solid var(--border-color);
-            padding: 4px 14px;
-            border-radius: var(--radius-sm);
-            text-align: left;
-            margin-bottom: 14px;
-            font-size: 14px;
-            color: var(--text-main);
-        }
-
-        .order-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #ECE7DC;
-            padding: 10px 0;
-            gap: 10px;
-        }
-
-        .order-info-row:last-child {
-            border-bottom: none;
-        }
-
-        .order-info-label {
-            font-size: 13px;
-            color: var(--text-sub);
-            font-weight: 600;
-            white-space: nowrap;
-            min-width: 76px;
-        }
-
-        .order-info-value {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-main);
-            text-align: right;
-            word-break: keep-all;
-            overflow-wrap: break-word;
-            flex: 1;
-            line-height: 1.38;
-        }
     </style>
 </head>
 
@@ -721,7 +592,7 @@
 
                 isMobileDevice: function () {
                     const ua = navigator.userAgent || "";
-                    return /Android|iPhone|iPad|iPod|Mobile|KakaoTalk/i.test(ua);
+                    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) && !/Windows|Macintosh|Linux x86_64|CrOS/i.test(ua);
                 },
 
                 ensureSDKLoaded: function () {
@@ -847,22 +718,6 @@
                     return this.session;
                 },
 
-                clearLocalSessionOnly: function () {
-                    this.session = { kakaoId: "", kakaoNickname: "", phone4: "", identifier: "" };
-                    try {
-                        localStorage.removeItem("donkatsu_kakao_id");
-                        localStorage.removeItem("donkatsu_kakao_nick");
-                        localStorage.removeItem("donkatsu_phone4");
-                        localStorage.removeItem("savedNickname");
-                    } catch (e) { }
-                    if (typeof storageImpl.setCookie === "function") {
-                        storageImpl.setCookie("donkatsu_kakao_id", "", -1);
-                        storageImpl.setCookie("donkatsu_kakao_nick", "", -1);
-                        storageImpl.setCookie("donkatsu_phone4", "", -1);
-                        storageImpl.setCookie("savedNickname", "", -1);
-                    }
-                },
-
                 getCleanRedirectUri: function () {
                     return window.location.origin + window.location.pathname;
                 },
@@ -883,73 +738,29 @@
                     };
                 },
 
-                fetchCurrentKakaoProfile: function () {
-                    const self = this;
-                    return new Promise((resolve, reject) => {
-                        if (!window.Kakao || !window.Kakao.API || !window.Kakao.Auth.getAccessToken()) {
-                            reject(new Error("카카오 액세스 토큰이 없습니다."));
-                            return;
-                        }
-                        window.Kakao.API.request({
-                            url: "/v2/user/me",
-                            success: function (res) {
-                                const profile = self.extractUserProfileFromKakao(res);
-                                if (!profile.kakaoId) {
-                                    reject(new Error("카카오 회원번호를 확인할 수 없습니다."));
-                                    return;
-                                }
-                                resolve(profile);
-                            },
-                            fail: function (err) {
-                                reject(err);
-                            }
-                        });
-                    });
-                },
-
                 exchangeCodeAndFetchProfile: async function (code) {
                     const redirectUri = this.getCleanRedirectUri();
-                    const tokenBody = new URLSearchParams({
-                        grant_type: "authorization_code",
-                        client_id: KAKAO_JS_KEY,
-                        redirect_uri: redirectUri,
-                        code: code
-                    });
-
-                    const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
+                    const res = await fetch(KAKAO_WEB_APP_URL, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
-                        },
-                        body: tokenBody.toString()
+                        headers: { "Content-Type": "text/plain" },
+                        body: JSON.stringify({
+                            action: "exchangeKakaoCode",
+                            code: code,
+                            redirectUri: redirectUri
+                        })
                     });
+                    const text = await res.text();
+                    let data = null;
+                    try { data = JSON.parse(text); } catch (e) { }
 
-                    const tokenData = await tokenRes.json();
-                    if (!tokenRes.ok || !tokenData || !tokenData.access_token) {
-                        const errDesc = (tokenData && (tokenData.error_description || tokenData.error)) || "카카오 토큰 발급에 실패했습니다.";
-                        throw new Error(errDesc);
+                    if (!res.ok || !data || data.result !== "ok" || !data.authUser || !data.authUser.kakaoId) {
+                        throw new Error((data && data.message) || "카카오 인증 정보 교환에 실패했습니다.");
                     }
 
-                    if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.setAccessToken === "function") {
-                        try {
-                            window.Kakao.Auth.setAccessToken(tokenData.access_token);
-                        } catch (e) { }
-                    }
-
-                    const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
-                        method: "GET",
-                        headers: {
-                            "Authorization": "Bearer " + tokenData.access_token,
-                            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
-                        }
-                    });
-
-                    const meData = await meRes.json();
-                    if (!meRes.ok || !meData || meData.id === undefined) {
-                        throw new Error("카카오 회원 프로필 조회에 실패했습니다.");
-                    }
-
-                    return this.extractUserProfileFromKakao(meData);
+                    return {
+                        kakaoId: this.normalizeId(data.authUser.kakaoId),
+                        kakaoNickname: String(data.authUser.kakaoNickname || "").trim() || ("카카오회원_" + this.normalizeId(data.authUser.kakaoId).slice(-4))
+                    };
                 },
 
                 authorizeViaKakao: async function () {
@@ -967,7 +778,7 @@
                     window.Kakao.Auth.authorize({
                         redirectUri: redirectUri,
                         scope: "profile_nickname",
-                        throughTalk: this.isMobileDevice(),
+                        throughTalk: false,
                         state: stateToken
                     });
 
@@ -985,6 +796,34 @@
                     const msgEl = document.getElementById("pageLoadingMessage");
                     if (msgEl && msg) msgEl.textContent = msg;
                     if (sk) sk.style.display = show ? "flex" : "none";
+                }
+            }
+
+            async function finishAuthAndEnterApp(syncData, fallbackId, fallbackNick, fallbackPhone4) {
+                const profile = syncData && syncData.memberProfile ? syncData.memberProfile : {};
+                const resolvedId = authImpl.normalizeId(profile.kakaoId || fallbackId || "");
+                const resolvedNick = String(profile.kakaoNickname || fallbackNick || "").trim();
+                const resolvedPhone4 = String(profile.phone4 || fallbackPhone4 || "").replace(/[^0-9]/g, "").slice(-4);
+                const resolvedIdent = String(profile.identifier || (resolvedNick && resolvedPhone4 ? (resolvedNick + resolvedPhone4) : "")).trim();
+
+                authImpl.saveSession({
+                    kakaoId: resolvedId,
+                    kakaoNickname: resolvedNick,
+                    phone4: resolvedPhone4,
+                    identifier: resolvedIdent
+                });
+
+                window.hideKakaoGateOverlay();
+                const statusEl = document.getElementById("kakaoGateStatus");
+                if (statusEl) statusEl.textContent = "";
+
+                if (syncData && syncData.settings && typeof window.saveSettingsCache === "function" && typeof window.applySettingsToGlobals === "function") {
+                    window.saveSettingsCache(syncData.settings);
+                    window.applySettingsToGlobals(syncData.settings);
+                }
+
+                if (typeof window.checkAndRenderState === "function") {
+                    await window.checkAndRenderState(false);
                 }
             }
 
@@ -1066,38 +905,18 @@
 
                 if (syncData.result === "blocked" || syncData.isBlocked) {
                     window.hideKakaoGateOverlay();
-                    if (typeof window.enforceBlockedOverlay === "function") {
-                        window.enforceBlockedOverlay(syncData.reason || syncData.blockReason || syncData.message);
-                    } else {
-                        const blockedEl = document.getElementById("blockedOverlay");
-                        const reasonEl = document.getElementById("blockedReasonText");
-                        if (reasonEl && (syncData.reason || syncData.blockReason || syncData.message)) {
-                            reasonEl.textContent = syncData.reason || syncData.blockReason || syncData.message;
-                        }
-                        if (blockedEl) blockedEl.style.display = "flex";
+                    const blockedEl = document.getElementById("blockedOverlay");
+                    const reasonEl = document.getElementById("blockedReasonText");
+                    if (reasonEl && (syncData.reason || syncData.blockReason || syncData.message)) {
+                        reasonEl.textContent = syncData.reason || syncData.blockReason || syncData.message;
                     }
+                    if (blockedEl) blockedEl.style.display = "flex";
                     return;
                 }
 
-                if (syncData.result === "registered" && syncData.memberProfile && syncData.memberProfile.phone4) {
-                    authImpl.saveSession({
-                        kakaoId: profile.kakaoId,
-                        kakaoNickname: syncData.memberProfile.kakaoNickname || profile.kakaoNickname,
-                        phone4: syncData.memberProfile.phone4,
-                        identifier: syncData.memberProfile.identifier
-                    });
-
-                    window.hideKakaoGateOverlay();
-                    if (statusEl) statusEl.textContent = "";
-
-                    if (syncData.settings && typeof window.saveSettingsCache === "function" && typeof window.applySettingsToGlobals === "function") {
-                        window.saveSettingsCache(syncData.settings);
-                        window.applySettingsToGlobals(syncData.settings);
-                    }
-
-                    if (typeof window.checkAndRenderState === "function") {
-                        await window.checkAndRenderState(false);
-                    }
+                const mp = syncData.memberProfile || {};
+                if (mp.isRegistered && mp.phone4 && mp.phone4.length === 4) {
+                    await finishAuthAndEnterApp(syncData, profile.kakaoId, profile.kakaoNickname, mp.phone4);
                     return;
                 }
 
@@ -1191,15 +1010,18 @@
                 if (submitBtn) submitBtn.disabled = true;
                 if (statusEl) statusEl.textContent = "회원 정보를 안전하게 등록하는 중입니다...";
 
+                const newIdent = authImpl.session.kakaoNickname + phone4;
+
                 try {
                     const res = await fetch(KAKAO_WEB_APP_URL, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain" },
                         body: JSON.stringify({
-                            action: "completeKakaoRegistration",
+                            action: "syncKakaoMember",
                             kakaoId: authImpl.session.kakaoId,
                             kakaoNickname: authImpl.session.kakaoNickname,
-                            phone4: phone4
+                            phone4: phone4,
+                            nickname: newIdent
                         })
                     });
                     const text = await res.text();
@@ -1212,31 +1034,17 @@
 
                     if (data.result === "blocked" || data.isBlocked) {
                         window.hideKakaoGateOverlay();
-                        if (typeof window.enforceBlockedOverlay === "function") {
-                            window.enforceBlockedOverlay(data.reason || data.blockReason || data.message);
+                        const blockedEl = document.getElementById("blockedOverlay");
+                        const reasonEl = document.getElementById("blockedReasonText");
+                        if (reasonEl && (data.reason || data.blockReason || data.message)) {
+                            reasonEl.textContent = data.reason || data.blockReason || data.message;
                         }
+                        if (blockedEl) blockedEl.style.display = "flex";
                         return;
                     }
 
-                    if (data.result === "success" && data.memberProfile) {
-                        authImpl.saveSession({
-                            kakaoId: authImpl.session.kakaoId,
-                            kakaoNickname: data.memberProfile.kakaoNickname || authImpl.session.kakaoNickname,
-                            phone4: data.memberProfile.phone4 || phone4,
-                            identifier: data.memberProfile.identifier
-                        });
-
-                        window.hideKakaoGateOverlay();
-                        if (statusEl) statusEl.textContent = "";
-
-                        if (data.settings && typeof window.saveSettingsCache === "function" && typeof window.applySettingsToGlobals === "function") {
-                            window.saveSettingsCache(data.settings);
-                            window.applySettingsToGlobals(data.settings);
-                        }
-
-                        if (typeof window.checkAndRenderState === "function") {
-                            await window.checkAndRenderState(false);
-                        }
+                    if (data.result === "ok") {
+                        await finishAuthAndEnterApp(data, authImpl.session.kakaoId, authImpl.session.kakaoNickname, phone4);
                         return;
                     }
 
