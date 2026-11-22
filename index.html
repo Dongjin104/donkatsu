@@ -4589,7 +4589,7 @@ ${safeCode}
 
             const qSel = document.getElementById('quickPickupTime');
             const currentSelected = qSel && qSel.value ? qSel.value : prevPickupTimeStr;
-            populateTimeSelect('quickPickupTime', currentSelected, false);
+            populateTimeSelect('quickPickupTime', currentSelected, true);
             if (quickReorderBox.style.display !== 'none' && qSel && qSel.value) {
                 handleTimeChange(qSel, 'quickBusyInfoBox');
             }
