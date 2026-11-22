@@ -2553,6 +2553,26 @@
 
         let scrollPosition = 0;
 
+        function isPageSkeletonLoadingActive() {
+            const loadingOverlay = document.getElementById('pageLoadingOverlay');
+            return !!(loadingOverlay && loadingOverlay.style.display !== 'none');
+        }
+
+        function hideAllMainContentSections() {
+            const ids = [
+                'closedNotice',
+                'pickupCompletedNotice',
+                'alreadyOrderedNotice',
+                'topNoticeBox',
+                'quickReorderBox',
+                'orderForm'
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
         function hasValidPhone4(val) {
             return /^\d{4}$/.test(String(val || "").trim());
         }
@@ -2564,20 +2584,7 @@
 
             if (!hasValidPhone4(currentSess.phone4)) {
                 stopLiveCustomerSync();
-
-                const orderForm = document.getElementById("orderForm");
-                const quickBox = document.getElementById("quickReorderBox");
-                const alreadyBox = document.getElementById("alreadyOrderedNotice");
-                const doneBox = document.getElementById("pickupCompletedNotice");
-                const closedBox = document.getElementById("closedNotice");
-                const topNotice = document.getElementById("topNoticeBox");
-
-                if (orderForm) orderForm.style.display = "none";
-                if (quickBox) quickBox.style.display = "none";
-                if (alreadyBox) alreadyBox.style.display = "none";
-                if (doneBox) doneBox.style.display = "none";
-                if (closedBox) closedBox.style.display = "none";
-                if (topNotice) topNotice.style.display = "none";
+                hideAllMainContentSections();
 
                 if (typeof window.showKakaoGateOverlay === "function" && window.showKakaoGateOverlay !== showKakaoGateOverlay) {
                     window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
@@ -2876,6 +2883,7 @@
 
         async function syncCustomerScreenWithSheet(forceApply = false) {
             if (document.hidden || isSubmitting || isQuickSubmitting) return;
+            if (!forceApply && isPageSkeletonLoadingActive()) return;
             if (!forceApply && Date.now() < localOptimisticLockUntil) return;
             if (liveSyncStartedAt > 0 && (Date.now() - liveSyncStartedAt) > LIVE_SYNC_MAX_DURATION_MS) {
                 return;
@@ -2910,6 +2918,7 @@
                 try { data = JSON.parse(text); } catch (e) { return; }
                 if (!data) return;
 
+                if (!forceApply && isPageSkeletonLoadingActive()) return;
                 if (!forceApply && Date.now() < localOptimisticLockUntil) {
                     return;
                 }
@@ -2943,6 +2952,7 @@
                         const st = String(reservationData.status || "").trim();
                         if (st === "완료") {
                             saveCustomerStateCache({ type: 'completed' });
+                            setLoadingSkeletonVisible(false);
                             document.getElementById('pickupCompletedNotice').style.display = 'block';
                             document.getElementById('alreadyOrderedNotice').style.display = 'none';
                             document.getElementById('topNoticeBox').style.display = 'none';
@@ -3045,6 +3055,8 @@
         }
 
         function renderActiveReservationNotice(resData) {
+            setLoadingSkeletonVisible(false);
+
             const nickInput = document.getElementById('nickname');
             const savedNick = (resData && resData.nickname) ? resData.nickname : (nickInput ? nickInput.value : globalUserNickname);
             currentFoundRowIndex = resData.rowIndex || currentFoundRowIndex || null;
@@ -3351,6 +3363,7 @@
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
 
+            setLoadingSkeletonVisible(false);
             saveCustomerStateCache({ type: 'new' });
             document.getElementById('pickupCompletedNotice').style.display = 'none';
             const isClosed = checkClosedStatus();
@@ -4794,6 +4807,8 @@
             const isAdminBypass = localStorage.getItem('isAdminTestMode') === 'true';
             const maintOverlay = document.getElementById('maintenanceOverlay');
             if (settings.isMaintenance && !isAdminBypass) {
+                setLoadingSkeletonVisible(false);
+                hideAllMainContentSections();
                 if (maintOverlay) maintOverlay.style.display = 'flex';
                 return;
             } else if (maintOverlay) {
@@ -4801,6 +4816,8 @@
             }
 
             if (settings.isBlocked) {
+                setLoadingSkeletonVisible(false);
+                hideAllMainContentSections();
                 enforceBlockedOverlay(settings.blockReason || "");
                 return;
             }
@@ -4813,6 +4830,12 @@
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
+
+            // 스켈레톤 로딩이 표시되는 동안에는 하위 콘텐츠 영역이 미리 노출되지 않도록 차단
+            if (isPageSkeletonLoadingActive()) {
+                hideAllMainContentSections();
+                return;
+            }
 
             const isClosed = typeof settings.isClosed === 'boolean' ? settings.isClosed : checkClosedStatus();
             const closedNotice = document.getElementById('closedNotice');
@@ -4853,40 +4876,12 @@
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
 
-            const loadingOverlay = document.getElementById('pageLoadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'flex';
-            }
+            hideAllMainContentSections();
+            setLoadingSkeletonVisible(true);
 
             const cachedSettings = loadSettingsCache();
-            const cachedState = loadCustomerStateCache();
-
             if (cachedSettings) {
                 applySettingsObject(cachedSettings);
-            }
-
-            if (cachedState && !checkClosedStatus()) {
-                if (cachedState.type === 'active_order' && cachedState.reservation) {
-                    renderActiveReservationNotice(cachedState.reservation);
-                } else if (cachedState.type === 'completed') {
-                    document.getElementById('pickupCompletedNotice').style.display = 'block';
-                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                    document.getElementById('topNoticeBox').style.display = 'none';
-                    document.getElementById('orderForm').style.display = 'none';
-                    document.getElementById('quickReorderBox').style.display = 'none';
-                } else if (cachedState.type === 'quick_reorder') {
-                    const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
-                    if (hasPrevOrder) {
-                        document.getElementById('topNoticeBox').style.display = 'block';
-                        document.getElementById('quickReorderBox').style.display = 'block';
-                        document.getElementById('orderForm').style.display = 'none';
-                        renderQuickReorderBox();
-                    }
-                }
-            }
-
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'flex';
             }
         }
 
@@ -4895,11 +4890,9 @@
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
 
-            const loadingOverlay = document.getElementById('pageLoadingOverlay');
             const cachedSettings = loadSettingsCache();
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'flex';
-            }
+            hideAllMainContentSections();
+            setLoadingSkeletonVisible(true);
 
             const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
 
@@ -4920,8 +4913,14 @@
                 });
                 const data = await res.json();
 
-                if (!data) return;
+                if (!data) {
+                    setLoadingSkeletonVisible(false);
+                    return;
+                }
                 lastLiveSnapshotSignature = buildLiveSnapshotSignature(data);
+
+                // 서버 데이터 수신 완료 후 스켈레톤 로딩 해제
+                setLoadingSkeletonVisible(false);
 
                 if (data.settings) {
                     saveSettingsCache(data.settings);
@@ -4982,21 +4981,23 @@
                     }
                 }
             } catch (e) {
+                setLoadingSkeletonVisible(false);
                 if (!cachedSettings && !checkClosedStatus() && !enforcePhone4GateIfNeeded(sess)) {
                     document.getElementById('topNoticeBox').style.display = 'block';
                     document.getElementById('orderForm').style.display = 'block';
                     populateTimeSelect('pickupTime', '', false);
                 }
             } finally {
-                if (loadingOverlay) {
-                    loadingOverlay.style.display = 'none';
-                }
+                setLoadingSkeletonVisible(false);
             }
         }
 
         function setLoadingSkeletonVisible(visible, messageText = "") {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (!loadingOverlay) return;
+            if (visible) {
+                hideAllMainContentSections();
+            }
             if (messageText) {
                 const msgEl = loadingOverlay.querySelector('[data-loading-text], .loading-text, p');
                 if (msgEl) msgEl.innerText = messageText;
