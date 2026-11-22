@@ -1250,15 +1250,108 @@
 
         #closedNotice {
             display: none;
-            background: #FFFFFF;
-            border: 1.5px solid var(--border-color);
-            padding: 26px 18px;
+            background: linear-gradient(180deg, #FFFDF8 0%, #FFFFFF 100%);
+            border: 1.5px solid #DFC793;
+            padding: 24px 16px;
             border-radius: var(--radius-lg);
             text-align: center;
             margin-top: 8px;
-            box-shadow: var(--shadow-card);
+            box-shadow: 0 14px 32px -8px rgba(28, 27, 24, 0.08), 0 0 0 1px rgba(197, 160, 89, 0.14);
             word-break: keep-all;
             overflow-wrap: break-word;
+        }
+
+        /* D-Day 오픈 카운트다운 프리미엄 카드 스타일 */
+        .dday-hero-card {
+            background: linear-gradient(135deg, #1C1B18 0%, #2B2822 100%);
+            color: #FFFFFF;
+            border: 1.5px solid #C5A059;
+            border-radius: var(--radius-md);
+            padding: 18px 14px;
+            margin: 14px 0;
+            box-shadow: 0 12px 26px -8px rgba(28, 27, 24, 0.22);
+            text-align: center;
+        }
+
+        .dday-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .dday-pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(197, 160, 89, 0.22);
+            color: #F6DFA4;
+            border: 1px solid rgba(197, 160, 89, 0.65);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+        }
+
+        .dday-target-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #D8D2C5;
+        }
+
+        .dday-headline {
+            font-size: 16.5px;
+            font-weight: 800;
+            color: #FFFDF7;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .dday-countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+            margin-bottom: 12px;
+        }
+
+        .dday-time-box {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            border-radius: 10px;
+            padding: 10px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dday-time-num {
+            font-size: 20px;
+            font-weight: 800;
+            color: #F6DFA4;
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .dday-time-unit {
+            font-size: 11px;
+            font-weight: 600;
+            color: #C9C3B6;
+            margin-top: 3px;
+        }
+
+        .dday-sub-caption {
+            font-size: 12px;
+            color: #E6C584;
+            background: rgba(251, 248, 240, 0.08);
+            border: 1px solid rgba(230, 197, 132, 0.25);
+            border-radius: 8px;
+            padding: 8px 10px;
+            line-height: 1.45;
+            font-weight: 600;
         }
 
         @keyframes skeletonPulse {
@@ -1595,19 +1688,44 @@
 
         <div id="closedNotice">
             <div
-                style="font-size: 19px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; line-height: 1.4;">
+                style="font-size: 19px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; line-height: 1.4;">
                 ⏰ 현재는 예약 가능 시간이 아닙니다
             </div>
-            <div style="font-size: 14px; color: var(--text-sub); line-height: 1.6; margin-top: 6px;">
-                온라인 예약 가능 시간은<br>
-                <span style="color: var(--text-main); font-weight: 800; font-size: 16px;"
-                    id="closedTimeRange"></span><br>
-                입니다.<br><br>
-                운영 시간 외에는 예약을 받지 않으니 양해 부탁드립니다! 🙏
+            <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.55;">
+                온라인 예약 운영 시간: <span style="color: var(--text-main); font-weight: 800;" id="closedTimeRange"></span>
+            </div>
+
+            <div id="ddayOpenCountdownCard" class="dday-hero-card">
+                <div class="dday-top-row">
+                    <span id="ddayBadgeEl" class="dday-pill-badge">✦ OPEN COUNTDOWN</span>
+                    <span id="ddayTargetDateEl" class="dday-target-label"></span>
+                </div>
+                <div id="ddayHeadlineEl" class="dday-headline">다음 예약 오픈까지 남은 시간</div>
+                <div class="dday-countdown-grid">
+                    <div class="dday-time-box">
+                        <span id="ddayDaysNum" class="dday-time-num">00</span>
+                        <span class="dday-time-unit">일 (DAY)</span>
+                    </div>
+                    <div class="dday-time-box">
+                        <span id="ddayHoursNum" class="dday-time-num">00</span>
+                        <span class="dday-time-unit">시간</span>
+                    </div>
+                    <div class="dday-time-box">
+                        <span id="ddayMinsNum" class="dday-time-num">00</span>
+                        <span class="dday-time-unit">분</span>
+                    </div>
+                    <div class="dday-time-box">
+                        <span id="ddaySecsNum" class="dday-time-num">00</span>
+                        <span class="dday-time-unit">초</span>
+                    </div>
+                </div>
+                <div id="ddaySubCaptionEl" class="dday-sub-caption">
+                    오픈 시각이 되면 예약 화면이 자동으로 열립니다.
+                </div>
             </div>
 
             <div
-                style="margin-top: 20px; background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 14px 12px; border-radius: var(--radius-md); text-align: left;">
+                style="margin-top: 16px; background: #FAFAF9; border: 1.5px solid var(--border-color); padding: 14px 12px; border-radius: var(--radius-md); text-align: left;">
                 <div
                     style="font-size: 13.5px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; text-align: center;">
                     💡 영업 외 시간에 필요한 메뉴 바로가기
@@ -2380,7 +2498,6 @@
             return '';
         }
 
-        // 관리자 인증 키: sessionStorage 중심으로 관리하고 기존 localStorage 키(donkatsuAdminKey)는 즉시 정리
         function purgeLegacyAdminKeyLocalStorage() {
             try {
                 if (window.localStorage) {
@@ -2594,6 +2711,7 @@
         let globalOpenMin = 0;
         let globalCloseHour = 18;
         let globalCloseMin = 30;
+        let globalNextOpenDateTime = "";
         let globalFortuneEnabled = true;
         let currentFoundRowIndex = null;
         let cachedEventMenuList = ["돈까스 1개", "새우까스 1개", "안심까스 1개"];
@@ -2627,6 +2745,159 @@
         const newPickupSelect = document.getElementById('newPickupTime');
 
         let scrollPosition = 0;
+
+        /* =========================================================
+           오픈 D-Day 카운트다운 (I2 자동 변환 포맷 & Date 객체 완전 지원)
+           ========================================================= */
+        let openCountdownInterval = null;
+        let lastCountdownTargetMs = null;
+
+        function getKoreanNowDate() {
+            const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+            return new Date(nowStr);
+        }
+
+        function parseKoreanDateTimeToMs(rawVal) {
+            if (!rawVal) return null;
+
+            if (rawVal instanceof Date) {
+                return isNaN(rawVal.getTime()) ? null : rawVal.getTime();
+            }
+
+            const str = String(rawVal).trim();
+            if (!str) return null;
+
+            // 예: "2026/12/01 오후 1:00:00" 또는 "2026-12-01 오전 9:30" 또는 "2026. 12. 1. 오후 1:00"
+            const krMatch = str.match(
+                /(\d{4})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})(?:\s*(오전|오후))?\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/
+            );
+            if (krMatch) {
+                const year = parseInt(krMatch[1], 10);
+                const month = parseInt(krMatch[2], 10) - 1;
+                const day = parseInt(krMatch[3], 10);
+                const ampm = krMatch[4] || '';
+                let hour = parseInt(krMatch[5], 10);
+                const min = parseInt(krMatch[6], 10);
+                const sec = parseInt(krMatch[7] || '0', 10);
+
+                if (ampm === '오전' && hour === 12) {
+                    hour = 0;
+                } else if (ampm === '오후' && hour < 12) {
+                    hour += 12;
+                }
+
+                // KST (+09:00) 기준 정확한 Epoch ms 계산
+                const utcMs = Date.UTC(year, month, day, hour - 9, min, sec);
+                return isNaN(utcMs) ? null : utcMs;
+            }
+
+            // ISO 또는 기타 날짜 문자열 파싱
+            const parsedDirect = Date.parse(str);
+            if (!isNaN(parsedDirect)) return parsedDirect;
+
+            return null;
+        }
+
+        function computeDefaultNextOpenTargetMs() {
+            const kstNow = getKoreanNowDate();
+            const year = kstNow.getFullYear();
+            const month = kstNow.getMonth();
+            const day = kstNow.getDate();
+            const curMins = kstNow.getHours() * 60 + kstNow.getMinutes();
+            const openMins = (Number(globalOpenHour) || 13) * 60 + (Number(globalOpenMin) || 0);
+
+            let targetDayOffset = 0;
+            if (curMins >= openMins) {
+                targetDayOffset = 1;
+            }
+
+            const targetKst = new Date(year, month, day + targetDayOffset, Number(globalOpenHour) || 13, Number(globalOpenMin) || 0, 0);
+            // targetKst는 KST 시각을 로컬 필드처럼 담은 Date이므로 UTC로 변환해 KST(+09:00) 절대 ms 산출
+            const targetUtcMs = Date.UTC(
+                targetKst.getFullYear(),
+                targetKst.getMonth(),
+                targetKst.getDate(),
+                targetKst.getHours() - 9,
+                targetKst.getMinutes(),
+                targetKst.getSeconds()
+            );
+            return targetUtcMs;
+        }
+
+        function formatTargetDateKorean(targetMs) {
+            try {
+                const d = new Date(targetMs);
+                const formatted = d.toLocaleString('ko-KR', {
+                    timeZone: 'Asia/Seoul',
+                    month: 'numeric',
+                    day: 'numeric',
+                    weekday: 'short',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+                return formatted + ' 오픈';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function renderOpenCountdownTick() {
+            const daysEl = document.getElementById('ddayDaysNum');
+            const hoursEl = document.getElementById('ddayHoursNum');
+            const minsEl = document.getElementById('ddayMinsNum');
+            const secsEl = document.getElementById('ddaySecsNum');
+            const badgeEl = document.getElementById('ddayBadgeEl');
+            const targetLabelEl = document.getElementById('ddayTargetDateEl');
+            const headlineEl = document.getElementById('ddayHeadlineEl');
+            const subCaptionEl = document.getElementById('ddaySubCaptionEl');
+            if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
+
+            const customTargetMs = parseKoreanDateTimeToMs(globalNextOpenDateTime);
+            const targetMs = (customTargetMs !== null) ? customTargetMs : computeDefaultNextOpenTargetMs();
+            const nowMs = Date.now();
+            const diffMs = Math.max(0, targetMs - nowMs);
+
+            const totalSeconds = Math.floor(diffMs / 1000);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+
+            daysEl.textContent = days > 0 ? String(days) : '00';
+            hoursEl.textContent = String(hours).padStart(2, '0');
+            minsEl.textContent = String(mins).padStart(2, '0');
+            secsEl.textContent = String(secs).padStart(2, '0');
+
+            if (badgeEl) {
+                badgeEl.textContent = days > 0 ? `D-${days} OPEN` : 'TODAY OPEN';
+            }
+            if (targetLabelEl) {
+                targetLabelEl.textContent = formatTargetDateKorean(targetMs);
+            }
+            if (headlineEl) {
+                headlineEl.textContent = diffMs > 0
+                    ? (days > 0 ? `다음 예약 오픈까지 D-${days} 남았습니다` : '오늘 예약 오픈까지 남은 시간')
+                    : '예약 오픈 시간이 되었습니다! 화면을 갱신합니다';
+            }
+            if (subCaptionEl) {
+                subCaptionEl.textContent = customTargetMs !== null
+                    ? '설정된 오픈 일시 기준으로 카운트다운 중입니다.'
+                    : '오픈 시각이 되면 예약 화면이 자동으로 열립니다.';
+            }
+
+            if (diffMs === 0 && lastCountdownTargetMs !== targetMs) {
+                lastCountdownTargetMs = targetMs;
+                syncCustomerScreenWithSheet(true);
+            }
+        }
+
+        function startOpenCountdownTimer() {
+            renderOpenCountdownTick();
+            if (openCountdownInterval !== null) {
+                clearInterval(openCountdownInterval);
+            }
+            openCountdownInterval = setInterval(renderOpenCountdownTick, 1000);
+        }
 
         function isPageSkeletonLoadingActive() {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
@@ -2696,7 +2967,6 @@
             runFullAppInitialization();
         }
 
-        // 존재하지 않는 /kakao-auth-module.js(404 / text/plain) 로드를 차단하기 위한 가드
         function isMissingKakaoAuthModuleScript(srcValue) {
             const raw = String(srcValue || '').trim();
             if (!raw) return false;
@@ -2767,7 +3037,6 @@
                     const scripts = Array.from(doc.querySelectorAll('script'));
                     for (const sc of scripts) {
                         if (sc.src) {
-                            // 404를 유발하는 누락된 kakao-auth-module.js 스크립트 태그는 건너뜀
                             if (isMissingKakaoAuthModuleScript(sc.src)) {
                                 continue;
                             }
@@ -2966,6 +3235,7 @@
                 s.isMaintenance ? 1 : 0,
                 s.isBlocked ? 1 : 0,
                 s.prepMinutes || 0,
+                s.nextOpenDateTime || '',
                 menusSig,
                 saucesSig,
                 loadSig,
@@ -4651,6 +4921,10 @@
         }
 
         function checkClosedStatus() {
+            const customTargetMs = parseKoreanDateTimeToMs(globalNextOpenDateTime);
+            if (customTargetMs !== null && Date.now() < customTargetMs) {
+                return true;
+            }
             const cur = getCurrentKoreanMinutes();
             const openVal = globalOpenHour * 60 + globalOpenMin;
             const closeVal = globalCloseHour * 60 + globalCloseMin;
@@ -4894,6 +5168,12 @@
             if (typeof settings.closeHour === 'number') globalCloseHour = settings.closeHour;
             if (typeof settings.closeMin === 'number') globalCloseMin = settings.closeMin;
 
+            if (settings.nextOpenDateTime !== undefined && settings.nextOpenDateTime !== null) {
+                globalNextOpenDateTime = (settings.nextOpenDateTime instanceof Date)
+                    ? settings.nextOpenDateTime.toISOString()
+                    : String(settings.nextOpenDateTime).trim();
+            }
+
             if (typeof settings.pickupStartHour === 'number') globalPickupStartHour = settings.pickupStartHour;
             if (typeof settings.pickupStartMin === 'number') globalPickupStartMin = settings.pickupStartMin;
             if (typeof settings.pickupCloseHour === 'number') globalPickupCloseHour = settings.pickupCloseHour;
@@ -4962,10 +5242,11 @@
                 return;
             }
 
-            const isClosed = typeof settings.isClosed === 'boolean' ? settings.isClosed : checkClosedStatus();
+            const isClosed = checkClosedStatus();
             const closedNotice = document.getElementById('closedNotice');
             if (isClosed) {
                 if (closedNotice) closedNotice.style.display = 'block';
+                startOpenCountdownTimer();
                 document.getElementById('topNoticeBox').style.display = 'none';
                 document.getElementById('orderForm').style.display = 'none';
                 document.getElementById('quickReorderBox').style.display = 'none';
@@ -5103,6 +5384,10 @@
                         renderMenuAndSauceCards();
                         populateTimeSelect('pickupTime', '', false);
                     }
+                } else {
+                    const closedNotice = document.getElementById('closedNotice');
+                    if (closedNotice) closedNotice.style.display = 'block';
+                    startOpenCountdownTimer();
                 }
             } catch (e) {
                 setLoadingSkeletonVisible(false);
@@ -5110,6 +5395,10 @@
                     document.getElementById('topNoticeBox').style.display = 'block';
                     document.getElementById('orderForm').style.display = 'block';
                     populateTimeSelect('pickupTime', '', false);
+                } else if (checkClosedStatus() && !enforcePhone4GateIfNeeded(sess)) {
+                    const closedNotice = document.getElementById('closedNotice');
+                    if (closedNotice) closedNotice.style.display = 'block';
+                    startOpenCountdownTimer();
                 }
             } finally {
                 setLoadingSkeletonVisible(false);
@@ -5159,6 +5448,7 @@
 
         window.addEventListener('DOMContentLoaded', async function () {
             purgeLegacyAdminKeyLocalStorage();
+            startOpenCountdownTimer();
             await mountKakaoLoginModule();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && typeof activeAuth.restoreSession === "function"
