@@ -5924,7 +5924,6 @@ ${safeCode}
                 if (typeof setLoadingSkeletonVisible === 'function') {
                     setLoadingSkeletonVisible(true);
                 }
-                // 최대 4초 안에 안 끝나면 스켈레톤이 화면을 계속 가리지 않도록 강제 해제
                 skeletonSafetyTimer = setTimeout(() => {
                     hideSkeletonSafely();
                 }, 4000);
