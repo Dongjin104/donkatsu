@@ -5967,27 +5967,23 @@ ${safeCode}
                     applySettingsObject(cachedSettings);
                     if (cachedSettings.isBlocked) {
                         enforceBlockedOverlay();
-                        hideSkeletonSafely();
                         return;
                     }
                 }
 
                 if (sess && sess.kakaoId) {
                     if (enforcePhone4GateIfNeeded(sess)) {
-                        hideSkeletonSafely();
                         return;
                     }
                     hideKakaoGateOverlay();
                     const isClosed = cachedSettings ? checkClosedStatus() : false;
                     renderCustomerSectionByState(isClosed, sess);
-                    hideSkeletonSafely();
                     startHeartbeat();
                     startLiveCustomerSync();
                     await withTimeout(syncCustomerScreenWithSheet(true), 3000, 'syncCustomerScreenWithSheet');
                 } else {
                     stopLiveCustomerSync();
                     hideAllMainContentSections();
-                    hideSkeletonSafely();
                     showKakaoGateOverlay("login", "예약과 단골 적립을 위해 카카오톡 로그인을 진행해 주세요.");
                 }
             } catch (err) {
