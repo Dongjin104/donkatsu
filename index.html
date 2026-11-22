@@ -3251,14 +3251,16 @@
             const month = kstNow.getMonth();
             const day = kstNow.getDate();
             const curMins = kstNow.getHours() * 60 + kstNow.getMinutes();
-            const openMins = (Number(globalOpenHour) || 13) * 60 + (Number(globalOpenMin) || 0);
+            const safeOpenHour = isValidHourMinutePair(Number(globalOpenHour), Number(globalOpenMin)) ? Number(globalOpenHour) : 13;
+            const safeOpenMin = isValidHourMinutePair(Number(globalOpenHour), Number(globalOpenMin)) ? Number(globalOpenMin) : 0;
+            const openMins = safeOpenHour * 60 + safeOpenMin;
 
             let targetDayOffset = 0;
             if (curMins >= openMins) {
                 targetDayOffset = 1;
             }
 
-            const targetKst = new Date(year, month, day + targetDayOffset, Number(globalOpenHour) || 13, Number(globalOpenMin) || 0, 0);
+            const targetKst = new Date(year, month, day + targetDayOffset, safeOpenHour, safeOpenMin, 0);
             const targetUtcMs = Date.UTC(
                 targetKst.getFullYear(),
                 targetKst.getMonth(),
@@ -3991,9 +3993,21 @@ ${safeCode}
         }
 
         const STORAGE_CACHE_KEYS = {
-            SETTINGS: 'donkatsu_cached_settings_v1',
-            CUSTOMER_STATE: 'donkatsu_cached_customer_state_v1'
+            SETTINGS: 'donkatsu_cached_settings_v2_kst',
+            CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
         };
+
+        (function purgeStaleTimeCacheOnBoot() {
+            try {
+                if (!window.localStorage) return;
+                window.localStorage.removeItem('donkatsu_cached_settings_v1');
+                window.localStorage.removeItem('donkatsu_cached_customer_state_v1');
+                const rawV2 = window.localStorage.getItem(STORAGE_CACHE_KEYS.SETTINGS);
+                if (rawV2 && (rawV2.includes('22:00') || rawV2.includes('오후 10:00') || rawV2.includes('"openHour":22'))) {
+                    window.localStorage.removeItem(STORAGE_CACHE_KEYS.SETTINGS);
+                }
+            } catch (e) { }
+        })();
 
         function saveSettingsCache(settingsObj) {
             if (!settingsObj || typeof settingsObj !== 'object') return;
@@ -4006,6 +4020,11 @@ ${safeCode}
             } catch (e) { }
         }
 
+        function isValidHourMinutePair(h, m) {
+            return typeof h === 'number' && !isNaN(h) && h >= 0 && h <= 23 &&
+                   typeof m === 'number' && !isNaN(m) && m >= 0 && m <= 59;
+        }
+
         function loadSettingsCache() {
             try {
                 const raw = localStorage.getItem(STORAGE_CACHE_KEYS.SETTINGS);
@@ -4013,7 +4032,12 @@ ${safeCode}
                 const parsed = JSON.parse(raw);
                 if (!parsed || !parsed.data || !parsed.savedAt) return null;
                 if (Date.now() - parsed.savedAt > 12 * 60 * 60 * 1000) return null;
-                return parsed.data;
+                const d = parsed.data;
+                if (d.openHour === 22 && d.openMin === 0 && (!d.closeHour || d.closeHour <= 23)) {
+                    localStorage.removeItem(STORAGE_CACHE_KEYS.SETTINGS);
+                    return null;
+                }
+                return d;
             } catch (e) {
                 return null;
             }
@@ -5355,29 +5379,57 @@ ${safeCode}
         }
 
         function parseTimeToMinutes(timeStr) {
-            if (!timeStr) return 9999;
+            if (timeStr === null || timeStr === undefined || timeStr === '') return 9999;
+            if (typeof timeStr === 'number' && !isNaN(timeStr)) {
+                if (timeStr >= 0 && timeStr < 1440) return Math.floor(timeStr);
+                return 9999;
+            }
             const s = String(timeStr).trim();
-            const isPM = s.includes('오후');
-            const isAM = s.includes('오전');
-            const clean = s.replace('오전', '').replace('오후', '').trim();
-            const parts = clean.split(':');
-            if (parts.length < 2) return 9999;
-            let h = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10);
-            if (isNaN(h) || isNaN(m)) return 9999;
-            if (isAM && h === 12) h = 0;
-            else if (isPM && h < 12) h += 12;
-            else if (!isAM && !isPM && h >= 1 && h <= 11) h += 12;
+            if (!s) return 9999;
+            if (/자정/.test(s) && !/\d/.test(s)) return 0;
+            if (/정오/.test(s) && !/\d/.test(s)) return 12 * 60;
+
+            const isPM = s.includes('오후') || /\bPM\b/i.test(s);
+            const isAM = s.includes('오전') || /\bAM\b/i.test(s);
+            const clean = s
+                .replace(/오전/g, '')
+                .replace(/오후/g, '')
+                .replace(/\bAM\b/gi, '')
+                .replace(/\bPM\b/gi, '')
+                .trim();
+
+            const match = clean.match(/^(\d{1,2})\s*:\s*(\d{1,2})(?::\d{1,2})?$/);
+            if (!match) return 9999;
+
+            let h = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
+            if (isNaN(h) || isNaN(m) || m < 0 || m > 59) return 9999;
+
+            if (isAM) {
+                if (h === 12) h = 0;
+            } else if (isPM) {
+                if (h < 12) h += 12;
+            } else {
+                if (h < 0 || h > 23) return 9999;
+            }
+
             return h * 60 + m;
         }
 
         function formatMinutesToKoreanTime(mins) {
-            const h24 = Math.floor(mins / 60);
-            const m = mins % 60;
+            let safeMins = Number(mins);
+            if (isNaN(safeMins) || !isFinite(safeMins)) safeMins = 0;
+            safeMins = ((Math.floor(safeMins) % 1440) + 1440) % 1440;
+            const h24 = Math.floor(safeMins / 60);
+            const m = safeMins % 60;
+            const mStr = m < 10 ? ('0' + m) : String(m);
+
+            if (h24 === 0) {
+                return `오전 12:${mStr}`;
+            }
             const ampm = h24 >= 12 ? '오후' : '오전';
             let h12 = h24 % 12;
             if (h12 === 0) h12 = 12;
-            const mStr = m < 10 ? ('0' + m) : String(m);
             return `${ampm} ${h12}:${mStr}`;
         }
 
@@ -5683,14 +5735,14 @@ ${safeCode}
                 maintOverlay.style.display = 'none';
             }
 
-            if (typeof settings.openHour === 'number') globalOpenHour = settings.openHour;
-            if (typeof settings.openMin === 'number') globalOpenMin = settings.openMin;
-            if (typeof settings.closeHour === 'number') globalCloseHour = settings.closeHour;
-            if (typeof settings.closeMin === 'number') globalCloseMin = settings.closeMin;
-            if (typeof settings.pickupStartHour === 'number') globalPickupStartHour = settings.pickupStartHour;
-            if (typeof settings.pickupStartMin === 'number') globalPickupStartMin = settings.pickupStartMin;
-            if (typeof settings.pickupCloseHour === 'number') globalPickupCloseHour = settings.pickupCloseHour;
-            if (typeof settings.pickupCloseMin === 'number') globalPickupCloseMin = settings.pickupCloseMin;
+            if (typeof settings.openHour === 'number' && !isNaN(settings.openHour)) globalOpenHour = settings.openHour;
+            if (typeof settings.openMin === 'number' && !isNaN(settings.openMin)) globalOpenMin = settings.openMin;
+            if (typeof settings.closeHour === 'number' && !isNaN(settings.closeHour)) globalCloseHour = settings.closeHour;
+            if (typeof settings.closeMin === 'number' && !isNaN(settings.closeMin)) globalCloseMin = settings.closeMin;
+            if (typeof settings.pickupStartHour === 'number' && !isNaN(settings.pickupStartHour)) globalPickupStartHour = settings.pickupStartHour;
+            if (typeof settings.pickupStartMin === 'number' && !isNaN(settings.pickupStartMin)) globalPickupStartMin = settings.pickupStartMin;
+            if (typeof settings.pickupCloseHour === 'number' && !isNaN(settings.pickupCloseHour)) globalPickupCloseHour = settings.pickupCloseHour;
+            if (typeof settings.pickupCloseMin === 'number' && !isNaN(settings.pickupCloseMin)) globalPickupCloseMin = settings.pickupCloseMin;
             if (typeof settings.prepMinutes === 'number') globalPrepMinutes = settings.prepMinutes;
             if (typeof settings.fortuneEnabled === 'boolean') globalFortuneEnabled = settings.fortuneEnabled;
 
