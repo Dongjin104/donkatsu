@@ -1470,6 +1470,12 @@
             color: #F6DFA4;
         }
 
+        option.slot-prep {
+            color: #8A857C;
+            background-color: #F3F1EC;
+            font-weight: 600;
+        }
+
         option.slot-busy {
             color: #92400E;
             background-color: #FFFBEB;
@@ -2750,7 +2756,7 @@
         let scrollPosition = 0;
 
         /* =========================================================
-           오픈 D-Day 카운트다운 (I2 오픈일시 & code.gs 연동)
+           오픈 D-Day 카운트다운 (J1 오픈일시 & code.gs 연동)
            ========================================================= */
         let openCountdownInterval = null;
         let lastCountdownTargetMs = null;
@@ -3084,12 +3090,14 @@
                             });
                         } else if (sc.textContent && sc.textContent.trim()) {
                             let safeCode = sc.textContent
-                                .replace(/\b(const|let|var)\s+KAKAO_JS_KEY\s*=/g, 'window.KAKAO_JS_KEY =')
-                                .replace(/\b(const|let|var)\s+KAKAO_WEB_APP_URL\s*=/g, 'window.KAKAO_WEB_APP_URL =')
-                                .replace(/\b(const|let|var)\s+KakaoTripleStorage\s*=/g, 'window.KakaoTripleStorage =')
-                                .replace(/\b(const|let|var)\s+KakaoAuthManager\s*=/g, 'window.KakaoAuthManager =');
+                                .replace(/(const|let|var)\s+KAKAO_JS_KEY\s*=/g, 'window.KAKAO_JS_KEY =')
+                                .replace(/(const|let|var)\s+KAKAO_WEB_APP_URL\s*=/g, 'window.KAKAO_WEB_APP_URL =')
+                                .replace(/(const|let|var)\s+KakaoTripleStorage\s*=/g, 'window.KakaoTripleStorage =')
+                                .replace(/(const|let|var)\s+KakaoAuthManager\s*=/g, 'window.KakaoAuthManager =');
 
-                            safeCode = `(function() {\n${safeCode}\n})();`;
+                            safeCode = `(function() {
+${safeCode}
+})();`;
 
                             const inlineScript = document.createElement('script');
                             inlineScript.textContent = safeCode;
@@ -3831,7 +3839,7 @@
                 return;
             }
             document.getElementById('customAlertTitle').innerText = String(title || '안내');
-            document.getElementById('customAlertMessage').textContent = String(message || '');
+            document.getElementById('customAlertMessage').innerHTML = String(message || '');
             const confirmBtn = document.getElementById('customAlertConfirmBtn');
             const newConfirmBtn = confirmBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
@@ -4183,9 +4191,11 @@
                 return;
             }
 
-            const pickupVal = document.getElementById('quickPickupTime').value;
-            if (!pickupVal) {
-                showCustomAlert("알림", "픽업 시간을 선택해 주세요!");
+            const pickupSelectEl = document.getElementById('quickPickupTime');
+            const pickupVal = pickupSelectEl ? pickupSelectEl.value : '';
+            const selectedOpt = pickupSelectEl && pickupSelectEl.selectedOptions ? pickupSelectEl.selectedOptions[0] : null;
+            if (!pickupVal || (selectedOpt && selectedOpt.disabled)) {
+                showCustomAlert("알림", "선택 가능한 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
                 return;
             }
 
@@ -4263,9 +4273,11 @@
             const sauceSummary = sauceParts.length > 0 ? sauceParts.join(', ') : '없음';
             const menuSummary = menuParts.join(', ');
 
-            const pickupVal = document.getElementById('pickupTime').value;
-            if (!pickupVal) {
-                showCustomAlert("알림", "픽업 시간을 선택해 주세요!");
+            const pickupSelectEl = document.getElementById('pickupTime');
+            const pickupVal = pickupSelectEl ? pickupSelectEl.value : '';
+            const selectedOpt = pickupSelectEl && pickupSelectEl.selectedOptions ? pickupSelectEl.selectedOptions[0] : null;
+            if (!pickupVal || (selectedOpt && selectedOpt.disabled)) {
+                showCustomAlert("알림", "선택 가능한 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
                 return;
             }
 
@@ -4648,7 +4660,7 @@
                 editGraceWarnedOnce = true;
                 showCustomAlert(
                     "기존 픽업 시간 변경 안내",
-                    `기존에 예약하신 <b>[${editOriginalPickupTime}]</b>은 현재 매장 준비(지연) 시간(${globalPrepMinutes}분) 내에 포함되어 있어,<br><b>다른 시간으로 변경한 뒤에는 이전 시간(${editOriginalPickupTime})을 다시 선택하실 수 없습니다.</b><br><br>(변경 사항을 저장하지 않고 닫으시면 기존 시간은 그대로 유지됩니다.)`
+                    `기존에 예약하신 <b>[${editOriginalPickupTime}]</b>은 현재 매장 준비(지연) 시간(${globalPrepMinutes}분) 내에 포함되어 있어,<br><b>다른 시간으로 변경한 뒤에는 해당 (준비중) 시간(${editOriginalPickupTime})으로 다시 되돌릴 수 없습니다.</b><br><br>(변경 사항을 저장하지 않고 닫으시면 기존 시간은 그대로 유지됩니다.)`
                 );
             }
         }
@@ -4785,9 +4797,11 @@
 
             const newMenuSummary = menuParts.join(', ');
             const newSauceSummary = sauceParts.length > 0 ? sauceParts.join(', ') : '없음';
-            const newPickupTime = document.getElementById('newPickupTime').value;
-            if (!newPickupTime) {
-                showCustomAlert("알림", "변경할 픽업 시간을 선택해 주세요.");
+            const pickupSelectEl = document.getElementById('newPickupTime');
+            const newPickupTime = pickupSelectEl ? pickupSelectEl.value : '';
+            const selectedOpt = pickupSelectEl && pickupSelectEl.selectedOptions ? pickupSelectEl.selectedOptions[0] : null;
+            if (!newPickupTime || (selectedOpt && selectedOpt.disabled)) {
+                showCustomAlert("알림", "변경할 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
                 return;
             }
 
@@ -4986,7 +5000,8 @@
             const startMins = globalPickupStartHour * 60 + globalPickupStartMin;
             const endMins = globalPickupCloseHour * 60 + globalPickupCloseMin;
             const nowMins = getCurrentKoreanMinutes();
-            const minAllowedMins = nowMins + (globalPrepMinutes || 0);
+            const prepMins = Math.max(0, Number(globalPrepMinutes) || 0);
+            const delayEndMins = nowMins + prepMins;
 
             const normalizedPre = preselectValue ? normalizeKoreanTimeLabel(preselectValue) : '';
             const preMins = normalizedPre ? parseTimeToMinutes(normalizedPre) : 9999;
@@ -4997,19 +5012,36 @@
             for (let m = startMins; m <= endMins; m += 5) {
                 const label = formatMinutesToKoreanTime(m);
                 const isPreSlot = (normalizedPre !== '' && (label === normalizedPre || m === preMins));
-                const isInDelayWindow = (m < minAllowedMins);
+                const isPastNow = (m < nowMins);
+                const isInDelayWindow = (!isPastNow && prepMins > 0 && m <= delayEndMins);
 
-                if (isInDelayWindow && !(allowGraceForPreselect && isPreSlot)) {
+                // 현재 시각 이전 시간대는 숨김
+                if (isPastNow && !(allowGraceForPreselect && isPreSlot)) {
+                    continue;
+                }
+
+                // 현재 시각 ~ 현재 시각 + 지연시간 구간은 (준비중)으로 표시하고 비활성화(disabled)
+                // 단, 기존 예약 수정 시 본인이 이미 잡아둔 시간은 (준비중) · 현재 선택된 시간으로 예외 선택 가능
+                if (isInDelayWindow) {
+                    if (allowGraceForPreselect && isPreSlot) {
+                        matchedPreselect = true;
+                        html += `<option value="${label}" class="slot-grace" selected>${label} (준비중 · 현재 선택된 시간 · 변경 시 재선택 불가)</option>`;
+                    } else {
+                        html += `<option value="${label}" class="slot-prep" disabled>${label} (준비중)</option>`;
+                    }
                     continue;
                 }
 
                 const load = getFryerLoadForSlotMinutes(m);
                 let cls = '';
                 let suffix = '';
+                let extraAttr = '';
 
-                if (isInDelayWindow && allowGraceForPreselect && isPreSlot) {
+                if (allowGraceForPreselect && isPreSlot) {
                     cls = 'slot-grace';
-                    suffix = ' · 기존 예약 시간 (지연시간 포함 · 변경 시 재선택 불가)';
+                    suffix = ' · 현재 선택된 시간';
+                    matchedPreselect = true;
+                    extraAttr = ' selected';
                 } else if (load >= 6.0) {
                     cls = 'slot-surge';
                     suffix = ' · 혼잡';
@@ -5018,15 +5050,16 @@
                     suffix = ' · 주문집중';
                 }
 
-                if (isPreSlot) matchedPreselect = true;
-                const selectedAttr = isPreSlot ? 'selected' : '';
-                html += `<option value="${label}" class="${cls}" ${selectedAttr}>${label}${suffix}</option>`;
+                html += `<option value="${label}" class="${cls}"${extraAttr}>${label}${suffix}</option>`;
             }
 
             if (allowGraceForPreselect && normalizedPre && !matchedPreselect) {
-                const selectedAttr = 'selected';
+                const wasInDelayOrPast = (preMins < delayEndMins);
+                const graceLabel = wasInDelayOrPast
+                    ? `${normalizedPre} (준비중 · 현재 선택된 시간 · 변경 시 재선택 불가)`
+                    : `${normalizedPre} · 현재 선택된 시간`;
                 html = `<option value="">픽업 시간을 선택해 주세요</option>` +
-                    `<option value="${normalizedPre}" class="slot-grace" ${selectedAttr}>${normalizedPre} · 기존 예약 시간 (변경 시 재선택 불가)</option>` +
+                    `<option value="${normalizedPre}" class="slot-grace" selected>${graceLabel}</option>` +
                     html.replace('<option value="">픽업 시간을 선택해 주세요</option>', '');
                 matchedPreselect = true;
             }
@@ -5034,6 +5067,8 @@
             sel.innerHTML = html;
             if (matchedPreselect && normalizedPre) {
                 sel.value = normalizedPre;
+            } else {
+                sel.value = '';
             }
         }
 
@@ -5050,11 +5085,11 @@
             const mins = parseTimeToMinutes(val);
             const load = getFryerLoadForSlotMinutes(mins);
             const nowMins = getCurrentKoreanMinutes();
-            const minAllowedMins = nowMins + (globalPrepMinutes || 0);
+            const delayEndMins = nowMins + Math.max(0, Number(globalPrepMinutes) || 0);
             const items = [];
 
-            if (selectEl.id === 'newPickupTime' && editOriginalPickupTime && val === editOriginalPickupTime && mins < minAllowedMins) {
-                items.push(`<div class="busy-info-item"><span class="busy-badge-pill pill-surge">기존 시간 유지 중</span>현재 매장 준비(지연) 시간(${globalPrepMinutes}분) 구간에 포함된 기존 예약 시간입니다. <b>다른 시간으로 바꾸면 이 시간은 다시 선택할 수 없습니다.</b></div>`);
+            if (selectEl.id === 'newPickupTime' && editOriginalPickupTime && val === editOriginalPickupTime && mins <= delayEndMins) {
+                items.push(`<div class="busy-info-item"><span class="busy-badge-pill pill-surge">기존 선택 시간 유지 중</span>현재 매장 준비(지연) 시간(${globalPrepMinutes}분) 구간에 포함된 <b>(준비중) · 현재 선택된 시간</b>입니다. <b>다른 시간으로 바꾸면 이 (준비중) 시간으로는 다시 되돌릴 수 없습니다.</b></div>`);
             }
 
             if (mins >= 18 * 60 + 35) {
@@ -5071,7 +5106,7 @@
                 box.style.display = 'none';
                 box.innerHTML = '';
             } else {
-                box.className = 'busy-info-box ' + (load >= 6.0 || (mins < minAllowedMins) ? 'busy-level-surge' : (load >= 3.5 ? 'busy-level-busy' : 'busy-level-late'));
+                box.className = 'busy-info-box ' + (load >= 6.0 || (mins <= delayEndMins) ? 'busy-level-surge' : (load >= 3.5 ? 'busy-level-busy' : 'busy-level-late'));
                 box.innerHTML = items.join('');
                 box.style.display = 'block';
             }
