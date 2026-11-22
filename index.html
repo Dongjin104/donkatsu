@@ -3882,15 +3882,22 @@ ${safeCode}
             } finally {
                 isLiveSyncRequest = false;
                 try {
-                    const closedEl = document.getElementById('closedNotice');
-                    const isClosedScreenVisible = !!(closedEl && closedEl.style.display !== 'none');
-                    if (isClosedScreenVisible && typeof checkClosedStatus === 'function' && !checkClosedStatus()) {
-                        if (typeof forceReloadForOpenCheck === 'function') {
-                            forceReloadForOpenCheck('closed_screen_now_open');
+                    if (!isSubmitting && !isQuickSubmitting && !isUpdatingReservation && typeof checkClosedStatus === 'function') {
+                        const closedEl = document.getElementById('closedNotice');
+                        const isClosedScreenVisible = !!(closedEl && closedEl.style.display !== 'none');
+                        const isClosedNow = checkClosedStatus();
+
+                        // 1) 마감 화면인데 영업/예약 가능 시간으로 바뀐 경우
+                        // 2) 예약 화면인데 마감/운영시간 외로 바뀐 경우
+                        if ((!isClosedScreenVisible && isClosedNow) || (isClosedScreenVisible && !isClosedNow)) {
+                            if (typeof forceReloadForOpenCheck === 'function') {
+                                forceReloadForOpenCheck(isClosedNow ? 'now_closed' : 'now_open');
+                            }
                         }
                     }
                 } catch (err) {}
             }
+        }
 
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
