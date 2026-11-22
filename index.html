@@ -3310,28 +3310,26 @@
             globalOpenDateRaw = "";
         }
 
+        function forceReloadForOpenCheck(reason = 'open_time_reached') {
+            try {
+                const guardKey = 'donkatsu_auto_reload_once';
+                const now = Date.now();
+                const lastReload = Number(sessionStorage.getItem(guardKey) || '0');
+                if (now - lastReload < 5000) return;
+                sessionStorage.setItem(guardKey, String(now));
+            } catch (e) {}
+
+            stopOpenCountdownTimer();
+            window.location.reload();
+        }
+
         function triggerOpenTransitionNow(cardEl) {
             if (countdownTransitionInFlight) return;
             countdownTransitionInFlight = true;
             clearCustomOpenTargetState();
             if (cardEl) cardEl.style.display = 'none';
             stopOpenCountdownTimer();
-
-            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
-            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
-            const isClosedNow = (typeof checkClosedStatus === 'function') ? checkClosedStatus() : false;
-
-            if (typeof renderCustomerSectionByState === 'function') {
-                renderCustomerSectionByState(isClosedNow, sess);
-            }
-
-            if (typeof syncCustomerScreenWithSheet === 'function') {
-                Promise.resolve(syncCustomerScreenWithSheet(true)).finally(() => {
-                    countdownTransitionInFlight = false;
-                });
-            } else {
-                countdownTransitionInFlight = false;
-            }
+            forceReloadForOpenCheck('countdown_zero_or_open');
         }
 
         function renderOpenCountdownTick() {
