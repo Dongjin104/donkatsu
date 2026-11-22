@@ -1517,7 +1517,7 @@
         </div>
 
         <div id="pageLoadingOverlay" class="menu-grid" style="display: none;">
-            <div
+            <div id="pageLoadingMessage"
                 style="text-align: center; font-size: 13px; color: var(--text-sub); font-weight: 600; margin-bottom: 4px;">
                 ✨ 메뉴와 매장 현황을 빠르게 불러오고 있습니다...
             </div>
@@ -2492,6 +2492,21 @@
 
         let scrollPosition = 0;
 
+        function setLoadingSkeletonVisible(show, message) {
+            const overlay = document.getElementById('pageLoadingOverlay');
+            const msgEl = document.getElementById('pageLoadingMessage');
+            if (msgEl && message) {
+                msgEl.textContent = message;
+            } else if (msgEl && !show) {
+                msgEl.textContent = "✨ 메뉴와 매장 현황을 빠르게 불러오고 있습니다...";
+            }
+            if (overlay) {
+                overlay.style.zIndex = show ? '99996' : '';
+                overlay.style.display = show ? 'flex' : 'none';
+            }
+        }
+        window.setLoadingSkeletonVisible = setLoadingSkeletonVisible;
+
         async function mountKakaoLoginModule() {
             const hasCodeOrError = (() => {
                 try {
@@ -2729,6 +2744,7 @@
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: 'checkSimple',
+                        isPolling: true,
                         nickname: savedNick,
                         clientId: clientId,
                         kakaoId: sess.kakaoId,
@@ -3012,7 +3028,7 @@
             document.getElementById('alreadyOrderedNotice').style.display = 'none';
             document.getElementById('pickupCompletedNotice').style.display = 'none';
             document.getElementById('closedNotice').style.display = 'none';
-            document.getElementById('pageLoadingOverlay').style.display = 'none';
+            setLoadingSkeletonVisible(false);
         }
         window.enforceBlockedOverlay = enforceBlockedOverlay;
 
@@ -3866,6 +3882,7 @@
                 globalPickupTimesList = settings.pickupTimesList;
             }
         }
+        window.applySettingsToGlobals = applySettingsObject;
 
         function checkClosedTimeAndRender(settings) {
             const nowMin = getFormattedNowMinutes();
@@ -4040,7 +4057,7 @@
 
             currentFoundRowIndex = resData.rowIndex || currentFoundRowIndex;
 
-            document.getElementById('pageLoadingOverlay').style.display = 'none';
+            setLoadingSkeletonVisible(false);
             document.getElementById('orderForm').style.display = 'none';
             document.getElementById('quickReorderBox').style.display = 'none';
             document.getElementById('pickupCompletedNotice').style.display = 'none';
@@ -4159,7 +4176,7 @@
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const nickname = (document.getElementById('nickname').value || sess.identifier || "").trim();
             if (!nickname || !sess.kakaoId) {
-                showKakaoGateOverlay(sess.kakaoId ? "phone" : "login");
+                showKakaoGateOverlay(sess.kakaoId ? "phone4" : "login");
                 return;
             }
 
@@ -4218,7 +4235,7 @@
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const nickname = (sess.identifier || globalUserNickname || "").trim();
             if (!nickname || !sess.kakaoId) {
-                showKakaoGateOverlay(sess.kakaoId ? "phone" : "login");
+                showKakaoGateOverlay(sess.kakaoId ? "phone4" : "login");
                 return;
             }
 
@@ -4370,12 +4387,13 @@
                 }
 
                 if (data.result === "success") {
+                    const finalVerifiedPrice = data.verifiedTotalPriceText || payload.totalPrice;
                     const lastOrderObj = {
                         nickname: payload.nickname,
                         cookType: payload.cookType,
                         menuSummary: payload.menuSummary,
                         sauce: payload.sauce,
-                        totalPrice: payload.totalPrice
+                        totalPrice: finalVerifiedPrice
                     };
                     TripleStorage.save('lastOrderSummary', JSON.stringify(lastOrderObj));
                     TripleStorage.save('savedNickname', payload.nickname);
@@ -4389,7 +4407,7 @@
                         cookType: payload.cookType,
                         menu: payload.menuSummary,
                         sauce: payload.sauce,
-                        totalPrice: payload.totalPrice,
+                        totalPrice: finalVerifiedPrice,
                         eventPrize: data.isWinner ? "당첨 (선택대기)" : ""
                     };
                     saveCustomerStateCache({
@@ -4681,7 +4699,13 @@
                     return;
                 }
 
+                if (data.result === "invalid_input" || data.result === "invalid_time") {
+                    showCustomAlert(data.message || "선택하신 메뉴 또는 픽업 시간이 올바르지 않습니다.", "입력 확인");
+                    return;
+                }
+
                 if (data.result === "updated") {
+                    const finalVerifiedPrice = data.verifiedTotalPriceText || payload.newTotalPrice;
                     const cachedState = loadCustomerStateCache();
                     const prevRes = (cachedState && cachedState.reservation) ? cachedState.reservation : {};
                     const updatedRes = Object.assign({}, prevRes, {
@@ -4692,7 +4716,7 @@
                         menu: payload.newMenu,
                         sauce: payload.newSauce,
                         pickupTime: payload.newPickupTime,
-                        totalPrice: payload.newTotalPrice
+                        totalPrice: finalVerifiedPrice
                     });
 
                     saveCustomerStateCache({
@@ -4705,7 +4729,7 @@
                         cookType: payload.newCookType,
                         menuSummary: payload.newMenu,
                         sauce: payload.newSauce,
-                        totalPrice: payload.newTotalPrice
+                        totalPrice: finalVerifiedPrice
                     };
                     TripleStorage.save('lastOrderSummary', JSON.stringify(lastOrderObj));
 
@@ -4715,7 +4739,7 @@
                     return;
                 }
 
-                showCustomAlert("예약 수정 중 오류가 발생했습니다.", "오류 안내");
+                showCustomAlert(data.message || "예약 수정 중 오류가 발생했습니다.", "오류 안내");
             } catch (err) {
                 hideSubmittingModal();
                 showCustomAlert("네트워크 통신이 불안정합니다. 다시 시도해 주세요.", "네트워크 오류");
@@ -4743,7 +4767,7 @@
             }
         }
 
-        async function runFullAppInitialization() {
+        async function runFullAppInitialization(useCachedFirst = true) {
             if (isBackgroundSyncing) return;
             isBackgroundSyncing = true;
 
@@ -4755,20 +4779,22 @@
 
             if (!sess.kakaoId) {
                 isBackgroundSyncing = false;
+                setLoadingSkeletonVisible(false);
                 showKakaoGateOverlay("login");
                 return;
             }
             if (!sess.phone4 || sess.phone4.length !== 4 || !sess.identifier) {
                 isBackgroundSyncing = false;
-                showKakaoGateOverlay("phone");
+                setLoadingSkeletonVisible(false);
+                showKakaoGateOverlay("phone4");
                 return;
             }
 
             hideKakaoGateOverlay();
             syncNicknameUI();
 
-            const cachedSettings = loadSettingsCache();
-            const cachedState = loadCustomerStateCache();
+            const cachedSettings = useCachedFirst ? loadSettingsCache() : null;
+            const cachedState = useCachedFirst ? loadCustomerStateCache() : null;
 
             if (cachedSettings) {
                 applySettingsObject(cachedSettings);
@@ -4780,7 +4806,7 @@
                     checkClosedTimeAndRender(cachedSettings);
                 }
             } else {
-                document.getElementById('pageLoadingOverlay').style.display = 'flex';
+                setLoadingSkeletonVisible(true, "✨ 메뉴와 매장 현황을 빠르게 불러오고 있습니다...");
             }
 
             try {
@@ -4800,7 +4826,7 @@
                 let data = null;
                 try { data = JSON.parse(text); } catch (e) { }
 
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
+                setLoadingSkeletonVisible(false);
 
                 if (!data) {
                     isBackgroundSyncing = false;
@@ -4864,7 +4890,7 @@
                     populateTimeSelect(pickupSelect, pickupSelect.value, false);
                 }
             } catch (err) {
-                document.getElementById('pageLoadingOverlay').style.display = 'none';
+                setLoadingSkeletonVisible(false);
                 if (!cachedSettings) {
                     checkClosedTimeAndRender(null);
                 }
@@ -4874,6 +4900,7 @@
         }
 
         window.runFullAppInitialization = runFullAppInitialization;
+        window.checkAndRenderState = runFullAppInitialization;
 
         function sendHeartbeatPing(updateSheet = false) {
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
@@ -4899,7 +4926,7 @@
 
         window.addEventListener('DOMContentLoaded', async function () {
             await mountKakaoLoginModule();
-            await runFullAppInitialization();
+            await runFullAppInitialization(true);
 
             setInterval(() => {
                 if (!document.hidden) {

@@ -769,9 +769,9 @@
                     if (!window.Kakao || typeof window.Kakao.init !== "function") return false;
                     try {
                         if (!window.Kakao.isInitialized()) {
-                            window.Kakao.init(window.KAKAO_JS_KEY || KAKAO_JS_KEY);
+                            window.Kakao.init(KAKAO_JS_KEY);
                         }
-                        this.sdkReady = !!window.Kakao.isInitialized();
+                        this.sdkReady = window.Kakao.isInitialized();
                         return this.sdkReady;
                     } catch (e) {
                         return false;
@@ -782,8 +782,9 @@
                     if (raw === null || raw === undefined) return "";
                     let s = String(raw).trim();
                     if (!s) return "";
-                    if (s.startsWith("kakao_")) s = s.slice(6).trim();
-                    if (/^\d+\.0$/.test(s)) s = s.replace(/\.0$/, "");
+                    if (s.startsWith("kakao_")) {
+                        s = s.slice(6).trim();
+                    }
                     return s;
                 },
 
@@ -816,6 +817,7 @@
                         storageImpl.save("savedNickname", ident);
                         window.globalUserNickname = ident;
                     }
+
                     if (typeof window.syncNicknameUI === "function") {
                         window.syncNicknameUI();
                     }
@@ -835,6 +837,13 @@
                         phone4: savedPhone4 ? String(savedPhone4).replace(/[^0-9]/g, "").slice(-4) : "",
                         identifier: savedIdent ? String(savedIdent).trim() : ""
                     };
+
+                    if (this.session.kakaoId) {
+                        window.clientId = this.formatClientId(this.session.kakaoId);
+                    }
+                    if (this.session.identifier) {
+                        window.globalUserNickname = this.session.identifier;
+                    }
                     return this.session;
                 },
 
@@ -845,489 +854,427 @@
                         localStorage.removeItem("donkatsu_kakao_nick");
                         localStorage.removeItem("donkatsu_phone4");
                         localStorage.removeItem("savedNickname");
-                        localStorage.removeItem("donkatsu_cached_state");
                     } catch (e) { }
                     if (typeof storageImpl.setCookie === "function") {
                         storageImpl.setCookie("donkatsu_kakao_id", "", -1);
                         storageImpl.setCookie("donkatsu_kakao_nick", "", -1);
                         storageImpl.setCookie("donkatsu_phone4", "", -1);
                         storageImpl.setCookie("savedNickname", "", -1);
-                        storageImpl.setCookie("donkatsu_cached_state", "", -1);
                     }
                 },
 
-                fetchUserProfileWithExistingToken: function () {
-                    return new Promise((resolve) => {
-                        if (!window.Kakao || !window.Kakao.Auth || typeof window.Kakao.Auth.getAccessToken !== "function") {
-                            resolve(null);
+                getCleanRedirectUri: function () {
+                    return window.location.origin + window.location.pathname;
+                },
+
+                extractUserProfileFromKakao: function (res) {
+                    const rawId = res && res.id !== undefined ? String(res.id).trim() : "";
+                    const normId = this.normalizeId(rawId);
+                    let rawNick = "";
+                    if (res && res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) {
+                        rawNick = String(res.kakao_account.profile.nickname).trim();
+                    } else if (res && res.properties && res.properties.nickname) {
+                        rawNick = String(res.properties.nickname).trim();
+                    }
+                    const cleanNick = rawNick.replace(/[<>]/g, "").trim() || ("카카오회원_" + normId.slice(-4));
+                    return {
+                        kakaoId: normId,
+                        kakaoNickname: cleanNick
+                    };
+                },
+
+                fetchCurrentKakaoProfile: function () {
+                    const self = this;
+                    return new Promise((resolve, reject) => {
+                        if (!window.Kakao || !window.Kakao.API || !window.Kakao.Auth.getAccessToken()) {
+                            reject(new Error("카카오 액세스 토큰이 없습니다."));
                             return;
                         }
-                        let token = "";
-                        try {
-                            token = window.Kakao.Auth.getAccessToken();
-                        } catch (e) {
-                            token = "";
-                        }
-                        if (!token) {
-                            resolve(null);
-                            return;
-                        }
-                        try {
-                            window.Kakao.API.request({
-                                url: "/v2/user/me",
-                                success: (res) => {
-                                    const rawId = res && res.id ? String(res.id).trim() : "";
-                                    const profileNick = res && res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname
-                                        ? String(res.kakao_account.profile.nickname).trim()
-                                        : (res && res.properties && res.properties.nickname ? String(res.properties.nickname).trim() : "");
-                                    if (rawId) {
-                                        resolve({
-                                            kakaoId: rawId,
-                                            kakaoNickname: profileNick || "카카오고객"
-                                        });
-                                    } else {
-                                        resolve(null);
-                                    }
-                                },
-                                fail: () => resolve(null)
-                            });
-                        } catch (e) {
-                            resolve(null);
-                        }
+                        window.Kakao.API.request({
+                            url: "/v2/user/me",
+                            success: function (res) {
+                                const profile = self.extractUserProfileFromKakao(res);
+                                if (!profile.kakaoId) {
+                                    reject(new Error("카카오 회원번호를 확인할 수 없습니다."));
+                                    return;
+                                }
+                                resolve(profile);
+                            },
+                            fail: function (err) {
+                                reject(err);
+                            }
+                        });
                     });
                 },
 
-                authorizeViaKakao: function () {
-                    return new Promise(async (resolve, reject) => {
-                        const loaded = await this.ensureSDKLoaded();
-                        if (!loaded || !window.Kakao) {
-                            reject(new Error("카카오 SDK를 불러오지 못했습니다. 네트워크나 광고차단기를 확인 후 새로고침해 주세요."));
-                            return;
-                        }
+                exchangeCodeAndFetchProfile: async function (code) {
+                    const redirectUri = this.getCleanRedirectUri();
+                    const tokenBody = new URLSearchParams({
+                        grant_type: "authorization_code",
+                        client_id: KAKAO_JS_KEY,
+                        redirect_uri: redirectUri,
+                        code: code
+                    });
 
-                        const existingProfile = await this.fetchUserProfileWithExistingToken();
-                        if (existingProfile && existingProfile.kakaoId) {
-                            resolve(existingProfile);
-                            return;
-                        }
+                    const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
+                        },
+                        body: tokenBody.toString()
+                    });
 
+                    const tokenData = await tokenRes.json();
+                    if (!tokenRes.ok || !tokenData || !tokenData.access_token) {
+                        const errDesc = (tokenData && (tokenData.error_description || tokenData.error)) || "카카오 토큰 발급에 실패했습니다.";
+                        throw new Error(errDesc);
+                    }
+
+                    if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.setAccessToken === "function") {
                         try {
-                            isNavigatingToKakao = true;
-                            const redirectUri = encodeURIComponent(`${window.location.origin}/`);
-                            const clientId = encodeURIComponent(window.KAKAO_JS_KEY || KAKAO_JS_KEY);
-                            const scope = encodeURIComponent("profile_nickname");
-                            const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-                            window.location.href = authUrl;
-                        } catch (e) {
-                            isNavigatingToKakao = false;
-                            console.error("카카오 로그인 상세 에러:", e);
-                            reject(new Error("카카오 로그인 호출 중 오류가 발생했습니다."));
+                            window.Kakao.Auth.setAccessToken(tokenData.access_token);
+                        } catch (e) { }
+                    }
+
+                    const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
+                        method: "GET",
+                        headers: {
+                            "Authorization": "Bearer " + tokenData.access_token,
+                            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
                         }
                     });
+
+                    const meData = await meRes.json();
+                    if (!meRes.ok || !meData || meData.id === undefined) {
+                        throw new Error("카카오 회원 프로필 조회에 실패했습니다.");
+                    }
+
+                    return this.extractUserProfileFromKakao(meData);
+                },
+
+                authorizeViaKakao: async function () {
+                    const loaded = await this.ensureSDKLoaded();
+                    if (!loaded || !window.Kakao || !window.Kakao.Auth) {
+                        throw new Error("카카오 SDK를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.");
+                    }
+
+                    const redirectUri = this.getCleanRedirectUri();
+                    const stateToken = "dk_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+                    try {
+                        sessionStorage.setItem("donkatsu_kakao_oauth_state", stateToken);
+                    } catch (e) { }
+
+                    window.Kakao.Auth.authorize({
+                        redirectUri: redirectUri,
+                        scope: "profile_nickname",
+                        throughTalk: this.isMobileDevice(),
+                        state: stateToken
+                    });
+
+                    return new Promise(() => { });
                 }
             };
 
             window.KakaoAuthManager = authImpl;
 
-            let isKakaoAuthInProgress = false;
-            let isNavigatingToKakao = false;
-
-            function setLoginButtonLocked(locked, labelText) {
-                const loginBtn = document.getElementById('kakaoGateLoginBtn');
-                if (!loginBtn) return;
-                loginBtn.disabled = !!locked;
-                loginBtn.style.pointerEvents = locked ? 'none' : 'auto';
-                loginBtn.style.opacity = locked ? '0.65' : '1';
-                const spanEl = loginBtn.querySelector('span:last-child');
-                if (spanEl && labelText) {
-                    spanEl.textContent = labelText;
-                }
-            }
-
             function toggleAuthSkeleton(show, msg) {
                 if (typeof window.setLoadingSkeletonVisible === "function") {
                     window.setLoadingSkeletonVisible(show, msg);
-                    return;
-                }
-                const overlay = document.getElementById('pageLoadingOverlay');
-                if (overlay) {
-                    overlay.style.zIndex = show ? '99996' : '';
-                    overlay.style.display = show ? 'flex' : 'none';
+                } else {
+                    const sk = document.getElementById("pageLoadingOverlay");
+                    const msgEl = document.getElementById("pageLoadingMessage");
+                    if (msgEl && msg) msgEl.textContent = msg;
+                    if (sk) sk.style.display = show ? "flex" : "none";
                 }
             }
 
-            function getAuth() {
-                return window.KakaoAuthManager || authImpl;
-            }
+            window.showKakaoGateOverlay = function (stepMode = "login", statusMessage = "") {
+                const gate = document.getElementById("kakaoGateOverlay");
+                const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                const phonePanel = document.getElementById("kakaoPhone4Panel");
+                const badge = document.getElementById("kakaoVerifiedNickBadge");
+                const statusEl = document.getElementById("kakaoGateStatus");
 
-            function showKakaoGateOverlay(stepMode = "login", statusMessage = "") {
-                if (typeof window.stopOrderStatusPolling === "function") {
-                    window.stopOrderStatusPolling();
-                }
-                toggleAuthSkeleton(false);
-
-                const auth = getAuth();
-                const gate = document.getElementById('kakaoGateOverlay');
-                const loginBtn = document.getElementById('kakaoGateLoginBtn');
-                const phonePanel = document.getElementById('kakaoPhone4Panel');
-                const badge = document.getElementById('kakaoVerifiedNickBadge');
-                const phoneInput = document.getElementById('kakaoPhone4Input');
-                const statusEl = document.getElementById('kakaoGateStatus');
-
-                if (gate) gate.style.display = 'flex';
                 if (statusEl) statusEl.textContent = statusMessage || "";
 
                 if (stepMode === "phone4") {
-                    isKakaoAuthInProgress = false;
-                    isNavigatingToKakao = false;
-                    if (loginBtn) loginBtn.style.display = 'none';
-                    if (phonePanel) phonePanel.style.display = 'block';
-                    if (badge) badge.textContent = "카카오 닉네임: " + ((auth.session && auth.session.kakaoNickname) || "확인됨");
-                    if (phoneInput) {
-                        phoneInput.value = (auth.session && auth.session.phone4) || "";
-                        updatePhone4Preview();
-                        setTimeout(() => phoneInput.focus(), 80);
-                    }
+                    if (loginBtn) loginBtn.style.display = "none";
+                    if (phonePanel) phonePanel.style.display = "block";
+                    const kNick = authImpl.session.kakaoNickname || "카카오 회원";
+                    if (badge) badge.textContent = `✓ 카카오 인증 완료 · ${kNick}님`;
+                    window.updatePhone4Preview();
+                    setTimeout(() => {
+                        const inp = document.getElementById("kakaoPhone4Input");
+                        if (inp) inp.focus();
+                    }, 120);
                 } else {
-                    if (loginBtn) loginBtn.style.display = 'flex';
-                    if (isNavigatingToKakao || isKakaoAuthInProgress) {
-                        setLoginButtonLocked(true, "카카오 연결 중...");
-                    } else {
-                        setLoginButtonLocked(false, "카카오톡으로 1초 로그인");
+                    if (loginBtn) {
+                        loginBtn.style.display = "flex";
+                        loginBtn.disabled = false;
                     }
-                    if (phonePanel) phonePanel.style.display = 'none';
+                    if (phonePanel) phonePanel.style.display = "none";
                 }
-            }
 
-            function hideKakaoGateOverlay() {
-                const gate = document.getElementById('kakaoGateOverlay');
-                if (gate) gate.style.display = 'none';
-            }
+                if (gate) gate.style.display = "flex";
+                toggleAuthSkeleton(false);
+            };
 
-            function updatePhone4Preview() {
-                const auth = getAuth();
-                const phoneInput = document.getElementById('kakaoPhone4Input');
-                const previewEl = document.getElementById('kakaoPreviewIdentText');
-                if (!phoneInput || !previewEl) return;
-                const digits = phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4);
-                phoneInput.value = digits;
-                const kNick = (auth.session && auth.session.kakaoNickname) || "고객";
-                previewEl.textContent = digits.length === 4
-                    ? ("등록될 예약 식별명: " + kNick + digits)
-                    : ("등록될 예약 식별명: " + kNick + (digits || "____"));
-            }
+            window.hideKakaoGateOverlay = function () {
+                const gate = document.getElementById("kakaoGateOverlay");
+                if (gate) gate.style.display = "none";
+            };
 
-            async function syncMemberAfterLogin(authUser) {
-                const auth = getAuth();
-                const endpointUrl = window.WEB_APP_URL || window.KAKAO_WEB_APP_URL || KAKAO_WEB_APP_URL;
-                const statusEl = document.getElementById('kakaoGateStatus');
+            window.updatePhone4Preview = function () {
+                const inp = document.getElementById("kakaoPhone4Input");
+                const preview = document.getElementById("kakaoPreviewIdentText");
+                if (!inp || !preview) return;
+                const digits = inp.value.replace(/[^0-9]/g, "").slice(0, 4);
+                if (inp.value !== digits) inp.value = digits;
+                const kNick = authImpl.session.kakaoNickname || "";
+                preview.textContent = digits.length === 4 && kNick
+                    ? `등록될 예약 식별명: ${kNick}${digits}`
+                    : `등록될 예약 식별명: ${kNick || "닉네임"} + 숫자 4자리`;
+            };
 
-                isKakaoAuthInProgress = true;
-                auth.saveSession({
-                    kakaoId: authUser.kakaoId,
-                    kakaoNickname: authUser.kakaoNickname
+            window.handleVerifiedKakaoProfile = async function (profile) {
+                const statusEl = document.getElementById("kakaoGateStatus");
+                const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                if (loginBtn) loginBtn.disabled = true;
+                if (statusEl) statusEl.textContent = "회원 이력을 확인하는 중입니다...";
+
+                authImpl.saveSession({
+                    kakaoId: profile.kakaoId,
+                    kakaoNickname: profile.kakaoNickname
                 });
-                const formattedId = auth.formatClientId(authUser.kakaoId);
-                window.clientId = formattedId;
 
-                hideKakaoGateOverlay();
-                toggleAuthSkeleton(true, "✨ 회원 정보와 매장 현황을 불러오고 있습니다...");
-                if (statusEl) statusEl.textContent = "회원 정보를 확인하고 있습니다...";
+                const syncRes = await fetch(KAKAO_WEB_APP_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify({
+                        action: "syncKakaoMember",
+                        kakaoId: profile.kakaoId,
+                        kakaoNickname: profile.kakaoNickname
+                    })
+                });
+                const syncText = await syncRes.text();
+                let syncData = null;
+                try { syncData = JSON.parse(syncText); } catch (e) { }
 
-                try {
-                    const res = await fetch(endpointUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({
-                            action: 'syncKakaoMember',
-                            clientId: formattedId,
-                            kakaoId: authUser.kakaoId,
-                            kakaoNickname: authUser.kakaoNickname
-                        })
+                if (!syncData) {
+                    throw new Error("서버 응답을 해석하지 못했습니다.");
+                }
+
+                if (syncData.result === "blocked" || syncData.isBlocked) {
+                    window.hideKakaoGateOverlay();
+                    if (typeof window.enforceBlockedOverlay === "function") {
+                        window.enforceBlockedOverlay(syncData.reason || syncData.blockReason || syncData.message);
+                    } else {
+                        const blockedEl = document.getElementById("blockedOverlay");
+                        const reasonEl = document.getElementById("blockedReasonText");
+                        if (reasonEl && (syncData.reason || syncData.blockReason || syncData.message)) {
+                            reasonEl.textContent = syncData.reason || syncData.blockReason || syncData.message;
+                        }
+                        if (blockedEl) blockedEl.style.display = "flex";
+                    }
+                    return;
+                }
+
+                if (syncData.result === "registered" && syncData.memberProfile && syncData.memberProfile.phone4) {
+                    authImpl.saveSession({
+                        kakaoId: profile.kakaoId,
+                        kakaoNickname: syncData.memberProfile.kakaoNickname || profile.kakaoNickname,
+                        phone4: syncData.memberProfile.phone4,
+                        identifier: syncData.memberProfile.identifier
                     });
-                    const text = await res.text();
-                    let payload = null;
-                    try { payload = JSON.parse(text); } catch (e) { }
 
-                    if (payload && (payload.result === "blocked" || (payload.settings && payload.settings.isBlocked))) {
-                        toggleAuthSkeleton(false);
-                        isKakaoAuthInProgress = false;
-                        hideKakaoGateOverlay();
-                        if (typeof window.enforceBlockedOverlay === "function") {
-                            window.enforceBlockedOverlay(payload.message || (payload.settings && payload.settings.blockReason));
-                        }
-                        return;
+                    window.hideKakaoGateOverlay();
+                    if (statusEl) statusEl.textContent = "";
+
+                    if (syncData.settings && typeof window.saveSettingsCache === "function" && typeof window.applySettingsToGlobals === "function") {
+                        window.saveSettingsCache(syncData.settings);
+                        window.applySettingsToGlobals(syncData.settings);
                     }
 
-                    if (payload && payload.settings) {
-                        if (typeof window.saveSettingsCache === "function") window.saveSettingsCache(payload.settings);
-                        if (typeof window.applySettingsToGlobals === "function") window.applySettingsToGlobals(payload.settings);
+                    if (typeof window.checkAndRenderState === "function") {
+                        await window.checkAndRenderState(false);
                     }
-
-                    const profile = payload && payload.memberProfile ? payload.memberProfile : null;
-                    if (profile && profile.isRegistered && profile.identifier && profile.phone4) {
-                        auth.saveSession({
-                            kakaoId: authUser.kakaoId,
-                            kakaoNickname: profile.kakaoNickname || authUser.kakaoNickname,
-                            phone4: profile.phone4,
-                            identifier: profile.identifier
-                        });
-                        if (typeof window.syncNicknameUI === "function") window.syncNicknameUI();
-                        hideKakaoGateOverlay();
-                        if (typeof window.checkAndRenderState === "function") {
-                            await window.checkAndRenderState(false);
-                        }
-                        toggleAuthSkeleton(false);
-                        isKakaoAuthInProgress = false;
-                    } else {
-                        showKakaoGateOverlay("phone4", "");
-                    }
-                } catch (err) {
-                    showKakaoGateOverlay("phone4", "");
+                    return;
                 }
-            }
 
-            async function startKakaoLoginFlow() {
-                if (isKakaoAuthInProgress) return;
-                isKakaoAuthInProgress = true;
+                window.showKakaoGateOverlay("phone4", "");
+            };
 
-                const auth = getAuth();
-                const statusEl = document.getElementById('kakaoGateStatus');
-                setLoginButtonLocked(true, "카카오 연결 중...");
-                if (statusEl) statusEl.textContent = "카카오 로그인 페이지로 이동 중입니다...";
+            window.startKakaoLoginFlow = async function () {
+                const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                const statusEl = document.getElementById("kakaoGateStatus");
+                if (loginBtn) loginBtn.disabled = true;
+                if (statusEl) statusEl.textContent = "카카오 로그인 페이지로 이동합니다...";
 
                 try {
-                    if (!auth || typeof auth.authorizeViaKakao !== "function") {
-                        throw new Error("카카오 로그인 모듈이 준비되지 않았습니다.");
-                    }
-                    const authUser = await auth.authorizeViaKakao();
-                    if (authUser && authUser.kakaoId) {
-                        await syncMemberAfterLogin(authUser);
-                    } else {
-                        toggleAuthSkeleton(false);
-                        setLoginButtonLocked(false, "카카오톡으로 1초 로그인");
-                        isKakaoAuthInProgress = false;
-                    }
+                    await authImpl.authorizeViaKakao();
                 } catch (err) {
-                    toggleAuthSkeleton(false);
-                    setLoginButtonLocked(false, "카카오톡으로 1초 로그인");
-                    isKakaoAuthInProgress = false;
-                    if (statusEl) statusEl.textContent = err && err.message ? err.message : "카카오 로그인 중 문제가 발생했습니다.";
+                    if (loginBtn) loginBtn.disabled = false;
+                    if (statusEl) {
+                        statusEl.textContent = (err && err.message) ? err.message : "카카오 로그인에 실패했습니다. 다시 시도해 주세요.";
+                    }
                 }
-            }
+            };
 
-            async function handleOAuthCallbackOnLandingPage() {
-                const auth = getAuth();
+            window.handleOAuthCallbackOnLandingPage = async function () {
                 const params = new URLSearchParams(window.location.search);
-                const authCode = params.get("code");
-                const authError = params.get("error");
+                const code = params.get("code");
+                const oauthError = params.get("error");
+                const oauthErrorDesc = params.get("error_description");
+                const returnedState = params.get("state");
 
-                if (!authCode && !authError) return false;
-
-                if (window.history && typeof window.history.replaceState === "function") {
-                    window.history.replaceState({}, document.title, window.location.pathname);
+                if (!code && !oauthError) {
+                    return false;
                 }
 
-                if (authError) {
-                    showKakaoGateOverlay("login", "카카오 로그인이 취소되었거나 완료되지 않았습니다.");
+                try {
+                    window.history.replaceState({}, document.title, authImpl.getCleanRedirectUri());
+                } catch (e) { }
+
+                if (oauthError) {
+                    window.showKakaoGateOverlay(
+                        "login",
+                        oauthErrorDesc || "카카오 로그인이 취소되었거나 실패했습니다. 다시 시도해 주세요."
+                    );
                     return true;
                 }
 
-                isKakaoAuthInProgress = true;
-                const statusEl = document.getElementById('kakaoGateStatus');
-                setLoginButtonLocked(true, "카카오 인증 확인 중...");
-                hideKakaoGateOverlay();
-                toggleAuthSkeleton(true, "✨ 카카오 로그인 정보를 확인하고 있습니다...");
-                if (statusEl) statusEl.textContent = "카카오 로그인 정보를 확인하고 있습니다...";
-
-                const endpointUrl = window.WEB_APP_URL || window.KAKAO_WEB_APP_URL || KAKAO_WEB_APP_URL;
-                const redirectUri = `${window.location.origin}/`;
-                let payload = null;
-
                 try {
-                    const res = await fetch(endpointUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({
-                            action: 'exchangeKakaoCode',
-                            code: authCode,
-                            redirectUri: redirectUri
-                        })
-                    });
-                    const text = await res.text();
-                    try { payload = JSON.parse(text); } catch (e) { }
-
-                    const rawUser = payload && (
-                        payload.authUser ||
-                        payload.user ||
-                        payload.data ||
-                        (payload.kakaoId || payload.id ? payload : null)
-                    );
-                    const resolvedKakaoId = rawUser && (rawUser.kakaoId || rawUser.id);
-                    const resolvedNick = rawUser && (
-                        rawUser.kakaoNickname ||
-                        rawUser.nickname ||
-                        (rawUser.properties && rawUser.properties.nickname)
-                    );
-
-                    if (resolvedKakaoId) {
-                        await syncMemberAfterLogin({
-                            kakaoId: String(resolvedKakaoId).trim(),
-                            kakaoNickname: resolvedNick ? String(resolvedNick).trim() : "카카오고객"
-                        });
+                    const expectedState = sessionStorage.getItem("donkatsu_kakao_oauth_state");
+                    sessionStorage.removeItem("donkatsu_kakao_oauth_state");
+                    if (expectedState && returnedState && expectedState !== returnedState) {
+                        window.showKakaoGateOverlay("login", "보안 검증 값이 일치하지 않습니다. 다시 로그인해 주세요.");
                         return true;
                     }
                 } catch (e) { }
 
-                const loaded = await auth.ensureSDKLoaded();
-                if (loaded && window.Kakao) {
-                    const profile = await auth.fetchUserProfileWithExistingToken();
-                    if (profile && profile.kakaoId) {
-                        await syncMemberAfterLogin(profile);
-                        return true;
-                    }
-                }
-
-                isKakaoAuthInProgress = false;
-                isNavigatingToKakao = false;
-                const failMsg = (payload && payload.message)
-                    ? `카카오 인증 확인 실패: ${payload.message}`
-                    : "카카오 인증 정보를 확인하지 못했습니다. 다시 로그인해 주세요.";
-                showKakaoGateOverlay("login", failMsg);
-                return true;
-            }
-
-            async function completeKakaoRegistration() {
-                const auth = getAuth();
-                const phoneInput = document.getElementById('kakaoPhone4Input');
-                const submitBtn = document.getElementById('kakaoPhone4SubmitBtn');
-                const statusEl = document.getElementById('kakaoGateStatus');
-
-                const digits = phoneInput ? phoneInput.value.replace(/[^0-9]/g, "").slice(0, 4) : "";
-                if (digits.length !== 4) {
-                    if (statusEl) statusEl.textContent = "휴대폰 번호 뒷자리 숫자 4자리를 정확히 입력해 주세요.";
-                    if (phoneInput) phoneInput.focus();
-                    return;
-                }
-
-                const kNick = (auth.session && auth.session.kakaoNickname) || "카카오고객";
-                const kId = auth.session && auth.session.kakaoId;
-                if (!kId) {
-                    showKakaoGateOverlay("login", "카카오 회원번호가 없습니다. 먼저 카카오 로그인을 진행해 주세요.");
-                    return;
-                }
-
-                const identifier = kNick + digits;
-                const formattedId = auth.formatClientId(kId);
-                window.clientId = formattedId;
-
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = "회원 등록 중...";
-                }
-                if (statusEl) statusEl.textContent = "";
-
-                const endpointUrl = window.WEB_APP_URL || window.KAKAO_WEB_APP_URL || KAKAO_WEB_APP_URL;
+                const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                const statusEl = document.getElementById("kakaoGateStatus");
+                if (loginBtn) loginBtn.disabled = true;
+                if (statusEl) statusEl.textContent = "카카오 인증 정보를 확인하고 있습니다...";
 
                 try {
-                    const res = await fetch(endpointUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain' },
+                    await authImpl.ensureSDKLoaded();
+                    const profile = await authImpl.exchangeCodeAndFetchProfile(code);
+                    await window.handleVerifiedKakaoProfile(profile);
+                } catch (err) {
+                    if (loginBtn) loginBtn.disabled = false;
+                    window.showKakaoGateOverlay(
+                        "login",
+                        (err && err.message) ? err.message : "카카오 인증 처리 중 오류가 발생했습니다. 다시 시도해 주세요."
+                    );
+                }
+                return true;
+            };
+
+            window.completeKakaoRegistration = async function () {
+                const inp = document.getElementById("kakaoPhone4Input");
+                const submitBtn = document.getElementById("kakaoPhone4SubmitBtn");
+                const statusEl = document.getElementById("kakaoGateStatus");
+
+                const phone4 = inp ? inp.value.replace(/[^0-9]/g, "") : "";
+                if (phone4.length !== 4) {
+                    if (statusEl) statusEl.textContent = "휴대폰 번호 뒷자리 4자리 숫자를 정확히 입력해 주세요.";
+                    if (inp) inp.focus();
+                    return;
+                }
+
+                if (!authImpl.session.kakaoId || !authImpl.session.kakaoNickname) {
+                    window.showKakaoGateOverlay("login", "카카오 인증 세션이 만료되었습니다. 다시 로그인해 주세요.");
+                    return;
+                }
+
+                if (submitBtn) submitBtn.disabled = true;
+                if (statusEl) statusEl.textContent = "회원 정보를 안전하게 등록하는 중입니다...";
+
+                try {
+                    const res = await fetch(KAKAO_WEB_APP_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain" },
                         body: JSON.stringify({
-                            action: 'syncKakaoMember',
-                            clientId: formattedId,
-                            kakaoId: kId,
-                            kakaoNickname: kNick,
-                            phone4: digits,
-                            nickname: identifier
+                            action: "completeKakaoRegistration",
+                            kakaoId: authImpl.session.kakaoId,
+                            kakaoNickname: authImpl.session.kakaoNickname,
+                            phone4: phone4
                         })
                     });
                     const text = await res.text();
-                    let payload = null;
-                    try { payload = JSON.parse(text); } catch (e) { }
+                    let data = null;
+                    try { data = JSON.parse(text); } catch (e) { }
 
-                    if (payload && payload.result === "blocked") {
-                        hideKakaoGateOverlay();
+                    if (!data) {
+                        throw new Error("서버 응답을 확인할 수 없습니다.");
+                    }
+
+                    if (data.result === "blocked" || data.isBlocked) {
+                        window.hideKakaoGateOverlay();
                         if (typeof window.enforceBlockedOverlay === "function") {
-                            window.enforceBlockedOverlay(payload.message);
+                            window.enforceBlockedOverlay(data.reason || data.blockReason || data.message);
                         }
                         return;
                     }
 
-                    if (payload && payload.settings) {
-                        if (typeof window.saveSettingsCache === "function") window.saveSettingsCache(payload.settings);
-                        if (typeof window.applySettingsToGlobals === "function") window.applySettingsToGlobals(payload.settings);
-                    }
+                    if (data.result === "success" && data.memberProfile) {
+                        authImpl.saveSession({
+                            kakaoId: authImpl.session.kakaoId,
+                            kakaoNickname: data.memberProfile.kakaoNickname || authImpl.session.kakaoNickname,
+                            phone4: data.memberProfile.phone4 || phone4,
+                            identifier: data.memberProfile.identifier
+                        });
 
-                    const registeredProfile = payload && payload.memberProfile ? payload.memberProfile : null;
-                    const finalIdent = (registeredProfile && registeredProfile.identifier) || identifier;
-                    const finalNick = (registeredProfile && registeredProfile.kakaoNickname) || kNick;
-                    const finalPhone4 = (registeredProfile && registeredProfile.phone4) || digits;
+                        window.hideKakaoGateOverlay();
+                        if (statusEl) statusEl.textContent = "";
 
-                    auth.saveSession({
-                        kakaoId: kId,
-                        kakaoNickname: finalNick,
-                        phone4: finalPhone4,
-                        identifier: finalIdent
-                    });
-                    if (typeof window.syncNicknameUI === "function") window.syncNicknameUI();
-                    hideKakaoGateOverlay();
-                    if (typeof window.checkAndRenderState === "function") await window.checkAndRenderState(false);
-                } catch (err) {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = "회원 등록 완료하고 예약하기";
-                    }
-                    if (statusEl) statusEl.textContent = "회원 정보 저장 중 오류가 발생했습니다. 다시 시도해 주세요.";
-                }
-            }
-
-            window.showKakaoGateOverlay = showKakaoGateOverlay;
-            window.hideKakaoGateOverlay = hideKakaoGateOverlay;
-            window.updatePhone4Preview = updatePhone4Preview;
-            window.startKakaoLoginFlow = startKakaoLoginFlow;
-            window.completeKakaoRegistration = completeKakaoRegistration;
-            window.handleOAuthCallbackOnLandingPage = handleOAuthCallbackOnLandingPage;
-            
-            function resetKakaoAuthUI() {
-                isKakaoAuthInProgress = false;
-                isNavigatingToKakao = false;
-                toggleAuthSkeleton(false);
-
-                const statusEl = document.getElementById('kakaoGateStatus');
-                if (statusEl && /이동 중|연결 중|확인 중/.test(statusEl.textContent || '')) {
-                    statusEl.textContent = '';
-                }
-
-                const phonePanel = document.getElementById('kakaoPhone4Panel');
-                const isPhone4Visible = !!(phonePanel && phonePanel.style.display === 'block');
-                if (!isPhone4Visible) {
-                    setLoginButtonLocked(false, "카카오톡으로 1초 로그인");
-                }
-            }
-
-            window.resetKakaoAuthUI = resetKakaoAuthUI;
-            authImpl.ensureSDKLoaded();
-
-            const initBindings = async () => {
-                const phoneInput = document.getElementById('kakaoPhone4Input');
-                if (phoneInput && !phoneInput.dataset.bound) {
-                    phoneInput.dataset.bound = "1";
-                    phoneInput.addEventListener('input', updatePhone4Preview);
-                    phoneInput.addEventListener('keydown', function (e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            completeKakaoRegistration();
+                        if (data.settings && typeof window.saveSettingsCache === "function" && typeof window.applySettingsToGlobals === "function") {
+                            window.saveSettingsCache(data.settings);
+                            window.applySettingsToGlobals(data.settings);
                         }
-                    });
+
+                        if (typeof window.checkAndRenderState === "function") {
+                            await window.checkAndRenderState(false);
+                        }
+                        return;
+                    }
+
+                    throw new Error(data.message || "회원 등록 중 오류가 발생했습니다.");
+                } catch (err) {
+                    if (statusEl) statusEl.textContent = err.message || "등록에 실패했습니다. 다시 시도해 주세요.";
+                } finally {
+                    if (submitBtn) submitBtn.disabled = false;
                 }
-                await handleOAuthCallbackOnLandingPage();
             };
 
-            if (document.readyState === "loading") {
-                window.addEventListener('DOMContentLoaded', initBindings, { once: true });
-            } else {
-                initBindings();
+            const phoneInput = document.getElementById("kakaoPhone4Input");
+            if (phoneInput) {
+                phoneInput.addEventListener("input", window.updatePhone4Preview);
+                phoneInput.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        window.completeKakaoRegistration();
+                    }
+                });
+            }
+
+            const isStandalonePage = !document.getElementById("kakaoAuthMountPoint");
+            if (isStandalonePage) {
+                window.addEventListener("DOMContentLoaded", async function () {
+                    authImpl.initSDK();
+                    const handledCallback = await window.handleOAuthCallbackOnLandingPage();
+                    if (handledCallback) return;
+
+                    const sess = await authImpl.restoreSession();
+                    if (sess && sess.kakaoId && sess.phone4 && sess.phone4.length === 4 && sess.identifier) {
+                        window.showKakaoGateOverlay("phone4", "이미 카카오 회원 인증이 완료되었습니다.");
+                    } else if (sess && sess.kakaoId) {
+                        window.showKakaoGateOverlay("phone4");
+                    } else {
+                        window.showKakaoGateOverlay("login");
+                    }
+                });
             }
         })();
     </script>
