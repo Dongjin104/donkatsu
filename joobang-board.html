@@ -696,12 +696,9 @@
             return audioCtx;
         }
 
-        async function startDashboard() {
+        function startDashboard() {
             getAudioContext();
-            if (isAdminProtectedAction('getAdminOrderList') && !getAdminApiKey()) {
-                const enteredKey = await promptForAdminKey('주방 대시보드를 시작하려면 ADMIN_API_KEY를 입력해 주세요.');
-                if (!enteredKey) return;
-            }
+
             const overlay = document.getElementById('blurOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
@@ -710,6 +707,8 @@
                     overlay.style.display = 'none';
                 }, 400);
             }
+
+            isAdminAuthBlocked = false;
             fetchOrders();
             fetchActiveUsers();
         }
