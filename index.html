@@ -1184,19 +1184,44 @@
         }
 
         @keyframes atelierSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes atelierProgressSlide {
-            0% { transform: translateX(-60%); width: 55%; }
-            50% { transform: translateX(45%); width: 70%; }
-            100% { transform: translateX(150%); width: 55%; }
+            0% {
+                transform: translateX(-60%);
+                width: 55%;
+            }
+
+            50% {
+                transform: translateX(45%);
+                width: 70%;
+            }
+
+            100% {
+                transform: translateX(150%);
+                width: 55%;
+            }
         }
 
         @keyframes atelierDotPulse {
-            0%, 100% { transform: scale(0.85); opacity: 0.55; }
-            50% { transform: scale(1.25); opacity: 1; }
+
+            0%,
+            100% {
+                transform: scale(0.85);
+                opacity: 0.55;
+            }
+
+            50% {
+                transform: scale(1.25);
+                opacity: 1;
+            }
         }
 
         .luxury-soldout-card {
@@ -1942,7 +1967,8 @@
             <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.55;">
                 온라인 예약 운영 시간: <span style="color: var(--text-main); font-weight: 800;" id="closedTimeRange"></span>
             </div>
-            <div id="closedAutoOpenHint" style="margin-top: 6px; font-size: 12.5px; color: var(--text-sub); line-height: 1.5;">
+            <div id="closedAutoOpenHint"
+                style="margin-top: 6px; font-size: 12.5px; color: var(--text-sub); line-height: 1.5;">
                 예약 운영 시간이 되면 자동으로 예약 페이지로 이동합니다.
             </div>
 
@@ -2772,7 +2798,8 @@
                     <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
                         <div class="cook-guide-copy">
                             <span id="editCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
-                            <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해 주세요.</span>
+                            <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해
+                                주세요.</span>
                         </div>
                         <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn"
                             onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
@@ -3318,7 +3345,7 @@
                 const lastReload = Number(sessionStorage.getItem(guardKey) || '0');
                 if (now - lastReload < 5000) return;
                 sessionStorage.setItem(guardKey, String(now));
-            } catch (e) {}
+            } catch (e) { }
 
             stopOpenCountdownTimer();
             window.location.reload();
@@ -3907,7 +3934,7 @@ ${safeCode}
                             }
                         }
                     }
-                } catch (err) {}
+                } catch (err) { }
             }
         }
 
@@ -4108,7 +4135,7 @@ ${safeCode}
 
         function isValidHourMinutePair(h, m) {
             return typeof h === 'number' && !isNaN(h) && h >= 0 && h <= 23 &&
-                   typeof m === 'number' && !isNaN(m) && m >= 0 && m <= 59;
+                typeof m === 'number' && !isNaN(m) && m >= 0 && m <= 59;
         }
 
         function loadSettingsCache() {
@@ -5940,6 +5967,8 @@ ${safeCode}
             };
 
             try {
+                if (window.__donkasInitRunning) return;
+                window.__donkasInitRunning = true;
                 __skeletonAlreadyHiddenOnce = false;
                 if (typeof setLoadingSkeletonVisible === 'function') {
                     setLoadingSkeletonVisible(true);
@@ -5951,7 +5980,7 @@ ${safeCode}
                 purgeLegacyAdminKeyLocalStorage();
 
                 try {
-                    await withTimeout(mountKakaoLoginModule(), 5000, 'mountKakaoLoginModule');
+                    await withTimeout(mountKakaoLoginModule(), 1200, 'mountKakaoLoginModule');
                 } catch (e) {
                     console.warn('mountKakaoLoginModule 오류:', e);
                 }
@@ -5960,7 +5989,7 @@ ${safeCode}
                 let sess = null;
                 try {
                     const rawSess = (activeAuth && typeof activeAuth.restoreSession === "function")
-                        ? await withTimeout(activeAuth.restoreSession(), 5000, 'restoreSession')
+                        ? await withTimeout(activeAuth.restoreSession(), 1200, 'restoreSession')
                         : (activeAuth ? activeAuth.session : null);
                     sess = rawSess || (activeAuth ? activeAuth.session : null);
                 } catch (e) {
@@ -5998,6 +6027,7 @@ ${safeCode}
                 console.error('runFullAppInitialization 오류:', err);
             } finally {
                 hideSkeletonSafely();
+                window.__donkasInitRunning = false;
             }
         }
 
