@@ -1903,7 +1903,7 @@
             </div>
         </div>
 
-        <div id="pageLoadingOverlay" class="menu-grid" style="display: none;">
+        <div id="pageLoadingOverlay" class="menu-grid" style="display: flex; flex-direction: column; gap: 10px;">
             <div
                 style="text-align: center; font-size: 13px; color: var(--text-sub); font-weight: 600; margin-bottom: 4px;">
                 ✨ 메뉴와 매장 현황을 빠르게 불러오고 있습니다...
@@ -5909,45 +5909,47 @@ ${safeCode}
         }
 
         async function runFullAppInitialization() {
-            purgeLegacyAdminKeyLocalStorage();
-            await mountKakaoLoginModule();
-
-            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
-            const sess = typeof activeAuth.restoreSession === "function" ? await activeAuth.restoreSession() : activeAuth.session;
-            syncNicknameUI();
-
-            const cachedSettings = loadSettingsCache();
-            if (cachedSettings) {
-                applySettingsObject(cachedSettings);
-                if (cachedSettings.isBlocked) {
-                    enforceBlockedOverlay();
-                    return;
+            try {
+                if (typeof setLoadingSkeletonVisible === 'function') {
+                    setLoadingSkeletonVisible(true);
                 }
-            }
+                purgeLegacyAdminKeyLocalStorage();
+                await mountKakaoLoginModule();
 
-            if (sess && sess.kakaoId) {
-                if (enforcePhone4GateIfNeeded(sess)) {
+                const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+                const sess = typeof activeAuth.restoreSession === "function" ? await activeAuth.restoreSession() : activeAuth.session;
+                syncNicknameUI();
+
+                const cachedSettings = loadSettingsCache();
+                if (cachedSettings) {
+                    applySettingsObject(cachedSettings);
+                    if (cachedSettings.isBlocked) {
+                        enforceBlockedOverlay();
+                        return;
+                    }
+                }
+
+                if (sess && sess.kakaoId) {
+                    if (enforcePhone4GateIfNeeded(sess)) {
+                        return;
+                    }
+                    hideKakaoGateOverlay();
+                    const isClosed = cachedSettings ? checkClosedStatus() : false;
+                    renderCustomerSectionByState(isClosed, sess);
+                    startHeartbeat();
+                    startLiveCustomerSync();
+                    await syncCustomerScreenWithSheet(true);
+                } else {
+                    stopLiveCustomerSync();
+                    hideAllMainContentSections();
+                    showKakaoGateOverlay("login", "예약과 단골 적립을 위해 카카오톡 로그인을 진행해 주세요.");
+                }
+            } finally {
+                if (typeof setLoadingSkeletonVisible === 'function') {
                     setLoadingSkeletonVisible(false);
-                    return;
                 }
-                hideKakaoGateOverlay();
-                const isClosed = cachedSettings ? checkClosedStatus() : false;
-                renderCustomerSectionByState(isClosed, sess);
-                startHeartbeat();
-                startLiveCustomerSync();
-                await syncCustomerScreenWithSheet(true);
-            } else {
-                setLoadingSkeletonVisible(false);
-                stopLiveCustomerSync();
-                hideAllMainContentSections();
-                showKakaoGateOverlay("login", "예약과 단골 적립을 위해 카카오톡 로그인을 진행해 주세요.");
             }
         }
-
-        window.addEventListener('DOMContentLoaded', function () {
-            purgeLegacyAdminKeyLocalStorage();
-            runFullAppInitialization();
-        });
     </script>
 </body>
 
