@@ -542,6 +542,13 @@
                             return null;
                         }
                     },
+                    getItem: function (key) {
+                        try {
+                            const lsVal = localStorage.getItem(key);
+                            if (lsVal !== null && lsVal !== undefined) return lsVal;
+                        } catch (e) { }
+                        return typeof this.getCookie === "function" ? this.getCookie(key) : null;
+                    },
                     save: function (key, value) {
                         if (value === null || value === undefined) return;
                         try { localStorage.setItem(key, value); } catch (e) { }
@@ -575,6 +582,16 @@
                         return null;
                     }
                 };
+
+            if (typeof storageImpl.getItem !== "function") {
+                storageImpl.getItem = function (key) {
+                    try {
+                        const lsVal = localStorage.getItem(key);
+                        if (lsVal !== null && lsVal !== undefined) return lsVal;
+                    } catch (e) { }
+                    return typeof this.getCookie === "function" ? this.getCookie(key) : null;
+                };
+            }
 
             window.KakaoTripleStorage = storageImpl;
             window.TripleStorage = storageImpl;

@@ -14,14 +14,14 @@ function sendEmailNotification(info) {
     var subject = typeVal + " " + nickname + "님 (" + pickupTime + " 픽업)";
 
     var body = "--- [장날동천 예약 내역] ---\n" +
-               "• 픽업시간: " + pickupTime + "\n" +
-               "• 조리방식: " + cookType + "\n" +
-               "• 메뉴: " + menuSummary + "\n" +
-               "• 추가소스: " + sauce + "\n" +
-               "• 예약 식별명: " + nickname + "\n" +
-               "• 주문 총 가격: " + totalPrice + "\n\n" +
-               "📊 [예약 스프레드시트 바로가기]\n" + spreadsheetUrl + "\n\n" +
-               "장날동천 수제 돈가스 예약 시스템에서 발송된 알림입니다.";
+      "• 픽업시간: " + pickupTime + "\n" +
+      "• 조리방식: " + cookType + "\n" +
+      "• 메뉴: " + menuSummary + "\n" +
+      "• 추가소스: " + sauce + "\n" +
+      "• 예약 식별명: " + nickname + "\n" +
+      "• 주문 총 가격: " + totalPrice + "\n\n" +
+      "📊 [예약 스프레드시트 바로가기]\n" + spreadsheetUrl + "\n\n" +
+      "장날동천 수제 돈가스 예약 시스템에서 발송된 알림입니다.";
 
     MailApp.sendEmail(myEmail, subject, body);
   } catch (e) {
@@ -104,6 +104,127 @@ function checkIsClosedNow(settings) {
   }
 }
 
+function normalizeAndValidatePickupTime(rawPickupTime, settings) {
+  var s = String(rawPickupTime || "").trim();
+  if (!s) return { valid: false, reason: "픽업시간이 비어 있습니다." };
+
+  var minVal = parseTimeToMin(s);
+  if (minVal === 9999 || minVal < 0 || minVal >= 1440) {
+    return { valid: false, reason: "올바르지 않은 픽업시간 형식입니다." };
+  }
+
+  if (settings) {
+    var startVal = (Number(settings.pickupStartHour) || 0) * 60 + (Number(settings.pickupStartMin) || 0);
+    var closeVal = (Number(settings.pickupCloseHour) || 23) * 60 + (Number(settings.pickupCloseMin) || 59);
+    if (closeVal < startVal) {
+      if (minVal < startVal && minVal > closeVal) {
+        return { valid: false, reason: "픽업 가능 시간대를 벗어났습니다." };
+      }
+    } else {
+      if (minVal < startVal || minVal > closeVal) {
+        return { valid: false, reason: "픽업 가능 시간대를 벗어났습니다." };
+      }
+    }
+  }
+
+  var h24 = Math.floor(minVal / 60);
+  var m = minVal % 60;
+  var ampm = h24 >= 12 ? "오후" : "오전";
+  var h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  var mStr = m < 10 ? ("0" + m) : String(m);
+
+  return {
+    valid: true,
+    normalized: ampm + " " + h12 + ":" + mStr,
+    minutes: minVal
+  };
+}
+
+function parsePriceNumber(priceVal) {
+  if (typeof priceVal === "number") return isNaN(priceVal) ? 0 : priceVal;
+  var digits = String(priceVal || "").replace(/[^0-9]/g, "");
+  if (!digits) return 0;
+  var n = parseInt(digits, 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function calculateServerOrderTotal(menuSummaryStr, sauceSummaryStr, settings) {
+  if (!settings) return 0;
+  var total = 0;
+
+  var menuMap = parseItemsToMap(menuSummaryStr || "");
+  var menuNames = Object.keys(menuMap);
+  for (var i = 0; i < menuNames.length; i++) {
+    var mName = menuNames[i];
+    var qty = menuMap[mName] || 0;
+    if (qty <= 0) continue;
+
+    var unitPrice = 0;
+    for (var m = 0; m < settings.menuList.length; m++) {
+      var item = settings.menuList[m];
+      var shortN = String(item.shortName || "").trim();
+      var fullN = String(item.name || "").trim();
+      if ((shortN && shortN === mName) || (fullN && fullN === mName) ||
+        (shortN && mName.indexOf(shortN) !== -1) || (fullN && mName.indexOf(fullN) !== -1)) {
+        unitPrice = parsePriceNumber(item.price);
+        break;
+      }
+    }
+    total += unitPrice * qty;
+  }
+
+  var sauceMap = parseItemsToMap(sauceSummaryStr || "");
+  var sauceNames = Object.keys(sauceMap);
+  for (var j = 0; j < sauceNames.length; j++) {
+    var sName = sauceNames[j];
+    var sQty = sauceMap[sName] || 0;
+    if (sQty <= 0) continue;
+
+    var sUnitPrice = 0;
+    for (var s = 0; s < settings.sauceList.length; s++) {
+      var sItem = settings.sauceList[s];
+      var sShort = String(sItem.shortName || "").trim();
+      var sFull = String(sItem.name || "").trim();
+      if ((sShort && sShort === sName) || (sFull && sFull === sName) ||
+        (sShort && sName.indexOf(sShort) !== -1) || (sFull && sName.indexOf(sFull) !== -1)) {
+        sUnitPrice = parsePriceNumber(sItem.price);
+        break;
+      }
+    }
+    total += sUnitPrice * sQty;
+  }
+
+  return total;
+}
+
+function isRapidDuplicateOrder(customerInfo, clientIdVal, menuText, pickupTime) {
+  try {
+    var cache = CacheService.getScriptCache();
+    var normId = normalizeKakaoId(clientIdVal);
+    var actorKey = normId ? ("kakao_" + normId) : ("nick_" + String(customerInfo || "").trim());
+    if (!actorKey || actorKey === "nick_") return false;
+
+    var sig = [actorKey, String(pickupTime || "").trim(), String(menuText || "").trim()].join("|");
+    var cacheKey = "recent_order_v1_" + Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, sig, Utilities.Charset.UTF_8)
+      .map(function (b) { return ("0" + (b & 0xFF).toString(16)).slice(-2); })
+      .join("");
+
+    var prevRaw = cache.get(cacheKey);
+    var nowMs = Date.now();
+    if (prevRaw) {
+      var prevMs = Number(prevRaw);
+      if (!isNaN(prevMs) && (nowMs - prevMs) < 20000) {
+        return true;
+      }
+    }
+    cache.put(cacheKey, String(nowMs), 30);
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
 function sortOrders(sheet) {
   var lastRow = sheet.getLastRow();
   if (lastRow > 2) {
@@ -111,7 +232,7 @@ function sortOrders(sheet) {
     var range = sheet.getRange(2, 1, lastRow - 1, maxCols);
     var values = range.getValues();
 
-    values.sort(function(a, b) {
+    values.sort(function (a, b) {
       var statusA = String(a[0]).trim();
       var statusB = String(b[0]).trim();
 
@@ -192,7 +313,7 @@ function exchangeKakaoAuthorizationCode(code, redirectUri) {
 
     var tokenCode = tokenRes.getResponseCode();
     var tokenJson = null;
-    try { tokenJson = JSON.parse(tokenRes.getContentText()); } catch (e) {}
+    try { tokenJson = JSON.parse(tokenRes.getContentText()); } catch (e) { }
 
     if (tokenCode < 200 || tokenCode >= 300 || !tokenJson || !tokenJson.access_token) {
       return {
@@ -211,7 +332,7 @@ function exchangeKakaoAuthorizationCode(code, redirectUri) {
 
     var userCode = userRes.getResponseCode();
     var userJson = null;
-    try { userJson = JSON.parse(userRes.getContentText()); } catch (e) {}
+    try { userJson = JSON.parse(userRes.getContentText()); } catch (e) { }
 
     if (userCode < 200 || userCode >= 300 || !userJson || !userJson.id) {
       return {
@@ -339,7 +460,6 @@ function checkAllClientsAccess() {
   }
 }
 
-// 일별 자동 트리거 전용 진입점
 function runDailyAccessLimitCheck() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) return;
@@ -348,24 +468,24 @@ function runDailyAccessLimitCheck() {
   } catch (err) {
     Logger.log("일별 접속제한 점검 오류: " + err.toString());
   } finally {
-    try { lock.releaseLock(); } catch (e) {}
+    try { lock.releaseLock(); } catch (e) { }
   }
 }
 
 function onEdit(e) {
   try {
-    var range = e.range;
-    var sheet = range.getSheet();
+    var range = e && e.range;
+    var sheet = range ? range.getSheet() : SpreadsheetApp.getActiveSheet();
     var sheetName = sheet.getName();
 
-    if (sheetName === "시트1" && range.getRow() > 1) {
+    if (sheetName === "시트1" && range && range.getRow() > 1) {
       var col = range.getColumn();
       if (col === 1 || col === 2) {
         sortOrders(sheet);
       }
     }
 
-    if (sheetName === "메뉴판" && range.getRow() > 1 && range.getColumn() === 6) {
+    if (sheetName === "메뉴판" && range && range.getRow() > 1 && range.getColumn() === 6) {
       var val = String(range.getValue() || "").trim().toUpperCase();
       var tsCell = sheet.getRange(range.getRow(), 8);
       if (val === "HOT") {
@@ -375,14 +495,49 @@ function onEdit(e) {
       }
     }
 
-    if (sheetName === "설정" || sheetName === "메뉴판") {
+    if (sheetName === "설정" || sheetName === "메뉴판" || sheetName === "시트1") {
       try {
         CacheService.getScriptCache().remove("store_settings_cache_v5");
-      } catch (cacheErr) {}
+      } catch (cacheErr) { }
     }
   } catch (err) {
     Logger.log("onEdit 오류: " + err.toString());
   }
+}
+
+function matchSoldOutItemName(targetText, itemObj) {
+  if (!targetText || !itemObj || !itemObj.isSoldOut) return "";
+  var candidates = [
+    String(itemObj.shortName || "").trim(),
+    String(itemObj.name || "").trim()
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    var label = candidates[i];
+    if (!label) continue;
+    var escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var regex = new RegExp(escaped + "\\s*(\\d+)개");
+    if (regex.test(targetText)) {
+      return label;
+    }
+  }
+  return "";
+}
+
+function getRequestedQtyForSoldOutItem(qtyMap, itemObj) {
+  if (!qtyMap || !itemObj) return 0;
+  var candidates = [
+    String(itemObj.shortName || "").trim(),
+    String(itemObj.name || "").trim()
+  ];
+  var maxQty = 0;
+  for (var i = 0; i < candidates.length; i++) {
+    var key = candidates[i];
+    if (key && qtyMap[key] !== undefined) {
+      var q = Number(qtyMap[key]) || 0;
+      if (q > maxQty) maxQty = q;
+    }
+  }
+  return maxQty;
 }
 
 function parseItemsToMap(str) {
@@ -399,6 +554,49 @@ function parseItemsToMap(str) {
     }
   }
   return map;
+}
+
+function getMenuUnitDifficultyWeight(menuName) {
+  var normalized = String(menuName || "").replace(/\s+/g, "").toLowerCase();
+  if (!normalized) return 1.0;
+
+  if (normalized.indexOf("세트4") !== -1 || normalized.indexOf("새우5") !== -1) return 0.7;
+  if (normalized.indexOf("세트1") !== -1 || normalized.indexOf("등심5") !== -1) return 1.0;
+  if (normalized.indexOf("세트2") !== -1 || normalized.indexOf("치즈3") !== -1) return 1.2;
+  if (normalized.indexOf("세트3") !== -1 || (normalized.indexOf("등심2") !== -1 && normalized.indexOf("치즈2") !== -1)) return 1.4;
+  if (normalized.indexOf("세트6") !== -1 || (normalized.indexOf("등심2") !== -1 && normalized.indexOf("안심8") !== -1)) return 1.6;
+  if (normalized.indexOf("모듬") !== -1 || normalized.indexOf("모둠") !== -1) return 1.8;
+  if (normalized.indexOf("세트5") !== -1 || normalized.indexOf("닭안심13") !== -1 || normalized.indexOf("안심13") !== -1) return 2.2;
+
+  return 1.0;
+}
+
+function calculateOrderFryerLoad(cookType, menuStr) {
+  var cType = String(cookType || "").trim();
+  if (cType.indexOf("비튀김") !== -1 || cType.indexOf("생고기") !== -1 || cType.indexOf("안튀김") !== -1) {
+    return 0;
+  }
+
+  var rawMenu = String(menuStr || "").trim();
+  if (!rawMenu || rawMenu === "없음") return 0;
+
+  var parts = rawMenu.split(',');
+  var totalLoad = 0;
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i].trim();
+    if (!part) continue;
+    var match = part.match(/(.*?)\s*(\d+)개/);
+    if (match) {
+      var itemName = match[1].trim();
+      var qty = parseInt(match[2], 10) || 0;
+      if (qty > 0) {
+        totalLoad += getMenuUnitDifficultyWeight(itemName) * qty;
+      }
+    } else {
+      totalLoad += getMenuUnitDifficultyWeight(part);
+    }
+  }
+  return Math.round(totalLoad * 100) / 100;
 }
 
 function syncKakaoMemberProfile(nickname, kakaoId, kakaoNickname, phone4, isPurchase) {
@@ -579,8 +777,8 @@ function checkClientAccessRestriction(nickname, clientId) {
       var rowClient = String(values[i][1] || "").trim();
 
       var isMatch = (normClient && rowClient && isSameKakaoMember(rowClient, normClient)) ||
-                      (cleanNick && rowNick && rowNick === cleanNick) ||
-                      (rowNick && aliases.indexOf(rowNick) !== -1);
+        (cleanNick && rowNick && rowNick === cleanNick) ||
+        (rowNick && aliases.indexOf(rowNick) !== -1);
       if (isMatch) {
         var currentStatus = String(values[i][4] || "").trim();
         if (currentStatus === "시스템 차단" || currentStatus === "관리자 차단") {
@@ -612,7 +810,7 @@ function updateClientRecordOnAction(nickname, clientId, isPurchase) {
     var rowNick = String(values[i][0] || "").trim();
     var rowClient = String(values[i][1] || "").trim();
     if ((normClient && rowClient && isSameKakaoMember(rowClient, normClient)) ||
-        (cleanNick && rowNick && rowNick === cleanNick)) {
+      (cleanNick && rowNick && rowNick === cleanNick)) {
       foundRow = i + 2;
       break;
     }
@@ -764,14 +962,24 @@ function buildFullSettingsPayload(ss, sheet, reqNick, reqClient) {
   var rawPickupTimes = [];
   var lastRow = sheet.getLastRow();
   if (lastRow >= 2) {
-    var rangeVals = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    var rangeVals = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
     for (var i = 0; i < rangeVals.length; i++) {
       var status = String(rangeVals[i][0] || "").trim();
       var pTime = rangeVals[i][1];
-      if (status !== "취소" && pTime !== "") {
+      var cookType = String(rangeVals[i][2] || "").trim();
+      var menuStr = String(rangeVals[i][3] || "").trim();
+
+      if (status !== "취소" && status !== "완료" && pTime !== "") {
         var minVal = parseTimeToMin(pTime);
         if (minVal !== 9999) {
-          rawPickupTimes.push(minVal);
+          var fryerLoad = calculateOrderFryerLoad(cookType, menuStr);
+          if (fryerLoad > 0) {
+            rawPickupTimes.push({
+              time: minVal,
+              load: fryerLoad,
+              rowIndex: i + 2
+            });
+          }
         }
       }
     }
@@ -887,8 +1095,8 @@ function doPost(e) {
   try {
     data = JSON.parse(e.postData.contents);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({"result": "error"}))
-                         .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error" }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
   var action = data.action;
@@ -914,16 +1122,16 @@ function doPost(e) {
     var res = recordUserHeartbeat(data);
     if (res.restriction && res.restriction.blocked) {
       return ContentService.createTextOutput(JSON.stringify({ "result": "blocked", "message": res.restriction.reason }))
-                           .setMimeType(ContentService.MimeType.JSON);
+        .setMimeType(ContentService.MimeType.JSON);
     }
     return ContentService.createTextOutput(JSON.stringify(res))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
   if (action === 'getActiveUsers') {
     var activeRes = getActiveUserList();
     return ContentService.createTextOutput(JSON.stringify(activeRes))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
   if (action === "getSettings") {
@@ -936,17 +1144,17 @@ function doPost(e) {
       var responseDataQuick = buildFullSettingsPayload(ssQuick, sheetQuick, reqNickQuick, reqClientQuick);
 
       return ContentService.createTextOutput(JSON.stringify(responseDataQuick))
-                           .setMimeType(ContentService.MimeType.JSON);
+        .setMimeType(ContentService.MimeType.JSON);
     } catch (quickErr) {
-      return ContentService.createTextOutput(JSON.stringify({"result": "error", "message": quickErr.toString()}))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ "result": "error", "message": quickErr.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
   }
 
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) {
-    return ContentService.createTextOutput(JSON.stringify({"result": "error", "message": "서버가 혼잡합니다. 잠시 후 다시 시도해 주세요."}))
-                         .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "message": "서버가 혼잡합니다. 잠시 후 다시 시도해 주세요." }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
   var backgroundTaskInfo = null;
@@ -1015,13 +1223,13 @@ function doPost(e) {
     if (action === 'getAdminOrderList') {
       var adminOrders = getAdminOrderList();
       return ContentService.createTextOutput(JSON.stringify(adminOrders))
-                           .setMimeType(ContentService.MimeType.JSON);
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'updateOrderStatus') {
       var res = updateOrderStatus(data.rowIndex, data.status);
       return ContentService.createTextOutput(JSON.stringify(res))
-                           .setMimeType(ContentService.MimeType.JSON);
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "create") {
@@ -1047,40 +1255,41 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
+      // 품절 상태 변경 즉시 반영을 위해 최신 설정 조회
+      try { CacheService.getScriptCache().remove("store_settings_cache_v5"); } catch (e) { }
       var settings = getStoreSettings(ss);
       if (checkIsClosedNow(settings)) {
-        return ContentService.createTextOutput(JSON.stringify({"result": "closed"}))
-                             .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({ "result": "closed" }))
+          .setMimeType(ContentService.MimeType.JSON);
       }
 
       var menuText = data.menuSummary || data.menu || "";
       var sauceText = data.sauce || "없음";
 
+      if (isRapidDuplicateOrder(customerInfo, clientIdVal, menuText, data.pickupTime)) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "result": "duplicate_nickname",
+          "message": "방금 동일한 예약 요청이 접수되었습니다. 잠시만 기다려 주세요!"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       for (var m = 0; m < settings.menuList.length; m++) {
-        var menuObj = settings.menuList[m];
-        if (menuObj.isSoldOut) {
-          var sName = menuObj.shortName;
-          var regex = new RegExp(sName + "\\s*(\\d+)개");
-          if (menuText.match(regex)) {
-            return ContentService.createTextOutput(JSON.stringify({
-              "result": "out_of_stock",
-              "menuName": sName
-            })).setMimeType(ContentService.MimeType.JSON);
-          }
+        var matchedMenu = matchSoldOutItemName(menuText, settings.menuList[m]);
+        if (matchedMenu) {
+          return ContentService.createTextOutput(JSON.stringify({
+            "result": "out_of_stock",
+            "menuName": matchedMenu
+          })).setMimeType(ContentService.MimeType.JSON);
         }
       }
 
       for (var s = 0; s < settings.sauceList.length; s++) {
-        var sauceObj = settings.sauceList[s];
-        if (sauceObj.isSoldOut) {
-          var sSauceName = sauceObj.shortName || sauceObj.name;
-          var regexSauce = new RegExp(sSauceName + "\\s*(\\d+)개");
-          if (sauceText.match(regexSauce)) {
-            return ContentService.createTextOutput(JSON.stringify({
-              "result": "out_of_stock",
-              "menuName": sSauceName
-            })).setMimeType(ContentService.MimeType.JSON);
-          }
+        var matchedSauce = matchSoldOutItemName(sauceText, settings.sauceList[s]);
+        if (matchedSauce) {
+          return ContentService.createTextOutput(JSON.stringify({
+            "result": "out_of_stock",
+            "menuName": matchedSauce
+          })).setMimeType(ContentService.MimeType.JSON);
         }
       }
 
@@ -1121,9 +1330,10 @@ function doPost(e) {
       }
 
       var receiptTime = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
-      var totalPriceInput = data.totalPrice || "";
-      var totalPriceVal = totalPriceInput.toString().replace(/[^0-9]/g, '');
-      var finalPriceDisplay = totalPriceVal ? Number(totalPriceVal) : "";
+      var computedTotal = calculateServerOrderTotal(menuText, sauceText, settings);
+      var clientPriceNum = parsePriceNumber(data.totalPrice || "");
+      var finalPriceNum = computedTotal > 0 ? computedTotal : clientPriceNum;
+      var finalPriceDisplay = finalPriceNum > 0 ? finalPriceNum : "";
 
       var isWinner = false;
       if (shouldCountWinners && todayWinnerCount < settings.maxEventWinners) {
@@ -1154,13 +1364,13 @@ function doPost(e) {
       }
 
       var lastRowIdx = sheet.getLastRow();
-      if (totalPriceVal) {
+      if (finalPriceDisplay) {
         sheet.getRange(lastRowIdx, 8).setNumberFormat('#,##0"원"');
       }
 
       try {
         CacheService.getScriptCache().remove("store_settings_cache_v5");
-      } catch(e) {}
+      } catch (e) { }
 
       backgroundTaskInfo = {
         type: "create",
@@ -1169,7 +1379,7 @@ function doPost(e) {
         cookType: rawCook,
         menuSummary: menuText,
         sauce: sauceText,
-        totalPrice: totalPriceVal ? Number(totalPriceVal).toLocaleString() + "원" : "0원"
+        totalPrice: finalPriceDisplay ? Number(finalPriceDisplay).toLocaleString() + "원" : "0원"
       };
 
       var responseOutput = ContentService.createTextOutput(JSON.stringify({
@@ -1180,14 +1390,14 @@ function doPost(e) {
         "syncedClientId": formattedKakaoId
       })).setMimeType(ContentService.MimeType.JSON);
 
-      try { lock.releaseLock(); } catch (e) {}
+      try { lock.releaseLock(); } catch (e) { }
       runPostOrderBackgroundTasks(backgroundTaskInfo);
       return responseOutput;
     }
 
     if (action === "checkNickname") {
-      return ContentService.createTextOutput(JSON.stringify({"result": "ok"}))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ "result": "ok" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "uploadMenuImage") {
@@ -1198,7 +1408,7 @@ function doPost(e) {
         var fileName = requestData.fileName || "menu.jpg";
 
         if (!base64Data) {
-          return ContentService.createTextOutput(JSON.stringify({"result": "error", "message": "이미지 데이터가 없습니다."})).setMimeType(ContentService.MimeType.JSON);
+          return ContentService.createTextOutput(JSON.stringify({ "result": "error", "message": "이미지 데이터가 없습니다." })).setMimeType(ContentService.MimeType.JSON);
         }
 
         var imageUrl = uploadImageToDriveAndGetUrl(base64Data, fileName);
@@ -1225,7 +1435,7 @@ function doPost(e) {
 
         try {
           CacheService.getScriptCache().remove("store_settings_cache_v5");
-        } catch(e) {}
+        } catch (e) { }
 
         return ContentService.createTextOutput(JSON.stringify({
           "result": "success",
@@ -1257,13 +1467,16 @@ function doPost(e) {
           var rowKakaoIdPrize = String(rows[i][9] || "").trim();
           if (isCustomerMatchForKakao(custCol, nickname, clientIdPrize, rowKakaoIdPrize, aliasesPrize)) {
             sheet.getRange(i + 2, 9).setValue("당첨 (" + prize + ")");
-            return ContentService.createTextOutput(JSON.stringify({"result": "success"}))
-                                       .setMimeType(ContentService.MimeType.JSON);
+            try {
+              CacheService.getScriptCache().remove("store_settings_cache_v5");
+            } catch (e) { }
+            return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+              .setMimeType(ContentService.MimeType.JSON);
           }
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({"result": "not_found"}))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ "result": "not_found" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "verify") {
@@ -1281,49 +1494,78 @@ function doPost(e) {
           var custCol = String(rows[i][5] || "").trim();
           var rowKakaoIdVerify = String(rows[i][9] || "").trim();
           if (isCustomerMatchForKakao(custCol, nickname, clientIdVerify, rowKakaoIdVerify, aliasesVerify)) {
-            return ContentService.createTextOutput(JSON.stringify({"result": "exists"}))
-                                       .setMimeType(ContentService.MimeType.JSON);
+            return ContentService.createTextOutput(JSON.stringify({ "result": "exists" }))
+              .setMimeType(ContentService.MimeType.JSON);
           }
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({"result": "not_exists"}))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ "result": "not_exists" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "check" || action === "checkSimple") {
       var nickname = String(data.nickname || "").trim();
       var clientIdCheck = String(data.clientId || data.kakaoId || "").trim();
-      var checkResult = buildReservationCheckPayload(ss, sheet, nickname, clientIdCheck, true, String(data.kakaoNickname || "").trim(), String(data.phone4 || "").trim());
+      var shouldUpdateAccessRecord = (action === "check") && (data.isPolling !== true);
+      var checkResult = buildReservationCheckPayload(
+        ss,
+        sheet,
+        nickname,
+        clientIdCheck,
+        shouldUpdateAccessRecord,
+        String(data.kakaoNickname || "").trim(),
+        String(data.phone4 || "").trim()
+      );
 
       return ContentService.createTextOutput(JSON.stringify(checkResult))
-                           .setMimeType(ContentService.MimeType.JSON);
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === "update") {
+      try { CacheService.getScriptCache().remove("store_settings_cache_v5"); } catch (e) { }
       var settingsCheck = getStoreSettings(ss);
       if (checkIsClosedNow(settingsCheck)) {
-        return ContentService.createTextOutput(JSON.stringify({"result": "closed"}))
-                             .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({ "result": "closed" }))
+          .setMimeType(ContentService.MimeType.JSON);
       }
 
       var rowIndex = Number(data.rowIndex);
       if (!rowIndex || rowIndex < 2) {
-        return ContentService.createTextOutput(JSON.stringify({"result": "error"}))
-                             .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({ "result": "error" }))
+          .setMimeType(ContentService.MimeType.JSON);
       }
 
       var rowValues = sheet.getRange(rowIndex, 1, 1, 8).getValues()[0];
       var currentStatus = String(rowValues[0] || "").trim();
       if (currentStatus === "확인") {
-        return ContentService.createTextOutput(JSON.stringify({"result": "locked"}))
-                             .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({ "result": "locked" }))
+          .setMimeType(ContentService.MimeType.JSON);
       }
-
-      var newMenuSummary = data.newMenu || "";
-      var newSauceSummary = data.newSauce || "없음";
 
       var oldMenuStr = String(rowValues[3] || "");
       var oldSauceStr = String(rowValues[4] || "");
+
+      var newMenuSummary = data.newMenu !== undefined ? String(data.newMenu).trim() : oldMenuStr;
+      var newSauceSummary = data.newSauce !== undefined ? (String(data.newSauce).trim() || "없음") : (oldSauceStr || "없음");
+
+      if (!newMenuSummary || newMenuSummary === "없음") {
+        return ContentService.createTextOutput(JSON.stringify({
+          "result": "invalid",
+          "message": "최소 1개 이상의 메뉴를 선택해 주세요."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var validatedPickup = null;
+      if (data.newPickupTime !== undefined && String(data.newPickupTime).trim() !== "") {
+        validatedPickup = normalizeAndValidatePickupTime(data.newPickupTime, settingsCheck);
+        if (!validatedPickup.valid) {
+          return ContentService.createTextOutput(JSON.stringify({
+            "result": "invalid_time",
+            "message": validatedPickup.reason
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+
       var oldMenuMap = parseItemsToMap(oldMenuStr);
       var oldSauceMap = parseItemsToMap(oldSauceStr);
 
@@ -1333,13 +1575,12 @@ function doPost(e) {
       for (var m = 0; m < settingsCheck.menuList.length; m++) {
         var menuObj = settingsCheck.menuList[m];
         if (menuObj.isSoldOut) {
-          var sName = menuObj.shortName;
-          var requestedQty = newMenuMap[sName] || 0;
-          var previouslyReservedQty = oldMenuMap[sName] || 0;
+          var requestedQty = getRequestedQtyForSoldOutItem(newMenuMap, menuObj);
+          var previouslyReservedQty = getRequestedQtyForSoldOutItem(oldMenuMap, menuObj);
           if (requestedQty > previouslyReservedQty) {
             return ContentService.createTextOutput(JSON.stringify({
               "result": "out_of_stock",
-              "menuName": sName
+              "menuName": menuObj.shortName || menuObj.name
             })).setMimeType(ContentService.MimeType.JSON);
           }
         }
@@ -1348,13 +1589,12 @@ function doPost(e) {
       for (var s = 0; s < settingsCheck.sauceList.length; s++) {
         var sauceObj = settingsCheck.sauceList[s];
         if (sauceObj.isSoldOut) {
-          var sSauceName = sauceObj.shortName || sauceObj.name;
-          var requestedQtyS = newSauceMap[sSauceName] || 0;
-          var previouslyReservedQtyS = oldSauceMap[sSauceName] || 0;
+          var requestedQtyS = getRequestedQtyForSoldOutItem(newSauceMap, sauceObj);
+          var previouslyReservedQtyS = getRequestedQtyForSoldOutItem(oldSauceMap, sauceObj);
           if (requestedQtyS > previouslyReservedQtyS) {
             return ContentService.createTextOutput(JSON.stringify({
               "result": "out_of_stock",
-              "menuName": sSauceName
+              "menuName": sauceObj.shortName || sauceObj.name
             })).setMimeType(ContentService.MimeType.JSON);
           }
         }
@@ -1371,53 +1611,54 @@ function doPost(e) {
         sheet.getRange(rowIndex, 3).setValue(shortCookUpdate);
       }
 
-      if (data.newMenu) sheet.getRange(rowIndex, 4).setValue(data.newMenu);
-      if (data.newSauce) sheet.getRange(rowIndex, 5).setValue(data.newSauce);
-      if (data.newPickupTime) sheet.getRange(rowIndex, 2).setValue(data.newPickupTime);
+      sheet.getRange(rowIndex, 4).setValue(newMenuSummary);
+      sheet.getRange(rowIndex, 5).setValue(newSauceSummary);
+      if (validatedPickup) {
+        sheet.getRange(rowIndex, 2).setValue(validatedPickup.normalized);
+      }
 
-      var updatePriceNumeric = "";
-      if (data.newTotalPrice) {
-        var updatePriceVal = data.newTotalPrice.toString().replace(/[^0-9]/g, '');
-        if (updatePriceVal) {
-          updatePriceNumeric = Number(updatePriceVal);
-          sheet.getRange(rowIndex, 8).setValue(updatePriceNumeric);
-          sheet.getRange(rowIndex, 8).setNumberFormat('#,##0"원"');
-        }
+      var recomputedPrice = calculateServerOrderTotal(newMenuSummary, newSauceSummary, settingsCheck);
+      var clientUpdatePrice = parsePriceNumber(data.newTotalPrice || "");
+      var updatePriceNumeric = recomputedPrice > 0 ? recomputedPrice : clientUpdatePrice;
+
+      if (updatePriceNumeric > 0) {
+        sheet.getRange(rowIndex, 8).setValue(updatePriceNumeric);
+        sheet.getRange(rowIndex, 8).setNumberFormat('#,##0"원"');
       }
 
       var custColVal = String(rowValues[5] || "").trim();
-      var pickupDisplay = data.newPickupTime || sheet.getRange(rowIndex, 2).getDisplayValue();
+      var pickupDisplay = validatedPickup ? validatedPickup.normalized : sheet.getRange(rowIndex, 2).getDisplayValue();
 
       backgroundTaskInfo = {
         type: "update",
         nickname: custColVal,
         pickupTime: pickupDisplay,
         cookType: finalCookTypeStr,
-        menuSummary: data.newMenu || oldMenuStr,
-        sauce: data.newSauce || oldSauceStr,
+        menuSummary: newMenuSummary,
+        sauce: newSauceSummary,
         totalPrice: updatePriceNumeric ? updatePriceNumeric.toLocaleString() + "원" : "0원"
       };
 
       try {
         CacheService.getScriptCache().remove("store_settings_cache_v5");
-      } catch(e) {}
+      } catch (e) { }
 
-      var updateResponseOutput = ContentService.createTextOutput(JSON.stringify({"result": "updated"}))
-                                               .setMimeType(ContentService.MimeType.JSON);
+      var updateResponseOutput = ContentService.createTextOutput(JSON.stringify({ "result": "updated" }))
+        .setMimeType(ContentService.MimeType.JSON);
 
-      try { lock.releaseLock(); } catch (e) {}
+      try { lock.releaseLock(); } catch (e) { }
       runPostOrderBackgroundTasks(backgroundTaskInfo);
       return updateResponseOutput;
     }
 
-    return ContentService.createTextOutput(JSON.stringify({"result": "invalid"}))
-                         .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ "result": "invalid" }))
+      .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({"result": "error", "message": err.toString()}))
-                         .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "message": err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   } finally {
-    try { lock.releaseLock(); } catch(e) {}
+    try { lock.releaseLock(); } catch (e) { }
   }
 }
 
@@ -1460,16 +1701,16 @@ function doGet(e) {
   }
 
   return HtmlService.createHtmlOutputFromFile(fileName)
-      .setTitle(titleName)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    .setTitle(titleName)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function outputJsonP(data, callbackName) {
   var jsonString = JSON.stringify(data);
   var output = callbackName ? (callbackName + '(' + jsonString + ');') : jsonString;
   return ContentService.createTextOutput(output)
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
 function getAdminOrderList() {
@@ -1526,7 +1767,7 @@ function getAdminOrderList() {
     });
   }
 
-  orders.sort(function(a, b) {
+  orders.sort(function (a, b) {
     return parseTimeToMin(a.pickupTime) - parseTimeToMin(b.pickupTime);
   });
 
@@ -1541,6 +1782,9 @@ function updateOrderStatus(rowIndex, newStatus) {
   var rowNum = Number(rowIndex);
   if (rowNum && rowNum > 1) {
     sheet.getRange(rowNum, 1).setValue(newStatus);
+    try {
+      CacheService.getScriptCache().remove("store_settings_cache_v5");
+    } catch (e) { }
     return { success: true, status: newStatus };
   }
   return { success: false, error: "Invalid row: " + rowIndex };
@@ -1554,7 +1798,7 @@ function getStoreSettings(ss) {
   if (cachedSettings) {
     try {
       baseSettings = JSON.parse(cachedSettings);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   var settingSheet = ss.getSheetByName("설정");
@@ -1603,7 +1847,7 @@ function getStoreSettings(ss) {
 
       var rawEventMenus = String(settingSheet.getRange("B7").getDisplayValue()).trim();
       if (rawEventMenus !== "") {
-        eventMenuList = rawEventMenus.split(",").map(function(item) { return item.trim(); });
+        eventMenuList = rawEventMenus.split(",").map(function (item) { return item.trim(); });
       }
 
       var maintVal = String(settingSheet.getRange("B9").getDisplayValue()).trim().toUpperCase();
@@ -1693,7 +1937,7 @@ function getStoreSettings(ss) {
 
   try {
     cache.put("store_settings_cache_v5", JSON.stringify(finalSettings), 30);
-  } catch (e) {}
+  } catch (e) { }
 
   return finalSettings;
 }

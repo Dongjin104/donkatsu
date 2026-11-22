@@ -5,886 +5,500 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>장날동천 주방 대시보드</title>
-    <link rel="stylesheet" as="style" crossorigin
-        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <link rel="icon" href="data:,">
     <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1a1a1a;
+            --surface-sub: #242424;
+            --border-color: #333333;
+            --text-main: #F8F7F4;
+            --text-sub: #9E9A90;
+            --accent-gold: #C5A059;
+            --accent-gold-bg: rgba(197, 160, 89, 0.12);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Pretendard Variable', Pretendard, sans-serif;
         }
 
         body {
-            background-color: #1A1A1A;
-            color: #F4F4F5;
-            min-height: 100vh;
-            padding: 12px 14px 40px 14px;
-            user-select: none;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 6px;
+            font-size: 14.5px;
+            overflow-x: hidden;
         }
 
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #27272A;
-            padding: 14px 20px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .header-title-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .header-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: #FFFFFF;
-            letter-spacing: -0.5px;
-        }
-
-        .header-badge {
-            background-color: #F59E0B;
-            color: #18181B;
-            font-size: 13px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .btn-header {
-            border: none;
-            border-radius: 8px;
-            padding: 9px 14px;
-            font-size: 13.5px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.15s ease;
-        }
-
-        .btn-header:active {
-            transform: scale(0.96);
-        }
-
-        .btn-header:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        .btn-sound-on {
-            background-color: #10B981;
-            color: #FFFFFF;
-        }
-
-        .btn-sound-off {
-            background-color: #3F3F46;
-            color: #A1A1AA;
-        }
-
-        .btn-refresh {
-            background-color: #3B82F6;
-            color: #FFFFFF;
-        }
-
-        .btn-undo {
-            background-color: #D97706;
-            color: #FFFFFF;
-        }
-
-        .status-strip {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            background-color: #27272A;
-            border: 1px solid #3F3F46;
-            border-radius: 10px;
-            padding: 9px 14px;
-            margin-bottom: 12px;
-            font-size: 13px;
-        }
-
-        .summary-pills {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .summary-pill {
-            background-color: #18181B;
-            border: 1px solid #3F3F46;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-weight: 700;
-            color: #E4E4E7;
-        }
-
-        .summary-pill b {
-            color: #FBBF24;
-        }
-
-        .sync-time-text {
-            color: #A1A1AA;
-            font-weight: 600;
-            font-size: 12.5px;
-        }
-
-        .alert-toast {
-            display: none;
-            background-color: #991B1B;
-            border: 2px solid #F87171;
-            color: #FFFFFF;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            font-size: 14px;
-            font-weight: 800;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert-toast.active {
-            display: flex;
-        }
-
-        .order-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 12px;
-        }
-
-        .order-card {
-            background-color: #FFFFFF;
-            color: #111827;
-            border-radius: 12px;
-            padding: 14px 16px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            border-left: 8px solid #EF4444;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .order-card.confirmed {
-            border-left: 8px solid #3B82F6;
-        }
-
-        .order-card.raw-card {
-            background-color: #EFF6FF;
-        }
-
-        .order-card.late-pickup {
-            border-top: 4px solid #F59E0B;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #E5E7EB;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-            gap: 6px;
-        }
-
-        .pickup-time {
-            font-size: 21px;
-            font-weight: 900;
-            color: #111827;
-            letter-spacing: -0.5px;
-        }
-
-        .late-tag {
-            background-color: #FEF3C7;
-            color: #B45309;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 4px;
-            vertical-align: middle;
-        }
-
-        .cook-type-badge {
-            font-size: 13px;
-            font-weight: 800;
-            padding: 5px 10px;
-            border-radius: 6px;
-            white-space: nowrap;
-        }
-
-        .cook-fried {
-            background-color: #FEF3C7;
-            color: #B45309;
-        }
-
-        .cook-raw {
-            background-color: #DBEAFE;
-            color: #1D4ED8;
-        }
-
-        .customer-info {
-            font-size: 16px;
-            font-weight: 800;
-            color: #374151;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .menu-list {
-            background-color: rgba(243, 244, 246, 0.85);
-            padding: 10px 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-
-        .menu-item {
-            font-size: 17px;
-            font-weight: 900;
-            color: #111827;
-            line-height: 1.4;
-        }
-
-        .sauce-info {
-            font-size: 14px;
-            font-weight: 700;
-            color: #4B5563;
-            margin-bottom: 8px;
-            padding: 0 2px;
-        }
-
-        .event-badge {
-            background-color: #FCE7F3;
-            color: #BE185D;
-            font-size: 13px;
-            font-weight: 800;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border: 1px solid #FBCFE8;
-        }
-
-        .price-row {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            font-size: 15px;
-            font-weight: 800;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-
-        .card-actions {
-            display: grid;
-            grid-template-columns: 1fr 1.15fr;
-            gap: 8px;
-        }
-
-        .btn-action {
-            border: none;
-            border-radius: 8px;
-            padding: 13px 8px;
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: opacity 0.15s ease, transform 0.1s ease;
-        }
-
-        .btn-action:active {
-            transform: scale(0.97);
-        }
-
-        .btn-action:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-status-unconfirmed {
-            background-color: #EF4444;
-            color: #FFFFFF;
-        }
-
-        .btn-status-confirmed {
-            background-color: #2563EB;
-            color: #FFFFFF;
-        }
-
-        .btn-complete {
-            background-color: #10B981;
-            color: #FFFFFF;
-        }
-
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 80px 20px;
-            color: #A1A1AA;
-        }
-
-        .empty-state-icon {
-            font-size: 56px;
-            margin-bottom: 16px;
-        }
-
-        .empty-state-text {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #E4E4E7;
-        }
-
-        .empty-state-sub {
-            font-size: 15px;
-        }
-
-        .modal-overlay {
+        #blurOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            display: none;
+            height: 100vh;
+            background: rgba(18, 18, 18, 0.45);
+            backdrop-filter: blur(2.5px);
+            -webkit-backdrop-filter: blur(2.5px);
+            z-index: 99999;
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
             padding: 20px;
+            cursor: pointer;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
         }
 
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-box {
-            background: #27272A;
-            color: #FFFFFF;
-            padding: 28px 24px;
-            border-radius: 16px;
-            max-width: 400px;
+        .blur-popup-card {
+            background: var(--surface-color);
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 20px;
+            padding: 44px 36px;
+            max-width: 380px;
             width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            animation: popupBounce 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .modal-title {
-            font-size: 20px;
+        @keyframes popupBounce {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-badge {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            background: var(--accent-gold-bg);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-bottom: 18px;
+            display: inline-block;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+        }
+
+        .popup-title {
+            font-size: 21px;
             font-weight: 800;
-            margin-bottom: 10px;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
         }
 
-        .modal-target-card {
-            background-color: #18181B;
-            border: 1px solid #3F3F46;
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 14px;
-            text-align: left;
+        .popup-desc {
             font-size: 14px;
-            line-height: 1.5;
-            color: #F4F4F5;
+            color: var(--text-sub);
+            line-height: 1.6;
             word-break: keep-all;
         }
 
-        .modal-desc {
-            font-size: 15px;
-            color: #D4D4D8;
-            margin-bottom: 22px;
-            line-height: 1.5;
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            border: 1px solid var(--border-color);
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
-        .modal-btns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn-modal-cancel {
-            background: #3F3F46;
-            color: #FFFFFF;
-            border: none;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn-modal-confirm {
-            background: #10B981;
-            color: #FFFFFF;
-            border: none;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 16px;
+        header h1 {
+            font-size: 0.92rem;
             font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .status-badge {
+            background: var(--surface-sub);
+            border: 1px solid var(--border-color);
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            color: var(--text-sub);
+        }
+
+        .online-status-container {
+            position: relative;
+            display: inline-block;
+            z-index: 100;
+        }
+
+        .online-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--surface-sub);
+            border: 1px solid var(--border-color);
+            padding: 4px 9px;
+            border-radius: 14px;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .online-badge:hover {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+
+        .pulse-dot {
+            width: 6.5px;
+            height: 6.5px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .badge-text {
+            font-size: 0.72rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+        }
+
+        .arrow-icon {
+            font-size: 0.58rem;
+            color: var(--text-sub);
+            transition: transform 0.2s;
+        }
+
+        .online-badge.active .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        .online-dropdown-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 200px;
+            background: var(--surface-color);
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background-color: var(--surface-sub);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-sub);
+        }
+
+        .online-user-list {
+            list-style: none;
+            margin: 0;
+            padding: 5px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .online-user-list li {
+            padding: 6px 8px;
+            font-size: 0.76rem;
+            color: var(--text-main);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .online-user-list li:hover {
+            background-color: var(--surface-sub);
+        }
+
+        .online-user-list li::before {
+            content: "•";
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        .order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .order-item {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            background: var(--surface-color);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-left-width: 4.5px;
+        }
+
+        .order-item.unconfirmed {
+            border-left-color: #ef4444;
+            background: #1c1515;
+        }
+
+        .order-item.confirmed {
+            border-left-color: #22c55e;
+            background: #141c14;
+        }
+
+        .order-info {
+            flex: 1;
+            padding: 7px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .time-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .time-tag {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            letter-spacing: -0.5px;
+        }
+
+        .winner-badge {
+            background: rgba(236, 72, 153, 0.15);
+            color: #f472b6;
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cooking-badge {
+            display: inline-block;
+            background: var(--surface-sub);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .cooking-badge.special {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .menu-text {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.35;
+            word-break: keep-all;
+        }
+
+        .bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 2px;
+        }
+
+        .sub-info-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sauce-text {
+            font-size: 0.72rem;
+            color: #fb923c;
+            font-weight: 700;
+        }
+
+        .nickname-text {
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .price-tag {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+            padding: 2px 7px;
+            border-radius: 5px;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .btn-status {
+            width: 55px;
+            height: 29px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.2s;
+        }
+
+        .btn-status:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-status.unconfirmed {
+            background: #dc2626;
+        }
+
+        .btn-status.confirmed {
+            background: #16a34a;
+        }
+
+        .btn-done {
+            width: 55px;
+            height: 29px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            background: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.2s;
+        }
+
+        .btn-done:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-done:active {
+            background: #1d4ed8;
         }
     </style>
 </head>
 
 <body>
 
-    <header class="dashboard-header">
-        <div class="header-title-group">
-            <h1 class="header-title">🍳 장날동천 주방 대시보드</h1>
-            <span class="header-badge" id="orderCountBadge">대기 0건</span>
+    <div id="blurOverlay" onclick="startDashboard()">
+        <div class="blur-popup-card">
+            <div class="popup-badge">장날동천 시스템</div>
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">🍳</div>
+            <h2 class="popup-title">주방 뷰를 시작합니다</h2>
+            <p class="popup-desc">
+                실시간 주문 접수 시스템이 준비되었습니다.<br>화면을 터치하여 대시보드를 활성화하세요.
+            </p>
         </div>
-        <div class="header-actions">
-            <button id="undoCompleteBtn" class="btn-header btn-undo" onclick="undoLastCompleted()" disabled title="방금 수령완료 처리한 주문을 되돌립니다">
-                ↩️ 직전 완료 되돌리기
+    </div>
+
+    <header>
+        <h1>🍳 장날동천 주방 뷰</h1>
+
+        <div class="online-status-container">
+            <button id="onlineBadgeBtn" class="online-badge" onclick="toggleOnlineDropdown()">
+                <span class="pulse-dot"></span>
+                <span id="activeVisitorsBadge" class="badge-text">접속 중: 0명</span>
+                <span class="arrow-icon">▼</span>
             </button>
-            <button id="soundToggleBtn" class="btn-header btn-sound-off" onclick="toggleSound()">
-                🔇 소리 알림 꺼짐
-            </button>
-            <button id="refreshBtn" class="btn-header btn-refresh" onclick="fetchOrders(true)">
-                🔄 새로고침
-            </button>
+
+            <div id="onlineDropdownPanel" class="online-dropdown-panel">
+                <div class="dropdown-header">
+                    <span>실시간 접속 목록</span>
+                    <span id="dropdownSubCount">총 0명</span>
+                </div>
+                <ul id="onlineUserList" class="online-user-list">
+                    <li style="color: #888; justify-content: center;">목록 로딩중...</li>
+                </ul>
+            </div>
         </div>
+
+        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ef4444; font-weight:bold;">0</span> / 총
+            <span id="totalCount">0</span></div>
     </header>
 
-    <div class="status-strip">
-        <div class="summary-pills">
-            <span class="summary-pill">미확인 <b id="unconfirmedCountText">0</b>건</span>
-            <span class="summary-pill">확인완료 <b id="confirmedCountText">0</b>건</span>
-            <span class="summary-pill">🍗 튀김 <b id="friedCountText">0</b>건</span>
-            <span class="summary-pill">🥩 생고기 <b id="rawCountText">0</b>건</span>
-        </div>
-        <div class="sync-time-text" id="lastSyncTimeText">마지막 갱신: -</div>
-    </div>
-
-    <div id="alertToast" class="alert-toast">
-        <span id="alertToastMessage">처리 중 오류가 발생했습니다.</span>
-        <button type="button" onclick="hideAlertToast()"
-            style="background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700; cursor: pointer;">닫기</button>
-    </div>
-
-    <main id="orderGrid" class="order-grid">
-        <div class="empty-state">
-            <div class="empty-state-icon">⏳</div>
-            <div class="empty-state-text">예약 목록을 불러오는 중입니다...</div>
-        </div>
-    </main>
-
-    <!-- 수령 완료 확인 모달 -->
-    <div id="completeModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-title">✅ 수령 완료 처리할까요?</div>
-            <div id="completeTargetSummary" class="modal-target-card"></div>
-            <div class="modal-desc">
-                완료 처리 시 주방 화면에서 즉시 사라지며,<br>고객님의 방문 횟수가 1회 적립됩니다.
-            </div>
-            <div class="modal-btns">
-                <button class="btn-modal-cancel" onclick="closeCompleteModal()">취소</button>
-                <button class="btn-modal-confirm" id="confirmCompleteBtn" onclick="executeCompleteOrder()">수령 완료</button>
+    <div id="custom-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; justify-content: center; align-items: center;">
+        <div
+            style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; width: 330px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; color: #fff;">
+            <h3 id="modal-title" style="margin: 0 0 10px 0; font-size: 17px; font-weight: 800; color: var(--accent-gold);">수령 완료 처리</h3>
+            <p id="modal-desc" style="margin: 0 0 22px 0; font-size: 14px; color: var(--text-sub); line-height: 1.5;">고객에게 돈가스를 전달하고<br>수령 완료 처리하시겠습니까?</p>
+            <div style="display: flex; gap: 8px;">
+                <button id="modal-cancel-btn"
+                    style="flex: 1; padding: 11px; background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: 700;">취소</button>
+                <button id="modal-confirm-btn"
+                    style="flex: 1; padding: 11px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700;">확인</button>
             </div>
         </div>
+    </div>
+
+    <div id="orderContainer" class="order-list">
+        <div style="text-align:center; padding: 25px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
     </div>
 
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
-
-        let knownRowIndices = new Set();
-        let isFirstLoad = true;
-        let isSoundEnabled = false;
-        let audioCtx = null;
-        let pendingCompleteRowIndex = null;
-        let pendingCompleteOrderObj = null;
-        let lastCompletedRecord = null;
-        let isFetching = false;
-        let currentOrdersList = [];
-
-        function showAlertToast(message) {
-            const toast = document.getElementById('alertToast');
-            const msgEl = document.getElementById('alertToastMessage');
-            if (msgEl) msgEl.textContent = message || "요청 처리에 실패했습니다. 새로고침 후 다시 확인해 주세요.";
-            if (toast) toast.classList.add('active');
-        }
-
-        function hideAlertToast() {
-            const toast = document.getElementById('alertToast');
-            if (toast) toast.classList.remove('active');
-        }
-
-        function updateLastSyncTime() {
-            const el = document.getElementById('lastSyncTimeText');
-            if (!el) return;
-            const now = new Date();
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            const ss = String(now.getSeconds()).padStart(2, '0');
-            el.textContent = `마지막 갱신: ${hh}:${mm}:${ss}`;
-        }
-
-        function callGasAPI(payload, callback) {
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            })
-                .then(res => res.json())
-                .then(data => callback(data))
-                .catch(err => {
-                    console.error('GAS API Error:', err);
-                    callback(null);
-                });
-        }
-
-        function toggleSound() {
-            isSoundEnabled = !isSoundEnabled;
-            const btn = document.getElementById('soundToggleBtn');
-            if (isSoundEnabled) {
-                if (!audioCtx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                btn.className = 'btn-header btn-sound-on';
-                btn.innerHTML = '🔊 소리 알림 켜짐';
-                playNotificationBeep();
-            } else {
-                btn.className = 'btn-header btn-sound-off';
-                btn.innerHTML = '🔇 소리 알림 꺼짐';
-            }
-        }
-
-        function playNotificationBeep() {
-            if (!isSoundEnabled || !audioCtx) return;
-            try {
-                const now = audioCtx.currentTime;
-                const osc1 = audioCtx.createOscillator();
-                const gain1 = audioCtx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(659.25, now);
-                gain1.gain.setValueAtTime(0.25, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                osc1.connect(gain1);
-                gain1.connect(audioCtx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.35);
-
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(880, now + 0.18);
-                gain2.gain.setValueAtTime(0.3, now + 0.18);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.start(now + 0.18);
-                osc2.stop(now + 0.65);
-            } catch (e) {
-                console.error("Audio playback error:", e);
-            }
-        }
-
-        function isLatePickupTime(timeStr) {
-            if (!timeStr) return false;
-            const match = timeStr.match(/(오전|오후)\s*(\d+):(\d+)/);
-            if (!match) return false;
-            let hour = parseInt(match[2], 10);
-            const min = parseInt(match[3], 10);
-            if (match[1] === '오후' && hour !== 12) hour += 12;
-            if (match[1] === '오전' && hour === 12) hour = 0;
-            const totalMinutes = hour * 60 + min;
-            return totalMinutes >= 18 * 60 + 35;
-        }
-
-        function fetchOrders(manual = false) {
-            if (isFetching && !manual) return;
-            isFetching = true;
-
-            const refreshBtn = document.getElementById('refreshBtn');
-            if (manual) {
-                refreshBtn.innerHTML = '⏳ 로딩중...';
-                refreshBtn.disabled = true;
-            }
-
-            callGasAPI({ action: 'getAdminOrderList' }, function (res) {
-                isFetching = false;
-                if (manual) {
-                    refreshBtn.innerHTML = '🔄 새로고침';
-                    refreshBtn.disabled = false;
-                }
-
-                if (!res || !res.success) {
-                    showAlertToast('⚠️ 주문 목록을 불러오지 못했습니다. 네트워크 상태를 확인해 주세요.');
-                    return;
-                }
-
-                const orders = res.orders || [];
-                currentOrdersList = orders;
-                updateLastSyncTime();
-
-                if (!isFirstLoad) {
-                    let hasNewOrder = false;
-                    orders.forEach(o => {
-                        if (!knownRowIndices.has(o.rowIndex)) {
-                            hasNewOrder = true;
-                        }
-                    });
-                    if (hasNewOrder) {
-                        playNotificationBeep();
-                    }
-                }
-
-                knownRowIndices = new Set(orders.map(o => o.rowIndex));
-                isFirstLoad = false;
-
-                renderOrders(orders);
-            });
-        }
-
-        function renderOrders(orders) {
-            const grid = document.getElementById('orderGrid');
-            const badge = document.getElementById('orderCountBadge');
-            badge.textContent = `대기 ${orders.length}건`;
-
-            let unconfirmedCount = 0;
-            let confirmedCount = 0;
-            let friedCount = 0;
-            let rawCount = 0;
-
-            orders.forEach(o => {
-                if (o.status === '확인') confirmedCount++;
-                else unconfirmedCount++;
-
-                const isRaw = (o.cookType || '').includes('비튀김') || (o.cookType || '').includes('생고기');
-                if (isRaw) rawCount++;
-                else friedCount++;
-            });
-
-            document.getElementById('unconfirmedCountText').textContent = unconfirmedCount;
-            document.getElementById('confirmedCountText').textContent = confirmedCount;
-            document.getElementById('friedCountText').textContent = friedCount;
-            document.getElementById('rawCountText').textContent = rawCount;
-
-            if (orders.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎉</div>
-                        <div class="empty-state-text">현재 대기 중인 예약이 없습니다</div>
-                        <div class="empty-state-sub">새 예약이 들어오면 화면에 자동으로 나타납니다</div>
-                    </div>
-                `;
-                return;
-            }
-
-            grid.innerHTML = orders.map(order => {
-                const isConfirmed = order.status === '확인';
-                const isRaw = (order.cookType || '').includes('비튀김') || (order.cookType || '').includes('생고기');
-                const isLate = isLatePickupTime(order.pickupTime);
-
-                const cardClasses = [
-                    'order-card',
-                    isConfirmed ? 'confirmed' : '',
-                    isRaw ? 'raw-card' : '',
-                    isLate ? 'late-pickup' : ''
-                ].filter(Boolean).join(' ');
-
-                const cookBadgeHtml = isRaw
-                    ? `<span class="cook-type-badge cook-raw">🥩 생고기</span>`
-                    : `<span class="cook-type-badge cook-fried">🍗 튀김</span>`;
-
-                const lateTagHtml = isLate ? `<span class="late-tag">6시30분 일괄조리</span>` : '';
-
-                const menuItemsHtml = (order.menu || '')
-                    .split(',')
-                    .map(m => m.trim())
-                    .filter(Boolean)
-                    .map(m => `<div class="menu-item">• ${escapeHtml(m)}</div>`)
-                    .join('');
-
-                const sauceHtml = (order.sauce && order.sauce !== '없음')
-                    ? `<div class="sauce-info">🥣 소스: ${escapeHtml(order.sauce)}</div>`
-                    : `<div class="sauce-info" style="color:#9CA3AF;">🥣 추가 소스 없음</div>`;
-
-                const eventHtml = (order.eventPrize && order.eventPrize.trim() !== '')
-                    ? `<div class="event-badge">🎁 이벤트: ${escapeHtml(order.eventPrize)}</div>`
-                    : '';
-
-                const statusBtnClass = isConfirmed ? 'btn-status-confirmed' : 'btn-status-unconfirmed';
-                const statusBtnText = isConfirmed ? '✅ 확인 완료' : '🔴 미확인';
-                const nextStatus = isConfirmed ? '미확인' : '확인';
-
-                return `
-                    <div class="${cardClasses}" id="card-${order.rowIndex}">
-                        <div>
-                            <div class="card-header">
-                                <div class="pickup-time">${escapeHtml(order.pickupTime)}${lateTagHtml}</div>
-                                ${cookBadgeHtml}
-                            </div>
-                            <div class="customer-info">
-                                👤 ${escapeHtml(order.nickname)}
-                            </div>
-                            <div class="menu-list">
-                                ${menuItemsHtml}
-                            </div>
-                            ${sauceHtml}
-                            ${eventHtml}
-                        </div>
-                        <div>
-                            <div class="price-row">
-                                <span>결제금액: ${escapeHtml(order.totalPrice)}</span>
-                            </div>
-                            <div class="card-actions">
-                                <button class="btn-action ${statusBtnClass}" id="status-btn-${order.rowIndex}"
-                                    onclick="toggleStatus(${order.rowIndex}, '${nextStatus}')">
-                                    ${statusBtnText}
-                                </button>
-                                <button class="btn-action btn-complete" id="complete-btn-${order.rowIndex}"
-                                    onclick="openCompleteModal(${order.rowIndex})">
-                                    수령완료
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function toggleStatus(rowIndex, nextStatus) {
-            const btn = document.getElementById(`status-btn-${rowIndex}`);
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = '변경중...';
-            }
-
-            callGasAPI({
-                action: 'updateOrderStatus',
-                rowIndex: rowIndex,
-                status: nextStatus
-            }, function (res) {
-                if (res && res.success) {
-                    hideAlertToast();
-                    fetchOrders();
-                } else {
-                    if (btn) btn.disabled = false;
-                    showAlertToast((res && res.message) ? `⚠️ ${res.message}` : '⚠️ 확인 상태 변경에 실패했습니다. 다시 시도해 주세요.');
-                    fetchOrders();
-                }
-            });
-        }
-
-        function openCompleteModal(rowIndex) {
-            pendingCompleteRowIndex = rowIndex;
-            pendingCompleteOrderObj = currentOrdersList.find(o => Number(o.rowIndex) === Number(rowIndex)) || null;
-
-            const summaryEl = document.getElementById('completeTargetSummary');
-            if (summaryEl) {
-                if (pendingCompleteOrderObj) {
-                    summaryEl.innerHTML = `
-                        <div><b>픽업시간:</b> ${escapeHtml(pendingCompleteOrderObj.pickupTime || '-')}</div>
-                        <div><b>고객명:</b> ${escapeHtml(pendingCompleteOrderObj.nickname || '-')}</div>
-                        <div><b>메뉴:</b> ${escapeHtml(pendingCompleteOrderObj.menu || '-')}</div>
-                    `;
-                } else {
-                    summaryEl.innerHTML = `<div>선택한 예약 건을 수령 완료 처리합니다.</div>`;
-                }
-            }
-
-            document.getElementById('completeModal').classList.add('active');
-        }
-
-        function closeCompleteModal() {
-            pendingCompleteRowIndex = null;
-            pendingCompleteOrderObj = null;
-            document.getElementById('completeModal').classList.remove('active');
-        }
-
-        function executeCompleteOrder() {
-            if (!pendingCompleteRowIndex) return;
-            const rowIndex = pendingCompleteRowIndex;
-            const completedSnapshot = pendingCompleteOrderObj ? Object.assign({}, pendingCompleteOrderObj) : { rowIndex: rowIndex };
-            closeCompleteModal();
-
-            const compBtn = document.getElementById(`complete-btn-${rowIndex}`);
-            if (compBtn) {
-                compBtn.disabled = true;
-                compBtn.textContent = '처리중...';
-            }
-
-            callGasAPI({
-                action: 'completeOrder',
-                rowIndex: rowIndex
-            }, function (res) {
-                if (res && res.success) {
-                    hideAlertToast();
-                    lastCompletedRecord = completedSnapshot;
-                    const undoBtn = document.getElementById('undoCompleteBtn');
-                    if (undoBtn) undoBtn.disabled = false;
-
-                    const card = document.getElementById(`card-${rowIndex}`);
-                    if (card) {
-                        card.style.opacity = '0.3';
-                        card.style.transform = 'scale(0.95)';
-                    }
-                    setTimeout(() => fetchOrders(), 200);
-                } else {
-                    if (compBtn) {
-                        compBtn.disabled = false;
-                        compBtn.textContent = '수령완료';
-                    }
-                    showAlertToast((res && res.message) ? `⚠️ ${res.message}` : '⚠️ 수령 완료 처리에 실패했습니다. 네트워크 확인 후 다시 눌러주세요.');
-                    fetchOrders();
-                }
-            });
-        }
-
-        function undoLastCompleted() {
-            if (!lastCompletedRecord || !lastCompletedRecord.rowIndex) return;
-            const undoBtn = document.getElementById('undoCompleteBtn');
-            if (undoBtn) {
-                undoBtn.disabled = true;
-                undoBtn.textContent = '⏳ 복구중...';
-            }
-
-            const restoreStatus = lastCompletedRecord.status === '확인' ? '확인' : '미확인';
-            callGasAPI({
-                action: 'updateOrderStatus',
-                rowIndex: lastCompletedRecord.rowIndex,
-                status: restoreStatus
-            }, function (res) {
-                if (undoBtn) undoBtn.textContent = '↩️ 직전 완료 되돌리기';
-                if (res && res.success) {
-                    hideAlertToast();
-                    lastCompletedRecord = null;
-                    fetchOrders();
-                } else {
-                    if (undoBtn) undoBtn.disabled = false;
-                    showAlertToast((res && res.message) ? `⚠️ ${res.message}` : '⚠️ 직전 완료 건 복구에 실패했습니다.');
-                }
-            });
-        }
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
+        const KAKAO_JS_KEY = "db06049bca3d739bbf1d8d9d0cad1b5b";
+        let previousTotalCount = 0;
+        let isInitialLoad = true;
+        let lastOrderSignature = "";
+        let lastActiveUsersSignature = "";
+        let isFetchingOrders = false;
+        let isFetchingActiveUsers = false;
 
         function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
+            return String(str === null || str === undefined ? '' : str)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -892,14 +506,393 @@
                 .replace(/'/g, '&#39;');
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchOrders();
-            setInterval(() => {
-                if (!document.hidden) {
-                    fetchOrders();
+        function escapeJsSingleQuote(str) {
+            return String(str === null || str === undefined ? '' : str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'");
+        }
+
+        function normalizeKakaoId(raw) {
+            if (raw === null || raw === undefined) return "";
+            let s = String(raw).trim();
+            if (!s) return "";
+            if (s.toLowerCase().startsWith("kakao_")) s = s.slice(6).trim();
+            if (/^\d+\.0$/.test(s)) s = s.replace(/\.0$/, "");
+            return s;
+        }
+
+        function formatKakaoId(raw) {
+            const norm = normalizeKakaoId(raw);
+            if (!norm) return "";
+            return /^\d+$/.test(norm) ? ("kakao_" + norm) : norm;
+        }
+
+        function getKakaoId() {
+            const params = new URLSearchParams(window.location.search);
+            const fromUrl = (params.get("kakaoId") || params.get("kakao_id") || params.get("clientId") || "").trim();
+            if (fromUrl) {
+                const normUrl = normalizeKakaoId(fromUrl);
+                if (normUrl) {
+                    try {
+                        localStorage.setItem("jnal_kakao_id", normUrl);
+                        sessionStorage.setItem("jnal_kakao_id", normUrl);
+                        localStorage.setItem("donkatsu_kakao_id", normUrl);
+                    } catch (e) {}
+                    return normUrl;
                 }
-            }, 15000);
+            }
+            try {
+                const rawStored = (
+                    sessionStorage.getItem("jnal_kakao_id") ||
+                    localStorage.getItem("jnal_kakao_id") ||
+                    localStorage.getItem("donkatsu_kakao_id") ||
+                    localStorage.getItem("donkatsu_client_id") ||
+                    localStorage.getItem("kakaoId") ||
+                    ""
+                ).trim();
+                return normalizeKakaoId(rawStored);
+            } catch (e) {
+                return "";
+            }
+        }
+
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function startDashboard() {
+            getAudioContext();
+            const overlay = document.getElementById('blurOverlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                overlay.style.visibility = 'hidden';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 400);
+            }
+            fetchOrders();
+            fetchActiveUsers();
+        }
+
+        function playNewOrderSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.frequency.setValueAtTime(523.25, now);
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc1.connect(gain1); gain1.connect(ctx.destination);
+                osc1.start(now); osc1.stop(now + 0.3);
+
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.frequency.setValueAtTime(659.25, now + 0.15);
+                gain2.gain.setValueAtTime(0.3, now + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                osc2.connect(gain2); gain2.connect(ctx.destination);
+                osc2.start(now + 0.15); osc2.stop(now + 0.45);
+            } catch (e) { }
+        }
+
+        function callGasAPI(action, params = {}, callback) {
+            const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
+            let settled = false;
+            const script = document.createElement('script');
+
+            const cleanup = () => {
+                try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                if (script.parentNode) {
+                    try { script.parentNode.removeChild(script); } catch (e) {}
+                }
+            };
+
+            const timer = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                if (callback) callback(null);
+            }, 10000);
+
+            window[callbackName] = function (data) {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                cleanup();
+                if (callback) callback(data);
+            };
+
+            const kakaoId = getKakaoId();
+            const mergedParams = Object.assign({}, params);
+            if (kakaoId && !mergedParams.kakaoId) {
+                mergedParams.kakaoId = kakaoId;
+            }
+            if (kakaoId && !mergedParams.clientId) {
+                mergedParams.clientId = formatKakaoId(kakaoId);
+            }
+            mergedParams._ts = Date.now();
+
+            let url = GAS_WEBAPP_URL + '?action=' + encodeURIComponent(action) + '&callback=' + encodeURIComponent(callbackName);
+            for (let key in mergedParams) {
+                if (mergedParams[key] !== undefined && mergedParams[key] !== null) {
+                    url += '&' + key + '=' + encodeURIComponent(mergedParams[key]);
+                }
+            }
+
+            script.src = url;
+            script.onerror = function () {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                cleanup();
+                if (callback) callback(null);
+            };
+            document.body.appendChild(script);
+        }
+
+        function fetchOrders() {
+            if (isFetchingOrders) return;
+            isFetchingOrders = true;
+            callGasAPI('getAdminOrderList', {}, function (data) {
+                isFetchingOrders = false;
+                if (data === null || data === undefined) return;
+                const ordersList = Array.isArray(data)
+                    ? data
+                    : (data && Array.isArray(data.orders) ? data.orders : null);
+                if (!ordersList) return;
+                renderOrders(ordersList);
+            });
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById('orderContainer');
+
+            if (!Array.isArray(orders)) {
+                orders = [];
+            }
+
+            const sig = JSON.stringify(orders.map(o => ({
+                r: o.rowIndex,
+                s: o.status,
+                t: o.pickupTime,
+                c: o.cooking,
+                m: o.menu,
+                es: o.extraSauce,
+                n: o.nickname,
+                p: o.totalPrice,
+                ep: o.eventPrize || o.eventWinner || '',
+                k: normalizeKakaoId(o.kakaoId)
+            })));
+
+            if (!isInitialLoad && sig === lastOrderSignature) {
+                return;
+            }
+            lastOrderSignature = sig;
+
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
+                document.getElementById('unconfirmedCount').innerText = 0;
+                document.getElementById('totalCount').innerText = 0;
+                previousTotalCount = 0;
+                isInitialLoad = false;
+                return;
+            }
+
+            if (!isInitialLoad && orders.length > previousTotalCount) {
+                playNewOrderSound();
+            }
+
+            previousTotalCount = orders.length;
+            isInitialLoad = false;
+
+            let unconfirmedCnt = 0;
+            let html = '';
+
+            orders.forEach(item => {
+                const statusVal = String(item.status || '미확인').trim();
+                const isUnconfirmed = (statusVal === '미확인');
+                if (isUnconfirmed) unconfirmedCnt++;
+
+                const cookingVal = String(item.cooking || '').trim();
+                const isSpecialCooking = cookingVal.includes('비튀김') || cookingVal.includes('생고기') || cookingVal.includes('안튀김');
+
+                let priceDisplay = '';
+                if (item.totalPrice !== undefined && item.totalPrice !== '') {
+                    let num = Number(String(item.totalPrice).replace(/[^0-9]/g, ''));
+                    priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : String(item.totalPrice);
+                }
+
+                let eventText = item.eventWinner || item.eventPrize || item.event || '';
+                if (!eventText) {
+                    for (let key in item) {
+                        if (key === 'kakaoId' || key === 'rowIndex' || key === 'totalPrice') continue;
+                        let val = String(item[key] || '');
+                        if (val.includes('당첨') || val.includes('서비스')) {
+                            eventText = val;
+                            break;
+                        }
+                    }
+                }
+
+                let eventDetailHtml = '';
+                if (eventText) {
+                    eventDetailHtml = `<span class="winner-badge">🎁 ${escapeHtml(eventText)}</span>`;
+                }
+
+                const safeRowIndex = Number(item.rowIndex) || 0;
+                const safeStatusJs = escapeJsSingleQuote(statusVal);
+
+                html += `
+                    <div class="order-item ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}">
+                        <div class="order-info">
+                            <div class="top-row">
+                                <div class="time-group">
+                                    <span class="time-tag">⏰ ${escapeHtml(item.pickupTime || '')}</span>
+                                    ${eventDetailHtml}
+                                </div>
+                                <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${escapeHtml(cookingVal || '튀김')}</span>
+                            </div>
+                            <div class="menu-text">${escapeHtml(item.menu || '')}</div>
+                            <div class="bottom-row">
+                                <div class="sub-info-group">
+                                    ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + escapeHtml(item.extraSauce) + '</span>' : ''}
+                                    <span class="nickname-text">👤 ${escapeHtml(item.nickname || '')}</span>
+                                </div>
+                                ${priceDisplay ? '<div class="price-tag">💰 ' + escapeHtml(priceDisplay) + '</div>' : ''}
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-status ${isUnconfirmed ? 'unconfirmed' : 'confirmed'}" 
+                                    onclick="toggleStatus(${safeRowIndex}, '${safeStatusJs}')">
+                                ${isUnconfirmed ? '미확인🔴' : '확인완료🟢'}
+                            </button>
+                            <button class="btn-done" onclick="completeOrder(${safeRowIndex})">
+                                수령완료🏁
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('unconfirmedCount').innerText = unconfirmedCnt;
+            document.getElementById('totalCount').innerText = orders.length;
+        }
+
+        function toggleStatus(rowIndex, currentStatus) {
+            getAudioContext();
+            const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
+            callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
+                lastOrderSignature = "";
+                fetchOrders();
+            });
+        }
+
+        function completeOrder(rowIndex) {
+            getAudioContext();
+            const modal = document.getElementById('custom-modal');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+
+            modal.style.display = 'flex';
+
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newConfirmBtn.addEventListener('click', function () {
+                modal.style.display = 'none';
+                callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) {
+                    lastOrderSignature = "";
+                    fetchOrders();
+                });
+            });
+
+            newCancelBtn.addEventListener('click', function () {
+                modal.style.display = 'none';
+            });
+        }
+
+        function toggleOnlineDropdown() {
+            const panel = document.getElementById('onlineDropdownPanel');
+            const badge = document.getElementById('onlineBadgeBtn');
+
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+                badge.classList.add('active');
+            } else {
+                panel.style.display = 'none';
+                badge.classList.remove('active');
+            }
+        }
+
+        window.addEventListener('click', function(e) {
+            const container = document.querySelector('.online-status-container');
+            if (container && !container.contains(e.target)) {
+                const panel = document.getElementById('onlineDropdownPanel');
+                const badge = document.getElementById('onlineBadgeBtn');
+                if (panel) panel.style.display = 'none';
+                if (badge) badge.classList.remove('active');
+            }
         });
+
+        function fetchActiveUsers() {
+            if (isFetchingActiveUsers) return;
+            isFetchingActiveUsers = true;
+            callGasAPI('getActiveUsers', {}, function(data) {
+                isFetchingActiveUsers = false;
+                if (!data || typeof data !== 'object') return;
+                const badge = document.getElementById('activeVisitorsBadge');
+                const subCount = document.getElementById('dropdownSubCount');
+                const listEl = document.getElementById('onlineUserList');
+
+                const usersArr = Array.isArray(data.users) ? data.users : [];
+                const count = (typeof data.count === 'number') ? data.count : usersArr.length;
+                const sig = count + '|' + JSON.stringify(usersArr);
+                if (sig === lastActiveUsersSignature) return;
+                lastActiveUsersSignature = sig;
+
+                if (badge) badge.innerText = `접속 중: ${count}명`;
+                if (subCount) subCount.innerText = `총 ${count}명`;
+
+                if (listEl) {
+                    listEl.innerHTML = '';
+                    if (usersArr.length === 0) {
+                        listEl.innerHTML = '<li style="color: #888; justify-content: center;">접속 중인 고객이 없습니다.</li>';
+                    } else {
+                        usersArr.forEach((userEntry) => {
+                            const li = document.createElement('li');
+                            if (typeof userEntry === 'object' && userEntry !== null) {
+                                const name = userEntry.nickname || userEntry.name || userEntry.identifier || '회원';
+                                li.textContent = `${name}`;
+                            } else {
+                                li.textContent = String(userEntry);
+                            }
+                            listEl.appendChild(li);
+                        });
+                    }
+                }
+            });
+        }
+
+        setInterval(fetchActiveUsers, 3000);
+        setTimeout(fetchActiveUsers, 800);
+
+        setInterval(fetchOrders, 2500);
     </script>
 </body>
 

@@ -213,6 +213,26 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
         let selectedFiles = [];
         let failedFilesList = [];
+        let isUploading = false;
+        let previewObjectUrls = [];
+
+        function escapeHtml(str) {
+            return String(str === null || str === undefined ? '' : str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function clearPreviewObjectUrls() {
+            if (previewObjectUrls.length > 0) {
+                previewObjectUrls.forEach(url => {
+                    try { URL.revokeObjectURL(url); } catch (e) {}
+                });
+                previewObjectUrls = [];
+            }
+        }
 
         window.addEventListener('DOMContentLoaded', async function () {
             try {
@@ -240,22 +260,39 @@
         });
 
         document.getElementById('fileInput').addEventListener('change', function (e) {
-            selectedFiles = Array.from(e.target.files);
+            if (isUploading) return;
+            selectedFiles = Array.from(e.target.files || []);
             failedFilesList = [];
             document.getElementById('retryFailedBtn').style.display = 'none';
             const previewGrid = document.getElementById('previewGrid');
             previewGrid.innerHTML = '';
+            clearPreviewObjectUrls();
 
             if (selectedFiles.length > 0) {
                 selectedFiles.forEach((file, idx) => {
-                    const reader = new FileReader();
-                    reader.onload = function (ev) {
-                        const div = document.createElement('div');
-                        div.className = 'preview-item';
-                        div.innerHTML = `<img src="${ev.target.result}"><span class="preview-badge">${idx + 1}번</span>`;
-                        previewGrid.appendChild(div);
-                    };
-                    reader.readAsDataURL(file);
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+
+                    const img = document.createElement('img');
+                    if (window.URL && typeof window.URL.createObjectURL === 'function') {
+                        const objUrl = URL.createObjectURL(file);
+                        previewObjectUrls.push(objUrl);
+                        img.src = objUrl;
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = function (ev) {
+                            img.src = ev.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+
+                    const badge = document.createElement('span');
+                    badge.className = 'preview-badge';
+                    badge.textContent = `${idx + 1}번`;
+
+                    div.appendChild(img);
+                    div.appendChild(badge);
+                    previewGrid.appendChild(div);
                 });
                 checkFormReady();
             } else {
@@ -268,53 +305,74 @@
         function checkFormReady() {
             const menuVal = document.getElementById('menuSelect').value;
             const uploadBtn = document.getElementById('uploadBtn');
-            uploadBtn.disabled = !(menuVal && selectedFiles.length > 0);
+            uploadBtn.disabled = Boolean(isUploading || !(menuVal && selectedFiles.length > 0));
         }
 
         function compressImage(file) {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    const img = new Image();
-                    img.onload = function () {
-                        const MAX_LONG_EDGE = 800;
-                        let width = img.width || 0;
-                        let height = img.height || 0;
+                const useObjectUrl = Boolean(window.URL && typeof window.URL.createObjectURL === 'function');
+                const sourceUrl = useObjectUrl ? URL.createObjectURL(file) : null;
 
-                        if (width <= 0 || height <= 0) {
-                            reject(new Error("이미지 크기를 읽을 수 없습니다."));
-                            return;
-                        }
-
-                        if (width >= height && width > MAX_LONG_EDGE) {
-                            height = Math.round(height * (MAX_LONG_EDGE / width));
-                            width = MAX_LONG_EDGE;
-                        } else if (height > width && height > MAX_LONG_EDGE) {
-                            width = Math.round(width * (MAX_LONG_EDGE / height));
-                            height = MAX_LONG_EDGE;
-                        }
-
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
-                        resolve(dataUrl);
-                    };
-                    img.onerror = () => reject(new Error("이미지 디코딩에 실패했습니다."));
-                    img.src = event.target.result;
+                const cleanupSourceUrl = () => {
+                    if (sourceUrl) {
+                        try { URL.revokeObjectURL(sourceUrl); } catch (e) {}
+                    }
                 };
-                reader.onerror = () => reject(new Error("파일 읽기에 실패했습니다."));
-                reader.readAsDataURL(file);
+
+                const img = new Image();
+                img.onload = function () {
+                    cleanupSourceUrl();
+                    const MAX_LONG_EDGE = 800;
+                    let width = img.width || 0;
+                    let height = img.height || 0;
+
+                    if (width <= 0 || height <= 0) {
+                        reject(new Error("이미지 크기를 읽을 수 없습니다."));
+                        return;
+                    }
+
+                    if (width >= height && width > MAX_LONG_EDGE) {
+                        height = Math.round(height * (MAX_LONG_EDGE / width));
+                        width = MAX_LONG_EDGE;
+                    } else if (height > width && height > MAX_LONG_EDGE) {
+                        width = Math.round(width * (MAX_LONG_EDGE / height));
+                        height = MAX_LONG_EDGE;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+                    resolve(dataUrl);
+                };
+                img.onerror = () => {
+                    cleanupSourceUrl();
+                    reject(new Error("이미지 디코딩에 실패했습니다."));
+                };
+
+                if (sourceUrl) {
+                    img.src = sourceUrl;
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        img.src = event.target.result;
+                    };
+                    reader.onerror = () => reject(new Error("파일 읽기에 실패했습니다."));
+                    reader.readAsDataURL(file);
+                }
             });
         }
 
         async function uploadImages(retryOnly = false) {
+            if (isUploading) return;
             const menuName = document.getElementById('menuSelect').value;
             const targetFiles = retryOnly ? failedFilesList.slice() : selectedFiles.slice();
             if (!menuName || targetFiles.length === 0) return;
+
+            isUploading = true;
 
             const uploadBtn = document.getElementById('uploadBtn');
             const retryBtn = document.getElementById('retryFailedBtn');
@@ -324,6 +382,7 @@
 
             uploadBtn.disabled = true;
             retryBtn.style.display = 'none';
+            retryBtn.disabled = true;
             document.getElementById('menuSelect').disabled = true;
             document.getElementById('fileInput').disabled = true;
 
@@ -335,69 +394,75 @@
             const currentFailed = [];
             let successCount = 0;
 
-            for (let i = 0; i < targetFiles.length; i++) {
-                const file = targetFiles[i];
-                const isFirstUpload = (!retryOnly && i === 0);
+            try {
+                for (let i = 0; i < targetFiles.length; i++) {
+                    const file = targetFiles[i];
+                    const isFirstUpload = (!retryOnly && i === 0);
 
-                statusText.style.color = '#e65100';
-                statusText.innerHTML = `⏳ [${i + 1} / ${targetFiles.length}] 번째 사진 압축 및 업로드 중...<br><span style="font-size:12px; color:#666;">(${file.name})</span>`;
+                    statusText.style.color = '#e65100';
+                    statusText.innerHTML = `⏳ [${i + 1} / ${targetFiles.length}] 번째 사진 압축 및 업로드 중...<br><span style="font-size:12px; color:#666;">(${escapeHtml(file.name)})</span>`;
 
-                try {
-                    const base64Data = await compressImage(file);
+                    try {
+                        const base64Data = await compressImage(file);
 
-                    const payload = {
-                        action: 'uploadMenuImage',
-                        menuName: menuName,
-                        imageBase64: base64Data,
-                        fileName: `${menuName}_${Date.now()}_${i + 1}.jpg`,
-                        isFirst: isFirstUpload
-                    };
+                        const payload = {
+                            action: 'uploadMenuImage',
+                            menuName: menuName,
+                            imageBase64: base64Data,
+                            fileName: `${menuName}_${Date.now()}_${i + 1}.jpg`,
+                            isFirst: isFirstUpload
+                        };
 
-                    const res = await fetch(WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify(payload)
-                    });
+                        const res = await fetch(WEB_APP_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify(payload)
+                        });
 
-                    const text = await res.text();
-                    let result = null;
-                    try { result = JSON.parse(text); } catch (e) { }
+                        const text = await res.text();
+                        let result = null;
+                        try { result = JSON.parse(text); } catch (e) { }
 
-                    if (!result || result.result !== 'success') {
-                        throw new Error((result && result.message) ? result.message : '서버 응답 오류');
+                        if (!res.ok || !result || result.result !== 'success') {
+                            throw new Error((result && result.message) ? result.message : '서버 응답 오류');
+                        }
+
+                        successCount++;
+                    } catch (err) {
+                        currentFailed.push(file);
                     }
 
-                    successCount++;
-                } catch (err) {
-                    currentFailed.push(file);
+                    const percent = Math.round(((i + 1) / targetFiles.length) * 100);
+                    progressFill.style.width = percent + '%';
                 }
 
-                const percent = Math.round(((i + 1) / targetFiles.length) * 100);
-                progressFill.style.width = percent + '%';
+                failedFilesList = currentFailed;
+
+                if (currentFailed.length === 0) {
+                    statusBox.style.background = '#e8f5e9';
+                    statusBox.style.borderColor = '#c8e6c9';
+                    statusText.style.color = '#2e7d32';
+                    statusText.innerHTML = `🎉 <b>총 ${successCount}장의 사진 등록 완료!</b><br><span style="font-size:13px; color:#444;">구글 드라이브 저장 및 [${escapeHtml(menuName)}] 시트 반영이 모두 끝났습니다.</span>`;
+
+                    document.getElementById('fileInput').value = '';
+                    document.getElementById('previewGrid').innerHTML = '';
+                    clearPreviewObjectUrls();
+                    selectedFiles = [];
+                } else {
+                    statusBox.style.background = '#ffebee';
+                    statusBox.style.borderColor = '#ffcdd2';
+                    statusText.style.color = '#c62828';
+                    const failedNamesHtml = currentFailed.map(f => escapeHtml(f.name)).join(', ');
+                    statusText.innerHTML = `⚠️ <b>일부 업로드 실패</b> (성공 ${successCount}장 / 실패 ${currentFailed.length}장)<br><span style="font-size:12.5px; color:#555;">실패 파일: ${failedNamesHtml}</span>`;
+                    retryBtn.disabled = false;
+                    retryBtn.style.display = 'block';
+                }
+            } finally {
+                isUploading = false;
+                document.getElementById('menuSelect').disabled = false;
+                document.getElementById('fileInput').disabled = false;
+                checkFormReady();
             }
-
-            failedFilesList = currentFailed;
-
-            if (currentFailed.length === 0) {
-                statusBox.style.background = '#e8f5e9';
-                statusBox.style.borderColor = '#c8e6c9';
-                statusText.style.color = '#2e7d32';
-                statusText.innerHTML = `🎉 <b>총 ${successCount}장의 사진 등록 완료!</b><br><span style="font-size:13px; color:#444;">구글 드라이브 저장 및 [${menuName}] 시트 반영이 모두 끝났습니다.</span>`;
-
-                document.getElementById('fileInput').value = '';
-                document.getElementById('previewGrid').innerHTML = '';
-                selectedFiles = [];
-            } else {
-                statusBox.style.background = '#ffebee';
-                statusBox.style.borderColor = '#ffcdd2';
-                statusText.style.color = '#c62828';
-                statusText.innerHTML = `⚠️ <b>일부 업로드 실패</b> (성공 ${successCount}장 / 실패 ${currentFailed.length}장)<br><span style="font-size:12.5px; color:#555;">실패 파일: ${currentFailed.map(f => f.name).join(', ')}</span>`;
-                retryBtn.style.display = 'block';
-            }
-
-            document.getElementById('menuSelect').disabled = false;
-            document.getElementById('fileInput').disabled = false;
-            checkFormReady();
         }
     </script>
 </body>
