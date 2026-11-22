@@ -218,46 +218,65 @@
             box-shadow: 0 4px 12px rgba(28, 27, 24, 0.12);
         }
 
+        /* 조리 방식 선택 하단 가이드 영역 통일 스타일 */
         .cook-guide-strip {
             margin-top: 8px;
-            padding: 9px 12px;
+            padding: 11px 13px;
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
+            background: linear-gradient(135deg, #FBF8F0 0%, #F6EFE0 100%);
+            border: 1.5px solid #DFC793;
+            box-shadow: 0 3px 10px rgba(28, 27, 24, 0.04);
             transition: all 0.2s ease;
         }
 
-        .cook-guide-strip.fried-mode {
-            background-color: #FAFAF9;
-            border: 1.5px solid var(--border-color);
+        .cook-guide-strip.fried-mode,
+        .cook-guide-strip.raw-mode {
+            background: linear-gradient(135deg, #FBF8F0 0%, #F6EFE0 100%);
+            border: 1.5px solid #DFC793;
         }
 
-        .cook-guide-strip.raw-mode {
-            background: linear-gradient(135deg, #FBF8F0 0%, #F7F0DE 100%);
-            border: 1.5px solid #DFC793;
+        .cook-guide-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cook-guide-eyebrow {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #8C6D1F;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
         }
 
         .cook-guide-strip-text {
             font-size: 12.5px;
             line-height: 1.38;
             word-break: keep-all;
-            font-weight: 600;
-            flex: 1;
+            font-weight: 700;
+            color: var(--text-main);
         }
 
-        .cook-guide-strip.fried-mode .cook-guide-strip-text {
-            color: var(--text-sub);
-        }
-
+        .cook-guide-strip.fried-mode .cook-guide-strip-text,
         .cook-guide-strip.raw-mode .cook-guide-strip-text {
-            color: #7A5C18;
+            color: var(--text-main);
         }
 
-        .cook-guide-trigger-btn {
+        .cook-guide-trigger-btn,
+        .cook-guide-strip.fried-mode .cook-guide-trigger-btn,
+        .cook-guide-strip.raw-mode .cook-guide-trigger-btn {
             flex-shrink: 0;
-            padding: 6px 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px 12px;
             border-radius: 8px;
             font-size: 12px;
             font-weight: 700;
@@ -265,30 +284,23 @@
             font-family: inherit;
             transition: all 0.15s ease;
             white-space: nowrap;
-        }
-
-        .cook-guide-strip.fried-mode .cook-guide-trigger-btn {
-            background: #FFFFFF;
-            color: var(--text-main);
-            border: 1.5px solid #D8D4C9;
-            box-shadow: 0 2px 5px rgba(28, 27, 24, 0.04);
-        }
-
-        .cook-guide-strip.fried-mode .cook-guide-trigger-btn:hover {
-            background: var(--surface-sub);
-            border-color: var(--accent-dark);
-        }
-
-        .cook-guide-strip.raw-mode .cook-guide-trigger-btn {
-            background: var(--accent-dark);
-            color: #F3D999;
+            background: linear-gradient(135deg, #1C1B18 0%, #2F2D29 100%);
+            color: #F6DFA4;
             border: 1.5px solid #C5A059;
             box-shadow: 0 3px 8px rgba(28, 27, 24, 0.12);
         }
 
+        .cook-guide-trigger-btn:hover,
+        .cook-guide-strip.fried-mode .cook-guide-trigger-btn:hover,
         .cook-guide-strip.raw-mode .cook-guide-trigger-btn:hover {
-            background: #2F2D29;
+            background: linear-gradient(135deg, #2A2824 0%, #3B3832 100%);
             color: #FFFFFF;
+            border-color: #E6C584;
+            transform: translateY(-1px);
+        }
+
+        .cook-guide-trigger-btn:active {
+            transform: translateY(0);
         }
 
         .completed-guide-card {
@@ -1808,9 +1820,12 @@
                     </div>
                 </div>
                 <div id="mainCookGuideStrip" class="cook-guide-strip fried-mode">
-                    <div id="mainCookGuideText" class="cook-guide-strip-text">식었을 때도 맛있게 데우는 법</div>
+                    <div class="cook-guide-copy">
+                        <span id="mainCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
+                        <span id="mainCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해 주세요.</span>
+                    </div>
                     <button type="button" id="mainCookGuideBtn" class="cook-guide-trigger-btn"
-                        onclick="openCookingGuideModal('reheat')">데우는 법 안내</button>
+                        onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
                 </div>
             </div>
 
@@ -2272,9 +2287,12 @@
                         </div>
                     </div>
                     <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
-                        <div id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 맛있게 데우는 법</div>
+                        <div class="cook-guide-copy">
+                            <span id="editCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
+                            <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해 주세요.</span>
+                        </div>
                         <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn"
-                            onclick="openCookingGuideModal('reheat')">데우는 법 안내</button>
+                            onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
                     </div>
                 </div>
 
@@ -3369,25 +3387,38 @@
             priceEl.innerText = calculateCurrentTotalPrice(mMap, sMap).toLocaleString();
         }
 
+        function applyUnifiedCookGuideStrip(stripId, eyebrowId, textId, btnId, isRaw) {
+            const strip = document.getElementById(stripId);
+            const eyebrowEl = document.getElementById(eyebrowId);
+            const textEl = document.getElementById(textId);
+            const btnEl = document.getElementById(btnId);
+            if (!strip || !textEl || !btnEl) return;
+
+            strip.className = 'cook-guide-strip ' + (isRaw ? 'raw-mode' : 'fried-mode');
+            if (eyebrowEl) {
+                eyebrowEl.textContent = isRaw ? '생고기 조리 · 오일 안내' : '조리 · 보관 안내';
+            }
+            if (isRaw) {
+                textEl.innerHTML = '세트별 조리 시간과 오일 바르기 방법을 확인해 주세요.';
+                btnEl.innerText = '조리법 보기 →';
+                btnEl.onclick = () => openCookingGuideModal('raw');
+            } else {
+                textEl.innerHTML = '식었을 때도 바삭하게 데우는 방법을 확인해 주세요.';
+                btnEl.innerText = '데우는 법 보기 →';
+                btnEl.onclick = () => openCookingGuideModal('reheat');
+            }
+        }
+
         function handleMainCookTypeChange() {
             userInteractedWithForm = true;
             const isRaw = document.getElementById('cook2').checked;
-            const strip = document.getElementById('mainCookGuideStrip');
-            const textEl = document.getElementById('mainCookGuideText');
-            const btnEl = document.getElementById('mainCookGuideBtn');
-            if (!strip || !textEl || !btnEl) return;
-
-            if (isRaw) {
-                strip.className = 'cook-guide-strip raw-mode';
-                textEl.innerHTML = '🥩 생고기 선택 시 <b>세트별 조리 시간 및 오일 안내</b>를 꼭 확인해 주세요.';
-                btnEl.innerText = '생고기 조리법 보기';
-                btnEl.onclick = () => openCookingGuideModal('raw');
-            } else {
-                strip.className = 'cook-guide-strip fried-mode';
-                textEl.innerHTML = '식었을 때도 맛있게 데우는 법';
-                btnEl.innerText = '데우는 법 안내';
-                btnEl.onclick = () => openCookingGuideModal('reheat');
-            }
+            applyUnifiedCookGuideStrip(
+                'mainCookGuideStrip',
+                'mainCookGuideEyebrow',
+                'mainCookGuideText',
+                'mainCookGuideBtn',
+                isRaw
+            );
 
             const currentSelect = document.getElementById('pickupTime');
             if (currentSelect && currentSelect.value) {
@@ -3397,22 +3428,13 @@
 
         function handleEditCookTypeChange() {
             const isRaw = document.getElementById('editCook2').checked;
-            const strip = document.getElementById('editCookGuideStrip');
-            const textEl = document.getElementById('editCookGuideText');
-            const btnEl = document.getElementById('editCookGuideBtn');
-            if (!strip || !textEl || !btnEl) return;
-
-            if (isRaw) {
-                strip.className = 'cook-guide-strip raw-mode';
-                textEl.innerHTML = '🥩 생고기 선택 시 <b>세트별 조리 시간 및 오일 안내</b>를 꼭 확인해 주세요.';
-                btnEl.innerText = '생고기 조리법 보기';
-                btnEl.onclick = () => openCookingGuideModal('raw');
-            } else {
-                strip.className = 'cook-guide-strip fried-mode';
-                textEl.innerHTML = '식었을 때도 맛있게 데우는 법';
-                btnEl.innerText = '데우는 법 안내';
-                btnEl.onclick = () => openCookingGuideModal('reheat');
-            }
+            applyUnifiedCookGuideStrip(
+                'editCookGuideStrip',
+                'editCookGuideEyebrow',
+                'editCookGuideText',
+                'editCookGuideBtn',
+                isRaw
+            );
 
             const currentEditSelect = document.getElementById('newPickupTime');
             if (currentEditSelect && currentEditSelect.value) {
