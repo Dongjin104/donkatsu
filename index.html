@@ -3096,6 +3096,7 @@
         let isQuickSubmitting = false;
         let isUpdatingReservation = false;
         let currentCompletedCookType = "🍗 튀겨서 포장";
+        let userDismissedCompletedNotice = false;
 
         let userInteractedWithForm = false;
         let isBackgroundSyncing = false;
@@ -3825,6 +3826,17 @@ ${safeCode}
                     if (reservationData.result === "found") {
                         const st = String(reservationData.status || "").trim();
                         if (st === "완료") {
+                            const quickBox = document.getElementById('quickReorderBox');
+                            const orderFrm = document.getElementById('orderForm');
+                            const isReorderingNow = !!(
+                                typeof userDismissedCompletedNotice !== 'undefined' &&
+                                userDismissedCompletedNotice &&
+                                ((quickBox && quickBox.style.display !== 'none') || (orderFrm && orderFrm.style.display !== 'none'))
+                            );
+                            if (isReorderingNow) {
+                                return;
+                            }
+
                             saveCustomerStateCache({ type: 'completed' });
                             setLoadingSkeletonVisible(false);
                             document.getElementById('pickupCompletedNotice').style.display = 'block';
@@ -4303,6 +4315,7 @@ ${safeCode}
             setLoadingSkeletonVisible(false);
             saveCustomerStateCache({ type: 'new' });
             document.getElementById('pickupCompletedNotice').style.display = 'none';
+            userDismissedCompletedNotice = true;
             const isClosed = checkClosedStatus();
             if (!isClosed) {
                 document.getElementById('topNoticeBox').style.display = 'block';
