@@ -923,7 +923,6 @@
             color: var(--text-main) !important;
         }
 
-        /* 고급스러운 품절 안내 카드 스타일 */
         .luxury-soldout-card {
             background: linear-gradient(180deg, #FFFDF8 0%, #FFFFFF 100%);
             border: 1.5px solid #DFC793;
@@ -1853,7 +1852,6 @@
         </form>
     </div>
 
-    <!-- 고급스러운 품절 전용 팝업 -->
     <div id="luxurySoldOutModal" class="modal" style="z-index: 10025;">
         <div class="luxury-soldout-card">
             <div class="luxury-soldout-badge">✦ SOLD OUT NOTICE</div>
@@ -2524,6 +2522,53 @@
 
         let scrollPosition = 0;
 
+        function hasValidPhone4(val) {
+            return /^\d{4}$/.test(String(val || "").trim());
+        }
+
+        function enforcePhone4GateIfNeeded(sess) {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const currentSess = sess || (activeAuth && activeAuth.session) || {};
+            if (!currentSess || !currentSess.kakaoId) return false;
+
+            if (!hasValidPhone4(currentSess.phone4)) {
+                stopLiveCustomerSync();
+
+                const orderForm = document.getElementById("orderForm");
+                const quickBox = document.getElementById("quickReorderBox");
+                const alreadyBox = document.getElementById("alreadyOrderedNotice");
+                const doneBox = document.getElementById("pickupCompletedNotice");
+                const closedBox = document.getElementById("closedNotice");
+                const topNotice = document.getElementById("topNoticeBox");
+
+                if (orderForm) orderForm.style.display = "none";
+                if (quickBox) quickBox.style.display = "none";
+                if (alreadyBox) alreadyBox.style.display = "none";
+                if (doneBox) doneBox.style.display = "none";
+                if (closedBox) closedBox.style.display = "none";
+                if (topNotice) topNotice.style.display = "none";
+
+                if (typeof window.showKakaoGateOverlay === "function" && window.showKakaoGateOverlay !== showKakaoGateOverlay) {
+                    window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
+                } else {
+                    showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
+                }
+
+                const gate = document.getElementById("kakaoGateOverlay");
+                const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                const phonePanel = document.getElementById("kakaoPhone4Panel");
+                const statusEl = document.getElementById("kakaoGateStatus");
+                if (loginBtn) loginBtn.style.display = "none";
+                if (phonePanel) phonePanel.style.display = "block";
+                if (statusEl && !statusEl.textContent.trim()) {
+                    statusEl.textContent = "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.";
+                }
+                if (gate) gate.style.display = "flex";
+                return true;
+            }
+            return false;
+        }
+
         function showLuxurySoldOutModal(menuName) {
             const bodyEl = document.getElementById('luxurySoldOutBody');
             if (bodyEl) {
@@ -2677,12 +2722,31 @@
                     return;
                 }
                 stopLiveCustomerSync();
+                const gate = document.getElementById('kakaoGateOverlay');
+                const loginBtn = document.getElementById('kakaoGateLoginBtn');
+                const phonePanel = document.getElementById('kakaoPhone4Panel');
+                const statusEl = document.getElementById('kakaoGateStatus');
+                if (stepMode === "phone4") {
+                    if (loginBtn) loginBtn.style.display = "none";
+                    if (phonePanel) phonePanel.style.display = "block";
+                } else {
+                    if (loginBtn) loginBtn.style.display = "flex";
+                    if (phonePanel) phonePanel.style.display = "none";
+                }
+                if (statusEl && statusMessage) statusEl.textContent = statusMessage;
+                if (gate) gate.style.display = "flex";
             } finally {
                 isShowingKakaoGate = false;
             }
         }
 
         function hideKakaoGateOverlay() {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (sess && sess.kakaoId && !hasValidPhone4(sess.phone4)) {
+                enforcePhone4GateIfNeeded(sess);
+                return;
+            }
             if (typeof window.hideKakaoGateOverlay === "function" && window.hideKakaoGateOverlay !== hideKakaoGateOverlay && document.getElementById('kakaoGateOverlay')) {
                 window.hideKakaoGateOverlay();
                 return;
@@ -2788,6 +2852,7 @@
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (!sess.kakaoId) return;
+            if (enforcePhone4GateIfNeeded(sess)) return;
 
             const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
 
@@ -2862,7 +2927,7 @@
                             saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
                             document.getElementById('alreadyOrderedNotice').style.display = 'none';
                             const isClosed = checkClosedStatus();
-                            if (!isClosed) {
+                            if (!isClosed && !enforcePhone4GateIfNeeded(sess)) {
                                 document.getElementById('topNoticeBox').style.display = 'block';
                                 if (hasPrevOrder) {
                                     document.getElementById('quickReorderBox').style.display = 'block';
@@ -3224,6 +3289,10 @@
         }
 
         function resetToNewOrder() {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (enforcePhone4GateIfNeeded(sess)) return;
+
             saveCustomerStateCache({ type: 'new' });
             document.getElementById('pickupCompletedNotice').style.display = 'none';
             const isClosed = checkClosedStatus();
@@ -3401,6 +3470,7 @@
                 const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
                 const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
                 if (sess && sess.kakaoId) {
+                    if (enforcePhone4GateIfNeeded(sess)) return;
                     startLiveCustomerSync();
                     syncCustomerScreenWithSheet(true);
                     sendHeartbeat(false);
@@ -3409,6 +3479,10 @@
         });
 
         function renderQuickReorderBox() {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (enforcePhone4GateIfNeeded(sess)) return;
+
             const quickReorderBox = document.getElementById('quickReorderBox');
             const summaryCard = document.getElementById('quickReorderSummaryCard');
             const soldOutNotice = document.getElementById('quickReorderSoldOutNotice');
@@ -3507,6 +3581,10 @@
         }
 
         function loadPreviousToForm() {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (enforcePhone4GateIfNeeded(sess)) return;
+
             userInteractedWithForm = true;
             const lastSummaryRaw = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
             let summaryObj = null;
@@ -3590,6 +3668,7 @@
                 showKakaoGateOverlay("login", "예약을 진행하려면 먼저 카카오톡 로그인을 완료해 주세요.");
                 return;
             }
+            if (enforcePhone4GateIfNeeded(sess)) return;
 
             const lastSummaryRaw = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
             let summaryObj = null;
@@ -3661,6 +3740,7 @@
                 showKakaoGateOverlay("login", "예약을 진행하려면 먼저 카카오톡 로그인을 완료해 주세요.");
                 return;
             }
+            if (enforcePhone4GateIfNeeded(sess)) return;
 
             const nick = (sess.identifier || document.getElementById('nickname').value || globalUserNickname || '').trim();
             if (!nick || nick.length < 2) {
@@ -4469,6 +4549,10 @@
                 closedTimeEl.innerText = `${formatMinutesToKoreanTime(globalOpenHour * 60 + globalOpenMin)} ~ ${formatMinutesToKoreanTime(globalCloseHour * 60 + globalCloseMin)}`;
             }
 
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (enforcePhone4GateIfNeeded(sess)) return;
+
             const isClosed = typeof settings.isClosed === 'boolean' ? settings.isClosed : checkClosedStatus();
             const closedNotice = document.getElementById('closedNotice');
             if (isClosed) {
@@ -4504,6 +4588,10 @@
         }
 
         function applyCachedStateImmediately() {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (enforcePhone4GateIfNeeded(sess)) return;
+
             const cachedSettings = loadSettingsCache();
             const cachedState = loadCustomerStateCache();
 
@@ -4533,14 +4621,16 @@
         }
 
         async function runFullAppInitialization() {
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+            if (enforcePhone4GateIfNeeded(sess)) return;
+
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             const cachedSettings = loadSettingsCache();
             if (!cachedSettings && loadingOverlay) {
                 loadingOverlay.style.display = 'flex';
             }
 
-            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
-            const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
 
             try {
@@ -4568,6 +4658,8 @@
                     applySettingsObject(data.settings);
                     if (data.settings.isBlocked) return;
                 }
+
+                if (enforcePhone4GateIfNeeded(sess)) return;
 
                 const reservationData = data.reservation;
                 if (reservationData) {
@@ -4621,7 +4713,7 @@
                 }
             } catch (e) {
                 if (loadingOverlay) loadingOverlay.style.display = 'none';
-                if (!cachedSettings && !checkClosedStatus()) {
+                if (!cachedSettings && !checkClosedStatus() && !enforcePhone4GateIfNeeded(sess)) {
                     document.getElementById('topNoticeBox').style.display = 'block';
                     document.getElementById('orderForm').style.display = 'block';
                     populateTimeSelect('pickupTime');
@@ -4643,37 +4735,23 @@
             return applySettingsObject(settings);
         }
 
-        function hasValidPhone4(val) {
-            return /^\d{4}$/.test(String(val || "").trim());
-        }
-
-        function enforcePhone4GateIfNeeded(sess) {
-            if (!sess || !sess.kakaoId) return false;
-            if (!hasValidPhone4(sess.phone4)) {
-                const orderForm = document.getElementById("orderForm");
-                const quickBox = document.getElementById("quickReorderBox");
-                const alreadyBox = document.getElementById("alreadyOrderedNotice");
-                const doneBox = document.getElementById("pickupCompletedNotice");
-                if (orderForm) orderForm.style.display = "none";
-                if (quickBox) quickBox.style.display = "none";
-                if (alreadyBox) alreadyBox.style.display = "none";
-                if (doneBox) doneBox.style.display = "none";
-
-                if (typeof window.showKakaoGateOverlay === "function") {
-                    window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
-                }
-                return true;
-            }
-            return false;
-        }
-
         async function checkAndRenderState() {
-            hideKakaoGateOverlay();
-            syncNicknameUI();
-            applyCachedStateImmediately();
-            startHeartbeat();
-            startLiveCustomerSync();
-            await runFullAppInitialization();
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = activeAuth && typeof activeAuth.restoreSession === "function"
+                ? await activeAuth.restoreSession()
+                : ((activeAuth && activeAuth.session) || {});
+
+            if (sess && sess.kakaoId) {
+                if (enforcePhone4GateIfNeeded(sess)) return;
+                hideKakaoGateOverlay();
+                syncNicknameUI();
+                applyCachedStateImmediately();
+                startHeartbeat();
+                startLiveCustomerSync();
+                await runFullAppInitialization();
+            } else {
+                showKakaoGateOverlay("login", "");
+            }
         }
 
         window.setLoadingSkeletonVisible = setLoadingSkeletonVisible;
@@ -4688,6 +4766,8 @@
                 : (activeAuth.session || {});
 
             if (sess && sess.kakaoId) {
+                if (enforcePhone4GateIfNeeded(sess)) return;
+
                 hideKakaoGateOverlay();
                 syncNicknameUI();
                 applyCachedStateImmediately();

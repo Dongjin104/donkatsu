@@ -352,6 +352,29 @@
             line-height: 1.45;
         }
 
+        .kakao-verified-summary {
+            display: none;
+            margin-top: 14px;
+            padding: 16px;
+            border-radius: 16px;
+            background: #FAF8F4;
+            border: 1px solid #E2D5B8;
+            text-align: left;
+        }
+
+        .kakao-verified-summary-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .kakao-verified-summary-desc {
+            font-size: 12.5px;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
         .kakao-btn {
             background-color: var(--kakao-yellow);
             color: var(--kakao-brown);
@@ -413,7 +436,7 @@
                 </svg>
                 <span>카카오톡으로 1초 로그인</span>
             </button>
-            <div class="kakao-gate-footnote">첫 방문만 번호 뒷자리 4자리를 입력합니다.</div>
+            <div class="kakao-gate-footnote" id="kakaoGateFootnote">첫 방문만 번호 뒷자리 4자리를 입력합니다.</div>
 
             <div id="kakaoPhone4Panel" class="kakao-phone4-panel">
                 <div class="kakao-phone4-badge" id="kakaoVerifiedNickBadge">카카오 닉네임 확인됨</div>
@@ -440,6 +463,11 @@
                     onclick="window.completeKakaoRegistration()">
                     회원 등록 완료하고 예약하기
                 </button>
+            </div>
+
+            <div id="kakaoVerifiedSummary" class="kakao-verified-summary">
+                <div class="kakao-verified-summary-title" id="kakaoVerifiedSummaryTitle">✓ 회원 인증 완료</div>
+                <div class="kakao-verified-summary-desc" id="kakaoVerifiedSummaryDesc">예약 식별명이 정상 등록되어 있습니다.</div>
             </div>
 
             <div id="kakaoGateStatus" class="kakao-gate-status"></div>
@@ -477,6 +505,12 @@
             window.KAKAO_WEB_APP_URL = KAKAO_WEB_APP_URL;
             window.KAKAO_JS_KEY = KAKAO_JS_KEY;
 
+            function normalizePhone4(raw) {
+                if (raw === null || raw === undefined) return "";
+                const digits = String(raw).replace(/[^0-9]/g, "");
+                return /^\d{4}$/.test(digits) ? digits : "";
+            }
+
             const existingStorage = window.KakaoTripleStorage || window.TripleStorage;
             const storageImpl = (existingStorage && typeof existingStorage.save === "function" && typeof existingStorage.load === "function")
                 ? existingStorage
@@ -502,6 +536,11 @@
                             }
                         } catch (e) { }
                         return null;
+                    },
+                    removeCookie: function (name) {
+                        try {
+                            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
+                        } catch (e) { }
                     },
                     openDB: function () {
                         return new Promise((resolve) => {
@@ -529,6 +568,14 @@
                             tx.objectStore(this.storeName).put(value, key);
                         } catch (e) { }
                     },
+                    removeIDB: async function (key) {
+                        try {
+                            const db = await this.openDB();
+                            if (!db) return;
+                            const tx = db.transaction(this.storeName, 'readwrite');
+                            tx.objectStore(this.storeName).delete(key);
+                        } catch (e) { }
+                    },
                     getIDB: async function (key) {
                         try {
                             const db = await this.openDB();
@@ -551,10 +598,18 @@
                         return typeof this.getCookie === "function" ? this.getCookie(key) : null;
                     },
                     save: function (key, value) {
-                        if (value === null || value === undefined) return;
+                        if (value === null || value === undefined || value === "") {
+                            this.remove(key);
+                            return;
+                        }
                         try { localStorage.setItem(key, value); } catch (e) { }
                         if (typeof this.setCookie === "function") this.setCookie(key, value);
                         if (typeof this.setIDB === "function") this.setIDB(key, value);
+                    },
+                    remove: function (key) {
+                        try { localStorage.removeItem(key); } catch (e) { }
+                        if (typeof this.removeCookie === "function") this.removeCookie(key);
+                        if (typeof this.removeIDB === "function") this.removeIDB(key);
                     },
                     load: async function (key) {
                         let val = null;
@@ -683,11 +738,22 @@
                     return /^\d+$/.test(norm) ? ("kakao_" + norm) : norm;
                 },
 
+                isPhone4Registered: function (sess) {
+                    const target = sess || this.session;
+                    const p4 = normalizePhone4(target && target.phone4);
+                    return Boolean(target && target.kakaoId && p4.length === 4);
+                },
+
                 saveSession: function (data) {
                     const normId = this.normalizeId(data.kakaoId !== undefined ? data.kakaoId : this.session.kakaoId);
                     const kNick = (data.kakaoNickname !== undefined ? String(data.kakaoNickname).trim() : this.session.kakaoNickname);
-                    const p4 = (data.phone4 !== undefined ? String(data.phone4).replace(/[^0-9]/g, "").slice(-4) : this.session.phone4);
-                    const ident = (data.identifier !== undefined ? String(data.identifier).trim() : (kNick && p4 ? (kNick + p4) : this.session.identifier));
+                    const rawP4 = data.phone4 !== undefined ? data.phone4 : this.session.phone4;
+                    const p4 = normalizePhone4(rawP4);
+                    const ident = p4
+                        ? (data.identifier !== undefined && String(data.identifier).trim()
+                            ? String(data.identifier).trim()
+                            : (kNick ? (kNick + p4) : ""))
+                        : "";
 
                     this.session = {
                         kakaoId: normId,
@@ -701,10 +767,21 @@
                         storageImpl.save("donkatsu_client_id", this.formatClientId(normId));
                     }
                     if (kNick) storageImpl.save("donkatsu_kakao_nick", kNick);
-                    if (p4) storageImpl.save("donkatsu_phone4", p4);
-                    if (ident) {
+
+                    if (p4) {
+                        storageImpl.save("donkatsu_phone4", p4);
+                    } else if (typeof storageImpl.remove === "function") {
+                        storageImpl.remove("donkatsu_phone4");
+                    }
+
+                    if (ident && p4) {
                         storageImpl.save("savedNickname", ident);
                         window.globalUserNickname = ident;
+                    } else {
+                        if (typeof storageImpl.remove === "function") {
+                            storageImpl.remove("savedNickname");
+                        }
+                        window.globalUserNickname = "";
                     }
 
                     if (typeof window.syncNicknameUI === "function") {
@@ -720,17 +797,31 @@
                     const savedIdent = await storageImpl.load("savedNickname");
 
                     const normId = this.normalizeId(savedKakaoId);
+                    const kNick = savedKakaoNick ? String(savedKakaoNick).trim() : "";
+                    const p4 = normalizePhone4(savedPhone4);
+                    const ident = p4
+                        ? ((savedIdent ? String(savedIdent).trim() : "") || (kNick ? (kNick + p4) : ""))
+                        : "";
+
                     this.session = {
                         kakaoId: normId,
-                        kakaoNickname: savedKakaoNick ? String(savedKakaoNick).trim() : "",
-                        phone4: savedPhone4 ? String(savedPhone4).replace(/[^0-9]/g, "").slice(-4) : "",
-                        identifier: savedIdent ? String(savedIdent).trim() : ""
+                        kakaoNickname: kNick,
+                        phone4: p4,
+                        identifier: ident
                     };
+
+                    if (!p4) {
+                        if (typeof storageImpl.remove === "function") {
+                            storageImpl.remove("donkatsu_phone4");
+                            storageImpl.remove("savedNickname");
+                        }
+                        window.globalUserNickname = "";
+                    }
 
                     if (this.session.kakaoId) {
                         window.clientId = this.formatClientId(this.session.kakaoId);
                     }
-                    if (this.session.identifier) {
+                    if (this.session.identifier && p4) {
                         window.globalUserNickname = this.session.identifier;
                     }
                     return this.session;
@@ -821,8 +912,24 @@
                 const profile = syncData && syncData.memberProfile ? syncData.memberProfile : {};
                 const resolvedId = authImpl.normalizeId(profile.kakaoId || fallbackId || "");
                 const resolvedNick = String(profile.kakaoNickname || fallbackNick || "").trim();
-                const resolvedPhone4 = String(profile.phone4 || fallbackPhone4 || "").replace(/[^0-9]/g, "").slice(-4);
+                const resolvedPhone4 = normalizePhone4(profile.phone4 || fallbackPhone4 || "");
                 const resolvedIdent = String(profile.identifier || (resolvedNick && resolvedPhone4 ? (resolvedNick + resolvedPhone4) : "")).trim();
+
+                if (!resolvedId) {
+                    window.showKakaoGateOverlay("login", "카카오 회원 정보가 확인되지 않았습니다. 다시 로그인해 주세요.");
+                    return;
+                }
+
+                if (!resolvedPhone4) {
+                    authImpl.saveSession({
+                        kakaoId: resolvedId,
+                        kakaoNickname: resolvedNick,
+                        phone4: "",
+                        identifier: ""
+                    });
+                    window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 먼저 등록해 주세요.");
+                    return;
+                }
 
                 authImpl.saveSession({
                     kakaoId: resolvedId,
@@ -848,14 +955,28 @@
             window.showKakaoGateOverlay = function (stepMode = "login", statusMessage = "") {
                 const gate = document.getElementById("kakaoGateOverlay");
                 const loginBtn = document.getElementById("kakaoGateLoginBtn");
+                const footnote = document.getElementById("kakaoGateFootnote");
                 const phonePanel = document.getElementById("kakaoPhone4Panel");
+                const verifiedSummary = document.getElementById("kakaoVerifiedSummary");
+                const summaryTitle = document.getElementById("kakaoVerifiedSummaryTitle");
+                const summaryDesc = document.getElementById("kakaoVerifiedSummaryDesc");
                 const badge = document.getElementById("kakaoVerifiedNickBadge");
                 const statusEl = document.getElementById("kakaoGateStatus");
 
                 if (statusEl) statusEl.textContent = statusMessage || "";
 
-                if (stepMode === "phone4") {
+                let effectiveMode = stepMode;
+                if (effectiveMode === "phone4" && !authImpl.session.kakaoId) {
+                    effectiveMode = "login";
+                }
+                if (effectiveMode === "verified" && !authImpl.isPhone4Registered()) {
+                    effectiveMode = authImpl.session.kakaoId ? "phone4" : "login";
+                }
+
+                if (effectiveMode === "phone4") {
                     if (loginBtn) loginBtn.style.display = "none";
+                    if (footnote) footnote.style.display = "none";
+                    if (verifiedSummary) verifiedSummary.style.display = "none";
                     if (phonePanel) phonePanel.style.display = "block";
                     const kNick = authImpl.session.kakaoNickname || "카카오 회원";
                     if (badge) badge.textContent = `✓ 카카오 인증 완료 · ${kNick}님`;
@@ -864,12 +985,22 @@
                         const inp = document.getElementById("kakaoPhone4Input");
                         if (inp) inp.focus();
                     }, 120);
+                } else if (effectiveMode === "verified") {
+                    if (loginBtn) loginBtn.style.display = "none";
+                    if (footnote) footnote.style.display = "none";
+                    if (phonePanel) phonePanel.style.display = "none";
+                    if (verifiedSummary) verifiedSummary.style.display = "block";
+                    const ident = authImpl.session.identifier || (authImpl.session.kakaoNickname + authImpl.session.phone4);
+                    if (summaryTitle) summaryTitle.textContent = `✓ 카카오 회원 인증 완료 (${ident})`;
+                    if (summaryDesc) summaryDesc.textContent = "휴대폰 번호 뒷자리 4자리가 등록되어 정상 이용 가능한 상태입니다.";
                 } else {
                     if (loginBtn) {
                         loginBtn.style.display = "flex";
                         loginBtn.disabled = false;
                     }
+                    if (footnote) footnote.style.display = "block";
                     if (phonePanel) phonePanel.style.display = "none";
+                    if (verifiedSummary) verifiedSummary.style.display = "none";
                 }
 
                 if (gate) gate.style.display = "flex";
@@ -877,6 +1008,14 @@
             };
 
             window.hideKakaoGateOverlay = function () {
+                if (!authImpl.isPhone4Registered()) {
+                    if (authImpl.session.kakaoId) {
+                        window.showKakaoGateOverlay("phone4", "예약 이용 전 휴대폰 번호 뒷자리 4자리 등록이 필요합니다.");
+                    } else {
+                        window.showKakaoGateOverlay("login", "카카오 로그인 후 이용해 주세요.");
+                    }
+                    return;
+                }
                 const gate = document.getElementById("kakaoGateOverlay");
                 if (gate) gate.style.display = "none";
             };
@@ -911,7 +1050,9 @@
 
                 authImpl.saveSession({
                     kakaoId: profile.kakaoId,
-                    kakaoNickname: rawNick
+                    kakaoNickname: rawNick,
+                    phone4: "",
+                    identifier: ""
                 });
 
                 const syncRes = await fetch(KAKAO_WEB_APP_URL, {
@@ -932,7 +1073,8 @@
                 }
 
                 if (syncData.result === "blocked" || syncData.isBlocked) {
-                    window.hideKakaoGateOverlay();
+                    const gate = document.getElementById("kakaoGateOverlay");
+                    if (gate) gate.style.display = "none";
                     const blockedEl = document.getElementById("blockedOverlay");
                     const reasonEl = document.getElementById("blockedReasonText");
                     if (reasonEl && (syncData.reason || syncData.blockReason || syncData.message)) {
@@ -943,15 +1085,19 @@
                 }
 
                 const mp = syncData.memberProfile || {};
-                const validServerPhone4 = /^\d{4}$/.test(String(mp.phone4 || "").trim())
-                    ? String(mp.phone4).trim()
-                    : "";
+                const validServerPhone4 = normalizePhone4(mp.phone4);
 
                 if (mp.isRegistered && validServerPhone4) {
                     await finishAuthAndEnterApp(syncData, profile.kakaoId, rawNick, validServerPhone4);
                     return;
                 }
 
+                authImpl.saveSession({
+                    kakaoId: profile.kakaoId,
+                    kakaoNickname: rawNick,
+                    phone4: "",
+                    identifier: ""
+                });
                 window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
             };
 
@@ -1027,8 +1173,8 @@
                 const submitBtn = document.getElementById("kakaoPhone4SubmitBtn");
                 const statusEl = document.getElementById("kakaoGateStatus");
 
-                const phone4 = inp ? inp.value.replace(/[^0-9]/g, "") : "";
-                if (phone4.length !== 4) {
+                const phone4 = normalizePhone4(inp ? inp.value : "");
+                if (!phone4) {
                     if (statusEl) statusEl.textContent = "휴대폰 번호 뒷자리 4자리 숫자를 정확히 입력해 주세요.";
                     if (inp) inp.focus();
                     return;
@@ -1065,7 +1211,8 @@
                     }
 
                     if (data.result === "blocked" || data.isBlocked) {
-                        window.hideKakaoGateOverlay();
+                        const gate = document.getElementById("kakaoGateOverlay");
+                        if (gate) gate.style.display = "none";
                         const blockedEl = document.getElementById("blockedOverlay");
                         const reasonEl = document.getElementById("blockedReasonText");
                         if (reasonEl && (data.reason || data.blockReason || data.message)) {
@@ -1107,10 +1254,10 @@
                     if (handledCallback) return;
 
                     const sess = await authImpl.restoreSession();
-                    if (sess && sess.kakaoId && sess.phone4 && sess.phone4.length === 4 && sess.identifier) {
-                        window.showKakaoGateOverlay("phone4", "이미 카카오 회원 인증이 완료되었습니다.");
+                    if (authImpl.isPhone4Registered(sess) && sess.identifier) {
+                        window.showKakaoGateOverlay("verified");
                     } else if (sess && sess.kakaoId) {
-                        window.showKakaoGateOverlay("phone4");
+                        window.showKakaoGateOverlay("phone4", "픽업 안내를 위해 휴대폰 번호 뒷자리 4자리를 입력해 주세요.");
                     } else {
                         window.showKakaoGateOverlay("login");
                     }
