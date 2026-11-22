@@ -1263,6 +1263,12 @@
             box-shadow: 0 4px 12px rgba(28, 27, 24, 0.04);
         }
 
+        .busy-info-item + .busy-info-item {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(28, 27, 24, 0.14);
+        }
+
         .busy-badge-pill {
             display: inline-block;
             padding: 2px 7px;
@@ -1271,6 +1277,21 @@
             font-weight: 800;
             margin-right: 6px;
             vertical-align: middle;
+        }
+
+        .busy-badge-pill.pill-late {
+            background: #1C1B18 !important;
+            color: #F6DFA4 !important;
+        }
+
+        .busy-badge-pill.pill-busy {
+            background: #D97706 !important;
+            color: #FFFFFF !important;
+        }
+
+        .busy-badge-pill.pill-surge {
+            background: #BE123C !important;
+            color: #FDE68A !important;
         }
 
         .busy-level-yellow,
@@ -2158,7 +2179,7 @@
         </div>
     </div>
 
-    <div id="searchModal" class="modal">
+    <div id="searchModal" class="modal" style="z-index: 10008;">
         <div class="modal-content"
             style="position: relative; display: flex; flex-direction: column; max-height: 88vh; padding: 22px 16px;">
             <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
@@ -2450,6 +2471,7 @@
 
         let pendingReduceAction = null;
         let pendingOrderPayload = null;
+        let pendingUpdatePayload = null;
 
         let isSubmitting = false;
         let isQuickSubmitting = false;
@@ -2984,10 +3006,13 @@
         function showModal(modalId) {
             const modal = document.getElementById(modalId);
             if (!modal) return;
-            scrollPosition = window.scrollY;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollPosition}px`;
-            document.body.style.width = '100%';
+            const anyActiveAlready = document.querySelector('.modal.active');
+            if (!anyActiveAlready) {
+                scrollPosition = window.scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollPosition}px`;
+                document.body.style.width = '100%';
+            }
             modal.style.display = 'flex';
             void modal.offsetWidth;
             modal.classList.add('active');
@@ -2997,10 +3022,13 @@
             const modal = document.getElementById(modalId);
             if (!modal) return;
             modal.classList.remove('active');
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            window.scrollTo(0, scrollPosition);
+            const otherActive = document.querySelector('.modal.active');
+            if (!otherActive) {
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                window.scrollTo(0, scrollPosition);
+            }
             setTimeout(() => {
                 if (!modal.classList.contains('active')) {
                     modal.style.display = 'none';
@@ -3205,6 +3233,11 @@
             return null;
         }
 
+        function isAfter1830Pickup(rawTime) {
+            const totalMin = parsePickupTimeToMinutes(rawTime);
+            return totalMin !== null && totalMin > (18 * 60 + 30);
+        }
+
         function getWindowCongestionCount(targetMin) {
             if (targetMin === null || isNaN(targetMin)) return 0;
             if (!Array.isArray(globalPickupTimesList) || globalPickupTimesList.length === 0) return 0;
@@ -3256,6 +3289,7 @@
             if (!selectedVal) {
                 infoBox.style.display = 'none';
                 infoBox.innerHTML = '';
+                infoBox.className = 'busy-info-box';
                 return;
             }
 
@@ -3263,34 +3297,48 @@
             if (selectedTotalMin === null) {
                 infoBox.style.display = 'none';
                 infoBox.innerHTML = '';
+                infoBox.className = 'busy-info-box';
                 return;
             }
 
-            if (selectedTotalMin > (18 * 60 + 30)) {
-                infoBox.style.display = 'block';
-                infoBox.className = 'busy-info-box busy-level-late';
-                infoBox.innerHTML = `<span class="busy-badge-pill">18:30 일괄조리</span>오후 6시 35분 이후 픽업 건은 <b>오후 6시 30분에 일괄 조리</b>되어 포장됩니다. 늦게 방문하실 경우 음식이 식을 수 있습니다.`;
-                return;
-            }
-
+            const isLate = selectedTotalMin > (18 * 60 + 30);
             const cong = getCongestionInfo(selectedTotalMin);
 
-            if (cong.level === 'clear') {
+            if (!isLate && cong.level === 'clear') {
                 infoBox.style.display = 'none';
                 infoBox.innerHTML = '';
                 infoBox.className = 'busy-info-box';
                 return;
             }
 
-            if (cong.level === 'surge') {
-                infoBox.style.display = 'block';
-                infoBox.className = 'busy-info-box busy-level-surge';
-                infoBox.innerHTML = `<span class="busy-badge-pill">폭주</span><b>${selectedVal}</b> 시간대는 주문이 몰려 많이 바쁜 시간대예요. 선택은 자유롭게 해주시되, 가능하면 다른 시간대로 잡으시면 대기 없이 받기 좋습니다. 이 시간대 예약 시 제시간보다 늦어질 수 있으니 너른 양해 부탁드립니다.`;
-            } else {
-                infoBox.style.display = 'block';
-                infoBox.className = 'busy-info-box busy-level-busy';
-                infoBox.innerHTML = `<span class="busy-badge-pill">혼잡</span><b>${selectedVal}</b> 시간대는 주문이 차오르는 바쁜 타임이에요. 물론 편하신 시간으로 고르셔도 되지만, 다른 시간대를 선택하시면 훨씬 수월하게 챙겨드릴 수 있습니다. 바쁠 때는 수령이 조금 늦어질 수 있는 점 참고해 주세요.`;
+            const sections = [];
+
+            if (isLate) {
+                sections.push(
+                    `<div class="busy-info-item"><span class="busy-badge-pill pill-late">18:30 일괄조리</span>오후 6시 35분 이후 픽업 건은 <b>오후 6시 30분에 일괄 조리</b>되어 포장됩니다. 늦게 방문하실 경우 음식이 식을 수 있습니다.</div>`
+                );
             }
+
+            if (cong.level === 'surge') {
+                sections.push(
+                    `<div class="busy-info-item"><span class="busy-badge-pill pill-surge">폭주</span><b>${selectedVal}</b> 시간대는 주문이 몰려 많이 바쁜 시간대예요. 선택은 자유롭게 해주시되, 가능하면 다른 시간대로 잡으시면 대기 없이 받기 좋습니다. 이 시간대 예약 시 제시간보다 늦어질 수 있으니 너른 양해 부탁드립니다.</div>`
+                );
+            } else if (cong.level === 'busy') {
+                sections.push(
+                    `<div class="busy-info-item"><span class="busy-badge-pill pill-busy">혼잡</span><b>${selectedVal}</b> 시간대는 주문이 차오르는 바쁜 타임이에요. 물론 편하신 시간으로 고르셔도 되지만, 다른 시간대를 선택하시면 훨씬 수월하게 챙겨드릴 수 있습니다. 바쁠 때는 수령이 조금 늦어질 수 있는 점 참고해 주세요.</div>`
+                );
+            }
+
+            infoBox.style.display = 'block';
+            if (cong.level === 'surge') {
+                infoBox.className = 'busy-info-box busy-level-surge';
+            } else if (cong.level === 'busy') {
+                infoBox.className = 'busy-info-box busy-level-busy';
+            } else {
+                infoBox.className = 'busy-info-box busy-level-late';
+            }
+
+            infoBox.innerHTML = sections.join('');
         }
 
         function getFormattedNowMinutes() {
@@ -3373,7 +3421,7 @@
             }
         }
 
-function extractDriveFileId(rawUrl) {
+        function extractDriveFileId(rawUrl) {
             const cleaned = String(rawUrl || '').trim();
             if (!cleaned) return '';
             const match = cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/) || cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -4244,6 +4292,7 @@ function extractDriveFileId(rawUrl) {
                 const secretCodeInputEl = document.getElementById('secretCodeInput');
                 const secretCode = secretCodeInputEl ? secretCodeInputEl.value.trim() : '';
 
+                pendingUpdatePayload = null;
                 pendingOrderPayload = {
                     isQuick: false,
                     nickname: nickname,
@@ -4349,6 +4398,7 @@ function extractDriveFileId(rawUrl) {
 
             const secretCode = document.getElementById('quickSecretCodeInput').value.trim();
 
+            pendingUpdatePayload = null;
             pendingOrderPayload = {
                 isQuick: true,
                 nickname: nickname,
@@ -4368,19 +4418,11 @@ function extractDriveFileId(rawUrl) {
         }
 
         function checkLatePickupAndSubmit(payload) {
-            const parts = payload.pickupTime.match(/(오전|오후)\s*(\d+):(\d+)/);
-            if (parts) {
-                let hour = parseInt(parts[2], 10);
-                const min = parseInt(parts[3], 10);
-                if (parts[1] === '오후' && hour < 12) hour += 12;
-                if (parts[1] === '오전' && hour === 12) hour = 0;
-
-                if ((hour * 60 + min) > (18 * 60 + 30)) {
-                    const badge = document.getElementById('warningSelectedTimeBadge');
-                    if (badge) badge.textContent = payload.pickupTime;
-                    showModal('warningModal');
-                    return;
-                }
+            if (isAfter1830Pickup(payload.pickupTime)) {
+                const badge = document.getElementById('warningSelectedTimeBadge');
+                if (badge) badge.textContent = payload.pickupTime;
+                showModal('warningModal');
+                return;
             }
             validateSecretCodeAndSubmit(payload);
         }
@@ -4388,10 +4430,17 @@ function extractDriveFileId(rawUrl) {
         function cancelWarningOrder() {
             hideModal('warningModal');
             pendingOrderPayload = null;
+            pendingUpdatePayload = null;
         }
 
         function confirmOrder() {
             hideModal('warningModal');
+            if (pendingUpdatePayload) {
+                const payloadToRun = pendingUpdatePayload;
+                pendingUpdatePayload = null;
+                finalizeUpdateReservation(payloadToRun);
+                return;
+            }
             if (pendingOrderPayload) {
                 validateSecretCodeAndSubmit(pendingOrderPayload);
             }
@@ -4564,6 +4613,7 @@ function extractDriveFileId(rawUrl) {
             if (subBtn) subBtn.disabled = false;
             if (qBtn) qBtn.disabled = false;
             pendingOrderPayload = null;
+            pendingUpdatePayload = null;
         }
 
         function closeEventFailModal() {
@@ -4754,7 +4804,7 @@ function extractDriveFileId(rawUrl) {
             hideModal('lockedModal');
         }
 
-        async function updateReservation() {
+        function updateReservation() {
             if (!currentFoundRowIndex) return;
             const summaryObj = buildOrderSummaryString(true);
             if (summaryObj.totalCount === 0) {
@@ -4771,14 +4821,41 @@ function extractDriveFileId(rawUrl) {
             const editCookRadio = document.querySelector('input[name="editCookType"]:checked');
             const newCookType = editCookRadio ? editCookRadio.value : '🍗 튀겨서 포장';
 
-            const updateBtn = document.getElementById('updateBtn');
-            updateBtn.disabled = true;
-            showSubmittingModal("예약 변경 내용을 저장하고 있어요", "잠시만 기다려 주세요...");
-
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const nick = sess.identifier || globalUserNickname || localStorage.getItem('savedNickname') || '';
             const resolvedClientId = clientId || (activeAuth && typeof activeAuth.formatClientId === 'function' ? activeAuth.formatClientId(sess.kakaoId) : '');
+
+            const updatePayload = {
+                rowIndex: currentFoundRowIndex,
+                nickname: nick,
+                clientId: resolvedClientId,
+                kakaoId: sess.kakaoId || '',
+                newCookType: newCookType,
+                newMenu: summaryObj.menuSummary,
+                newSauce: summaryObj.sauceSummary,
+                newPickupTime: newPickupTime,
+                newTotalPrice: String(summaryObj.totalPrice)
+            };
+
+            if (isAfter1830Pickup(newPickupTime)) {
+                pendingOrderPayload = null;
+                pendingUpdatePayload = updatePayload;
+                const badge = document.getElementById('warningSelectedTimeBadge');
+                if (badge) badge.textContent = newPickupTime;
+                showModal('warningModal');
+                return;
+            }
+
+            finalizeUpdateReservation(updatePayload);
+        }
+
+        async function finalizeUpdateReservation(payload) {
+            if (!payload || !payload.rowIndex) return;
+
+            const updateBtn = document.getElementById('updateBtn');
+            if (updateBtn) updateBtn.disabled = true;
+            showSubmittingModal("예약 변경 내용을 저장하고 있어요", "잠시만 기다려 주세요...");
 
             try {
                 const response = await fetch(WEB_APP_URL, {
@@ -4786,15 +4863,15 @@ function extractDriveFileId(rawUrl) {
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: 'update',
-                        rowIndex: currentFoundRowIndex,
-                        nickname: nick,
-                        clientId: resolvedClientId,
-                        kakaoId: sess.kakaoId || '',
-                        newCookType: newCookType,
-                        newMenu: summaryObj.menuSummary,
-                        newSauce: summaryObj.sauceSummary,
-                        newPickupTime: newPickupTime,
-                        newTotalPrice: String(summaryObj.totalPrice)
+                        rowIndex: payload.rowIndex,
+                        nickname: payload.nickname,
+                        clientId: payload.clientId,
+                        kakaoId: payload.kakaoId,
+                        newCookType: payload.newCookType,
+                        newMenu: payload.newMenu,
+                        newSauce: payload.newSauce,
+                        newPickupTime: payload.newPickupTime,
+                        newTotalPrice: payload.newTotalPrice
                     })
                 });
                 const text = await response.text();
@@ -4802,7 +4879,7 @@ function extractDriveFileId(rawUrl) {
                 try { resData = JSON.parse(text); } catch (e) { }
 
                 hideSubmittingModal();
-                updateBtn.disabled = false;
+                if (updateBtn) updateBtn.disabled = false;
 
                 if (!resData) {
                     showCustomAlert("변경 저장 중 오류가 발생했습니다.", "오류");
@@ -4827,11 +4904,11 @@ function extractDriveFileId(rawUrl) {
 
                 if (resData.result === 'updated') {
                     const updatedOrderObj = {
-                        nickname: nick,
-                        cookType: newCookType,
-                        menuSummary: summaryObj.menuSummary,
-                        sauce: summaryObj.sauceSummary,
-                        totalPrice: String(summaryObj.totalPrice)
+                        nickname: payload.nickname,
+                        cookType: payload.newCookType,
+                        menuSummary: payload.newMenu,
+                        sauce: payload.newSauce,
+                        totalPrice: payload.newTotalPrice
                     };
                     TripleStorage.save('lastOrderSummary', JSON.stringify(updatedOrderObj));
 
@@ -4839,14 +4916,14 @@ function extractDriveFileId(rawUrl) {
                     const prevRes = (prevState && prevState.reservation) ? prevState.reservation : {};
                     const updatedReservation = Object.assign({}, prevRes, {
                         result: 'found',
-                        rowIndex: currentFoundRowIndex,
+                        rowIndex: payload.rowIndex,
                         status: prevRes.status || '미확인',
-                        nickname: nick || prevRes.nickname || '',
-                        cookType: newCookType,
-                        menu: summaryObj.menuSummary,
-                        sauce: summaryObj.sauceSummary,
-                        pickupTime: newPickupTime,
-                        totalPrice: String(summaryObj.totalPrice)
+                        nickname: payload.nickname || prevRes.nickname || '',
+                        cookType: payload.newCookType,
+                        menu: payload.newMenu,
+                        sauce: payload.newSauce,
+                        pickupTime: payload.newPickupTime,
+                        totalPrice: payload.newTotalPrice
                     });
 
                     saveCustomerStateCache({
@@ -4864,7 +4941,7 @@ function extractDriveFileId(rawUrl) {
                 showCustomAlert("예약 변경 중 오류가 발생했습니다.", "오류");
             } catch (e) {
                 hideSubmittingModal();
-                updateBtn.disabled = false;
+                if (updateBtn) updateBtn.disabled = false;
                 showCustomAlert("네트워크 오류가 발생했습니다.", "통신 오류");
             }
         }
