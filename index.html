@@ -3559,98 +3559,24 @@
             return /(?:^|\/)kakao-auth-module\.js(?:\?|$)/i.test(raw);
         }
 
-        async function mountKakaoLoginModule() {
-            const hasCodeOrError = (() => {
-                try {
-                    const params = new URLSearchParams(window.location.search);
-                    return !!(params.get("code") || params.get("error"));
-                } catch (e) {
-                    return false;
-                }
-            })();
+        let __mountKakaoInFlight = null;
 
-            if (document.getElementById('kakaoGateOverlay') && (window.KakaoAuthManager || (typeof KakaoAuthManager !== 'undefined' && KakaoAuthManager))) {
-                if (window.KakaoAuthManager) KakaoAuthManager = window.KakaoAuthManager;
-                if (window.KakaoTripleStorage || window.TripleStorage) {
-                    TripleStorage = window.KakaoTripleStorage || window.TripleStorage;
-                }
-                if (typeof TripleStorage.getItem !== "function") {
-                    TripleStorage.getItem = function (key) {
-                        try {
-                            const lsVal = localStorage.getItem(key);
-                            if (lsVal !== null && lsVal !== undefined) return lsVal;
-                        } catch (e) { }
-                        return typeof this.getCookie === "function" ? this.getCookie(key) : null;
-                    };
-                }
-                if (hasCodeOrError && typeof window.handleOAuthCallbackOnLandingPage === "function") {
-                    await window.handleOAuthCallbackOnLandingPage();
-                }
-                return true;
+        async function mountKakaoLoginModule() {
+            if (__mountKakaoInFlight) {
+                return __mountKakaoInFlight;
             }
 
-            try {
-                const resp = await fetch('./kakaologin.html', { cache: 'no-store' });
-                if (resp.ok) {
-                    const htmlText = await resp.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(htmlText, 'text/html');
-                    const mountPoint = document.getElementById('kakaoAuthMountPoint');
-
-                    const styles = Array.from(doc.querySelectorAll('style'));
-                    styles.forEach((st, idx) => {
-                        const styleId = `injectedKakaoStyle_${idx}`;
-                        if (!document.getElementById(styleId)) {
-                            const newStyle = document.createElement('style');
-                            newStyle.id = styleId;
-                            newStyle.textContent = st.textContent;
-                            document.head.appendChild(newStyle);
-                        }
-                    });
-
-                    if (mountPoint) {
-                        mountPoint.innerHTML = '';
-                        const gateEl = doc.getElementById('kakaoGateOverlay');
-                        const blockedEl = doc.getElementById('blockedOverlay');
-                        if (gateEl) mountPoint.appendChild(document.importNode(gateEl, true));
-                        if (blockedEl) mountPoint.appendChild(document.importNode(blockedEl, true));
+            __mountKakaoInFlight = (async () => {
+                const hasCodeOrError = (() => {
+                    try {
+                        const params = new URLSearchParams(window.location.search);
+                        return !!(params.get("code") || params.get("error"));
+                    } catch (e) {
+                        return false;
                     }
+                })();
 
-                    const scripts = Array.from(doc.querySelectorAll('script'));
-                    for (const sc of scripts) {
-                        if (sc.src) {
-                            if (isMissingKakaoAuthModuleScript(sc.src)) {
-                                continue;
-                            }
-                            await new Promise((resolve) => {
-                                if (document.querySelector(`script[src="${sc.src}"]`)) {
-                                    resolve();
-                                    return;
-                                }
-                                const s = document.createElement('script');
-                                s.src = sc.src;
-                                if (sc.crossOrigin) s.crossOrigin = sc.crossOrigin;
-                                s.onload = () => resolve();
-                                s.onerror = () => resolve();
-                                document.body.appendChild(s);
-                            });
-                        } else if (sc.textContent && sc.textContent.trim()) {
-                            let safeCode = sc.textContent
-                                .replace(/ (const|let|var)\s+KAKAO_JS_KEY\s*=/g, 'window.KAKAO_JS_KEY =')
-                                .replace(/ (const|let|var)\s+KAKAO_WEB_APP_URL\s*=/g, 'window.KAKAO_WEB_APP_URL =')
-                                .replace(/ (const|let|var)\s+KakaoTripleStorage\s*=/g, 'window.KakaoTripleStorage =')
-                                .replace(/ (const|let|var)\s+KakaoAuthManager\s*=/g, 'window.KakaoAuthManager =');
-
-                            safeCode = `(function() {
-${safeCode}
-})();`;
-
-                            const inlineScript = document.createElement('script');
-                            inlineScript.textContent = safeCode;
-                            document.body.appendChild(inlineScript);
-                        }
-                    }
-
+                const syncGlobals = () => {
                     if (window.KakaoAuthManager) {
                         KakaoAuthManager = window.KakaoAuthManager;
                     }
@@ -3659,7 +3585,7 @@ ${safeCode}
                     } else if (window.TripleStorage) {
                         TripleStorage = window.TripleStorage;
                     }
-                    if (typeof TripleStorage.getItem !== "function") {
+                    if (TripleStorage && typeof TripleStorage.getItem !== "function") {
                         TripleStorage.getItem = function (key) {
                             try {
                                 const lsVal = localStorage.getItem(key);
@@ -3668,30 +3594,116 @@ ${safeCode}
                             return typeof this.getCookie === "function" ? this.getCookie(key) : null;
                         };
                     }
+                };
 
-                    const phoneInput = document.getElementById('kakaoPhone4Input');
-                    if (phoneInput && typeof window.updatePhone4Preview === "function" && typeof window.completeKakaoRegistration === "function") {
-                        phoneInput.addEventListener('input', window.updatePhone4Preview);
-                        phoneInput.addEventListener('keydown', function (e) {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                window.completeKakaoRegistration();
-                            }
-                        });
-                    }
-
+                const existingManager = window.KakaoAuthManager || (typeof KakaoAuthManager !== 'undefined' ? KakaoAuthManager : null);
+                if (document.getElementById('kakaoGateOverlay') && existingManager) {
+                    syncGlobals();
                     if (hasCodeOrError && typeof window.handleOAuthCallbackOnLandingPage === "function") {
                         await window.handleOAuthCallbackOnLandingPage();
                     }
-
                     return true;
                 }
-            } catch (e) { }
 
-            if (KakaoAuthManager && typeof KakaoAuthManager.ensureSDKLoaded === "function") {
-                await KakaoAuthManager.ensureSDKLoaded();
+                try {
+                    const resp = await fetch('./kakaologin.html', { cache: 'default' });
+                    if (resp.ok) {
+                        const htmlText = await resp.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(htmlText, 'text/html');
+                        const mountPoint = document.getElementById('kakaoAuthMountPoint');
+
+                        const styles = Array.from(doc.querySelectorAll('style'));
+                        styles.forEach((st, idx) => {
+                            const styleId = `injectedKakaoStyle_${idx}`;
+                            if (!document.getElementById(styleId)) {
+                                const newStyle = document.createElement('style');
+                                newStyle.id = styleId;
+                                newStyle.textContent = st.textContent;
+                                document.head.appendChild(newStyle);
+                            }
+                        });
+
+                        if (mountPoint) {
+                            const gateEl = doc.getElementById('kakaoGateOverlay');
+                            const blockedEl = doc.getElementById('blockedOverlay');
+                            if (gateEl && !document.getElementById('kakaoGateOverlay')) {
+                                mountPoint.appendChild(document.importNode(gateEl, true));
+                            }
+                            if (blockedEl && !document.getElementById('blockedOverlay')) {
+                                mountPoint.appendChild(document.importNode(blockedEl, true));
+                            }
+                        }
+
+                        const scripts = Array.from(doc.querySelectorAll('script'));
+                        for (const sc of scripts) {
+                            if (sc.src) {
+                                if (typeof isMissingKakaoAuthModuleScript === "function" && isMissingKakaoAuthModuleScript(sc.src)) {
+                                    continue;
+                                }
+                                await new Promise((resolve) => {
+                                    if (document.querySelector(`script[src="${sc.src}"]`)) {
+                                        resolve();
+                                        return;
+                                    }
+                                    const s = document.createElement('script');
+                                    s.src = sc.src;
+                                    if (sc.crossOrigin) s.crossOrigin = sc.crossOrigin;
+                                    s.onload = () => resolve();
+                                    s.onerror = () => resolve();
+                                    document.body.appendChild(s);
+                                });
+                            } else if (sc.textContent && sc.textContent.trim()) {
+                                let safeCode = sc.textContent
+                                    .replace(/\b(const|let|var)\s+KAKAO_JS_KEY\s*=/g, 'window.KAKAO_JS_KEY =')
+                                    .replace(/\b(const|let|var)\s+KAKAO_WEB_APP_URL\s*=/g, 'window.KAKAO_WEB_APP_URL =')
+                                    .replace(/\b(const|let|var)\s+KakaoTripleStorage\s*=/g, 'window.KakaoTripleStorage =')
+                                    .replace(/\b(const|let|var)\s+KakaoAuthManager\s*=/g, 'window.KakaoAuthManager =');
+
+                                safeCode = `(function() {
+${safeCode}
+})();`;
+
+                                const inlineScript = document.createElement('script');
+                                inlineScript.textContent = safeCode;
+                                document.body.appendChild(inlineScript);
+                            }
+                        }
+
+                        syncGlobals();
+
+                        const phoneInput = document.getElementById('kakaoPhone4Input');
+                        if (phoneInput && !phoneInput.dataset.boundKakaoEvents && typeof window.updatePhone4Preview === "function" && typeof window.completeKakaoRegistration === "function") {
+                            phoneInput.dataset.boundKakaoEvents = "1";
+                            phoneInput.addEventListener('input', window.updatePhone4Preview);
+                            phoneInput.addEventListener('keydown', function (e) {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    window.completeKakaoRegistration();
+                                }
+                            });
+                        }
+
+                        if (hasCodeOrError && typeof window.handleOAuthCallbackOnLandingPage === "function") {
+                            await window.handleOAuthCallbackOnLandingPage();
+                        }
+
+                        return true;
+                    }
+                } catch (e) { }
+
+                syncGlobals();
+                if (typeof KakaoAuthManager !== 'undefined' && KakaoAuthManager && typeof KakaoAuthManager.ensureSDKLoaded === "function") {
+                    await KakaoAuthManager.ensureSDKLoaded();
+                }
+                return false;
+            })();
+
+            try {
+                return await __mountKakaoInFlight;
+            } finally {
+                __mountKakaoInFlight = null;
             }
-            return false;
         }
 
         let isShowingKakaoGate = false;
