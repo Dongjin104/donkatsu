@@ -5792,10 +5792,17 @@ ${safeCode}
             pendingReduceAction = null;
         }
 
+        let __skeletonAlreadyHiddenOnce = false;
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = visible ? 'flex' : 'none';
+            if (!loadingOverlay) return;
+            if (visible) {
+                if (!__skeletonAlreadyHiddenOnce) {
+                    loadingOverlay.style.display = 'flex';
+                }
+            } else {
+                __skeletonAlreadyHiddenOnce = true;
+                loadingOverlay.style.display = 'none';
             }
         }
 
@@ -5933,6 +5940,7 @@ ${safeCode}
             };
 
             try {
+                __skeletonAlreadyHiddenOnce = false;
                 if (typeof setLoadingSkeletonVisible === 'function') {
                     setLoadingSkeletonVisible(true);
                 }
