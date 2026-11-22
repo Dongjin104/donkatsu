@@ -5909,15 +5909,45 @@ ${safeCode}
         }
 
         async function runFullAppInitialization() {
+            let skeletonSafetyTimer = null;
+            const hideSkeletonSafely = () => {
+                if (skeletonSafetyTimer) {
+                    clearTimeout(skeletonSafetyTimer);
+                    skeletonSafetyTimer = null;
+                }
+                if (typeof setLoadingSkeletonVisible === 'function') {
+                    setLoadingSkeletonVisible(false);
+                }
+            };
+
             try {
                 if (typeof setLoadingSkeletonVisible === 'function') {
                     setLoadingSkeletonVisible(true);
                 }
+                // 최대 4초 안에 안 끝나면 스켈레톤이 화면을 계속 가리지 않도록 강제 해제
+                skeletonSafetyTimer = setTimeout(() => {
+                    hideSkeletonSafely();
+                }, 4000);
+
                 purgeLegacyAdminKeyLocalStorage();
-                await mountKakaoLoginModule();
+
+                try {
+                    await mountKakaoLoginModule();
+                } catch (e) {
+                    console.warn('mountKakaoLoginModule 오류:', e);
+                }
 
                 const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
-                const sess = typeof activeAuth.restoreSession === "function" ? await activeAuth.restoreSession() : activeAuth.session;
+                let sess = null;
+                try {
+                    sess = (activeAuth && typeof activeAuth.restoreSession === "function")
+                        ? await activeAuth.restoreSession()
+                        : (activeAuth ? activeAuth.session : null);
+                } catch (e) {
+                    console.warn('restoreSession 오류:', e);
+                    sess = activeAuth ? activeAuth.session : null;
+                }
+
                 syncNicknameUI();
 
                 const cachedSettings = loadSettingsCache();
@@ -5925,29 +5955,33 @@ ${safeCode}
                     applySettingsObject(cachedSettings);
                     if (cachedSettings.isBlocked) {
                         enforceBlockedOverlay();
+                        hideSkeletonSafely();
                         return;
                     }
                 }
 
                 if (sess && sess.kakaoId) {
                     if (enforcePhone4GateIfNeeded(sess)) {
+                        hideSkeletonSafely();
                         return;
                     }
                     hideKakaoGateOverlay();
                     const isClosed = cachedSettings ? checkClosedStatus() : false;
                     renderCustomerSectionByState(isClosed, sess);
+                    hideSkeletonSafely();
                     startHeartbeat();
                     startLiveCustomerSync();
                     await syncCustomerScreenWithSheet(true);
                 } else {
                     stopLiveCustomerSync();
                     hideAllMainContentSections();
+                    hideSkeletonSafely();
                     showKakaoGateOverlay("login", "예약과 단골 적립을 위해 카카오톡 로그인을 진행해 주세요.");
                 }
+            } catch (err) {
+                console.error('runFullAppInitialization 오류:', err);
             } finally {
-                if (typeof setLoadingSkeletonVisible === 'function') {
-                    setLoadingSkeletonVisible(false);
-                }
+                hideSkeletonSafely();
             }
         }
     </script>
