@@ -3320,40 +3320,7 @@
             );
             return targetUtcMs;
         }
-
-        function scrollToTopCleanly(focusTargetId = '') {
-            try {
-                if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                    document.activeElement.blur();
-                }
-            } catch (e) { }
-
-            const goTop = () => {
-                window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-                document.documentElement.scrollTop = 0;
-                document.body.scrollTop = 0;
-            };
-
-            goTop();
-
-            requestAnimationFrame(() => {
-                goTop();
-                setTimeout(() => {
-                    goTop();
-                    if (focusTargetId) {
-                        const targetEl = document.getElementById(focusTargetId);
-                        if (targetEl && typeof targetEl.focus === 'function') {
-                            try {
-                                targetEl.focus({ preventScroll: true });
-                            } catch (e) {
-                                try { targetEl.focus(); } catch (_) { }
-                            }
-                        }
-                    }
-                }, 80);
-            });
-        }
-
+        
         function formatTargetDateKorean(targetMs) {
             if (globalOpenDateRaw && String(globalOpenDateRaw).trim() !== '') {
                 return String(globalOpenDateRaw).trim() + ' 오픈';
@@ -4447,7 +4414,9 @@ ${safeCode}
                     renderMenuAndSauceCards();
                 }
             }
-            scrollToTopCleanly();
+            if (window.scrollTo) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
         function openNoticeModal() {
