@@ -3881,8 +3881,16 @@ ${safeCode}
             } catch (e) {
             } finally {
                 isLiveSyncRequest = false;
+                try {
+                    const closedEl = document.getElementById('closedNotice');
+                    const isClosedScreenVisible = !!(closedEl && closedEl.style.display !== 'none');
+                    if (isClosedScreenVisible && typeof checkClosedStatus === 'function' && !checkClosedStatus()) {
+                        if (typeof forceReloadForOpenCheck === 'function') {
+                            forceReloadForOpenCheck('closed_screen_now_open');
+                        }
+                    }
+                } catch (err) {}
             }
-        }
 
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
