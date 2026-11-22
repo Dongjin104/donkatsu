@@ -4657,7 +4657,7 @@ ${safeCode}
             document.getElementById('quickReorderBox').style.display = 'none';
             document.getElementById('orderForm').style.display = 'block';
             renderMenuAndSauceCards();
-            populateTimeSelect('pickupTime', selectedQuickTime, false);
+            populateTimeSelect('pickupTime', selectedQuickTime, true);
             const mainSel = document.getElementById('pickupTime');
             if (mainSel && mainSel.value) {
                 handleTimeChange(mainSel, 'mainBusyInfoBox');
