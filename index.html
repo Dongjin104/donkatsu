@@ -3057,10 +3057,29 @@
                 return this.session;
             },
             async restoreSession() {
-                const savedKakaoId = await TripleStorage.load("donkatsu_kakao_id");
-                const savedKakaoNick = await TripleStorage.load("donkatsu_kakao_nick");
-                const savedPhone4 = await TripleStorage.load("donkatsu_phone4");
-                const savedIdent = await TripleStorage.load("savedNickname");
+                const readVal = async (key) => {
+                    try {
+                        if (typeof TripleStorage !== 'undefined' && typeof TripleStorage.load === 'function') {
+                            const v = await TripleStorage.load(key);
+                            if (v !== null && v !== undefined && String(v).trim() !== '') return v;
+                        }
+                    } catch (e) { }
+                    try {
+                        const ls = localStorage.getItem(key);
+                        if (ls !== null && ls !== undefined && String(ls).trim() !== '') return ls;
+                    } catch (e) { }
+                    try {
+                        if (typeof TripleStorage !== 'undefined' && typeof TripleStorage.getCookie === 'function') {
+                            return TripleStorage.getCookie(key) || '';
+                        }
+                    } catch (e) { }
+                    return '';
+                };
+
+                const savedKakaoId = await readVal("donkatsu_kakao_id");
+                const savedKakaoNick = await readVal("donkatsu_kakao_nick");
+                const savedPhone4 = await readVal("donkatsu_phone4");
+                const savedIdent = await readVal("savedNickname");
                 const normId = this.normalizeId(savedKakaoId);
                 this.session = {
                     kakaoId: normId,
@@ -3526,9 +3545,11 @@
                 }
             })();
 
-            if (window.KakaoAuthManager && typeof window.KakaoAuthManager.authorizeViaKakao === "function" && document.getElementById('kakaoGateOverlay')) {
-                KakaoAuthManager = window.KakaoAuthManager;
-                TripleStorage = window.KakaoTripleStorage || window.TripleStorage || TripleStorage;
+            if (document.getElementById('kakaoGateOverlay') && (window.KakaoAuthManager || (typeof KakaoAuthManager !== 'undefined' && KakaoAuthManager))) {
+                if (window.KakaoAuthManager) KakaoAuthManager = window.KakaoAuthManager;
+                if (window.KakaoTripleStorage || window.TripleStorage) {
+                    TripleStorage = window.KakaoTripleStorage || window.TripleStorage;
+                }
                 if (typeof TripleStorage.getItem !== "function") {
                     TripleStorage.getItem = function (key) {
                         try {
