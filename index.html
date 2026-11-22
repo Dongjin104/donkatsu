@@ -5908,6 +5908,18 @@ ${safeCode}
             }
         }
 
+        function withTimeout(promise, ms, label = '작업') {
+            return Promise.race([
+                Promise.resolve().then(() => promise),
+                new Promise((resolve) => {
+                    setTimeout(() => {
+                        console.warn(`[타임아웃] ${label} (${ms}ms 초과로 건너뜀)`);
+                        resolve(null);
+                    }, ms);
+                })
+            ]);
+        }
+
         async function runFullAppInitialization() {
             let skeletonSafetyTimer = null;
             const hideSkeletonSafely = () => {
@@ -5931,7 +5943,7 @@ ${safeCode}
                 purgeLegacyAdminKeyLocalStorage();
 
                 try {
-                    await mountKakaoLoginModule();
+                    await withTimeout(mountKakaoLoginModule(), 2500, 'mountKakaoLoginModule');
                 } catch (e) {
                     console.warn('mountKakaoLoginModule 오류:', e);
                 }
@@ -5939,9 +5951,10 @@ ${safeCode}
                 const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
                 let sess = null;
                 try {
-                    sess = (activeAuth && typeof activeAuth.restoreSession === "function")
-                        ? await activeAuth.restoreSession()
+                    const rawSess = (activeAuth && typeof activeAuth.restoreSession === "function")
+                        ? await withTimeout(activeAuth.restoreSession(), 2500, 'restoreSession')
                         : (activeAuth ? activeAuth.session : null);
+                    sess = rawSess || (activeAuth ? activeAuth.session : null);
                 } catch (e) {
                     console.warn('restoreSession 오류:', e);
                     sess = activeAuth ? activeAuth.session : null;
@@ -5970,7 +5983,7 @@ ${safeCode}
                     hideSkeletonSafely();
                     startHeartbeat();
                     startLiveCustomerSync();
-                    await syncCustomerScreenWithSheet(true);
+                    await withTimeout(syncCustomerScreenWithSheet(true), 3000, 'syncCustomerScreenWithSheet');
                 } else {
                     stopLiveCustomerSync();
                     hideAllMainContentSections();
@@ -5982,6 +5995,19 @@ ${safeCode}
             } finally {
                 hideSkeletonSafely();
             }
+        }
+
+        function startAppOnce() {
+            if (window.__donkasAppInitStarted) return;
+            window.__donkasAppInitStarted = true;
+            purgeLegacyAdminKeyLocalStorage();
+            runFullAppInitialization();
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', startAppOnce, { once: true });
+        } else {
+            startAppOnce();
         }
     </script>
 </body>
