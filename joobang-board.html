@@ -483,24 +483,6 @@
         </div>
     </div>
 
-    <div id="adminKeyModal"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.82); backdrop-filter: blur(6px); z-index: 10000; justify-content: center; align-items: center; padding: 16px;">
-        <div
-            style="background: var(--surface-color); border: 1px solid rgba(197, 160, 89, 0.45); border-radius: 14px; padding: 24px 20px; width: 100%; max-width: 340px; box-shadow: 0 20px 45px rgba(0,0,0,0.7); text-align: center; color: #fff;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--accent-gold); margin-bottom: 6px; letter-spacing: 0.08em;">ADMIN AUTHENTICATION</div>
-            <h3 style="margin: 0 0 8px 0; font-size: 17px; font-weight: 800; color: var(--text-main);">관리자 키 입력</h3>
-            <p id="adminKeyModalDesc" style="margin: 0 0 14px 0; font-size: 12.5px; color: var(--text-sub); line-height: 1.45;">주방 주문 조회 및 상태 변경을 위해<br>ADMIN_API_KEY를 입력해 주세요.</p>
-            <input type="password" id="adminKeyInput" placeholder="ADMIN_API_KEY 입력"
-                style="width: 100%; padding: 10px 12px; border-radius: 7px; border: 1px solid var(--border-color); background: var(--surface-sub); color: #fff; font-size: 13.5px; margin-bottom: 12px; outline: none;">
-            <div style="display: flex; gap: 8px;">
-                <button type="button" id="adminKeyCancelBtn"
-                    style="flex: 1; padding: 10px; background: var(--surface-sub); color: var(--text-sub); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: 700;">취소</button>
-                <button type="button" id="adminKeySubmitBtn"
-                    style="flex: 1; padding: 10px; background: var(--accent-gold); color: #121212; border: none; border-radius: 6px; cursor: pointer; font-weight: 800;">확인</button>
-            </div>
-        </div>
-    </div>
-
     <div id="orderContainer" class="order-list">
         <div style="text-align:center; padding: 25px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
     </div>
@@ -514,114 +496,6 @@
         let lastActiveUsersSignature = "";
         let isFetchingOrders = false;
         let isFetchingActiveUsers = false;
-        let adminKeyPromptResolver = null;
-        let isAdminAuthBlocked = false;
-
-        function getAdminApiKey() {
-            try {
-                const fromSession = (window.sessionStorage && window.sessionStorage.getItem('ADMIN_API_KEY')) || '';
-                if (fromSession) return String(fromSession).trim();
-            } catch (e) {}
-            try {
-                const fromLocal = (window.localStorage && window.localStorage.getItem('ADMIN_API_KEY')) || '';
-                if (fromLocal) return String(fromLocal).trim();
-            } catch (e) {}
-            return '';
-        }
-
-        function setAdminApiKey(val) {
-            const clean = String(val || '').trim();
-            try {
-                if (window.sessionStorage) {
-                    if (clean) window.sessionStorage.setItem('ADMIN_API_KEY', clean);
-                    else window.sessionStorage.removeItem('ADMIN_API_KEY');
-                }
-            } catch (e) {}
-            try {
-                if (window.localStorage) {
-                    if (clean) window.localStorage.setItem('ADMIN_API_KEY', clean);
-                    else window.localStorage.removeItem('ADMIN_API_KEY');
-                }
-            } catch (e) {}
-        }
-
-        function promptForAdminKey(customMessage = '') {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('adminKeyModal');
-                const input = document.getElementById('adminKeyInput');
-                const desc = document.getElementById('adminKeyModalDesc');
-                const submitBtn = document.getElementById('adminKeySubmitBtn');
-                const cancelBtn = document.getElementById('adminKeyCancelBtn');
-
-                if (!modal || !input || !submitBtn || !cancelBtn) {
-                    const fallbackVal = window.prompt(customMessage || 'ADMIN_API_KEY를 입력해 주세요.');
-                    resolve(fallbackVal ? String(fallbackVal).trim() : '');
-                    return;
-                }
-
-                if (adminKeyPromptResolver) {
-                    const prev = adminKeyPromptResolver;
-                    adminKeyPromptResolver = null;
-                    prev('');
-                }
-                adminKeyPromptResolver = resolve;
-
-                if (desc) {
-                    desc.innerHTML = customMessage
-                        ? escapeHtml(customMessage)
-                        : '주방 주문 조회 및 상태 변경을 위해<br>ADMIN_API_KEY를 입력해 주세요.';
-                }
-                input.value = getAdminApiKey() || '';
-                modal.style.display = 'flex';
-                setTimeout(() => input.focus(), 30);
-
-                const finish = (val) => {
-                    modal.style.display = 'none';
-                    const resolver = adminKeyPromptResolver;
-                    adminKeyPromptResolver = null;
-                    if (resolver) resolver(val);
-                };
-
-                const newSubmit = submitBtn.cloneNode(true);
-                const newCancel = cancelBtn.cloneNode(true);
-                submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
-                cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
-
-                newSubmit.addEventListener('click', () => {
-                    const entered = String(input.value || '').trim();
-                    if (entered) {
-                        setAdminApiKey(entered);
-                        isAdminAuthBlocked = false;
-                    }
-                    finish(entered);
-                });
-
-                newCancel.addEventListener('click', () => {
-                    finish('');
-                });
-
-                input.onkeydown = function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        newSubmit.click();
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        newCancel.click();
-                    }
-                };
-            });
-        }
-
-        function isAdminProtectedAction(action) {
-            return action === 'getAdminOrderList' || action === 'updateOrderStatus';
-        }
-
-        function isUnauthorizedAdminResponse(data) {
-            if (!data || typeof data !== 'object') return false;
-            if (data.unauthorized === true || data.code === 'UNAUTHORIZED') return true;
-            const msg = String(data.message || data.error || '').toLowerCase();
-            return msg.includes('unauthorized') || msg.includes('admin_api_key') || msg.includes('관리자 키') || msg.includes('인증 실패');
-        }
 
         function escapeHtml(str) {
             return String(str === null || str === undefined ? '' : str)
@@ -698,7 +572,6 @@
 
         function startDashboard() {
             getAudioContext();
-
             const overlay = document.getElementById('blurOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
@@ -707,8 +580,6 @@
                     overlay.style.display = 'none';
                 }, 400);
             }
-
-            isAdminAuthBlocked = false;
             fetchOrders();
             fetchActiveUsers();
         }
@@ -737,7 +608,7 @@
             } catch (e) { }
         }
 
-        function callGasAPI(action, params = {}, callback, isRetryAfterAuth = false) {
+        function callGasAPI(action, params = {}, callback) {
             const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
             let settled = false;
             const script = document.createElement('script');
@@ -756,23 +627,11 @@
                 if (callback) callback(null);
             }, 10000);
 
-            window[callbackName] = async function (data) {
+            window[callbackName] = function (data) {
                 if (settled) return;
                 settled = true;
                 clearTimeout(timer);
                 cleanup();
-
-                if (isAdminProtectedAction(action) && isUnauthorizedAdminResponse(data) && !isRetryAfterAuth) {
-                    setAdminApiKey('');
-                    const nextKey = await promptForAdminKey('관리자 키가 올바르지 않습니다. ADMIN_API_KEY를 다시 입력해 주세요.');
-                    if (nextKey) {
-                        const retryParams = Object.assign({}, params, { adminKey: nextKey, adminApiKey: nextKey });
-                        callGasAPI(action, retryParams, callback, true);
-                        return;
-                    }
-                    isAdminAuthBlocked = true;
-                }
-
                 if (callback) callback(data);
             };
 
@@ -783,13 +642,6 @@
             }
             if (kakaoId && !mergedParams.clientId) {
                 mergedParams.clientId = formatKakaoId(kakaoId);
-            }
-            if (isAdminProtectedAction(action)) {
-                const adminKeyVal = mergedParams.adminKey || mergedParams.adminApiKey || getAdminApiKey();
-                if (adminKeyVal) {
-                    mergedParams.adminKey = adminKeyVal;
-                    mergedParams.adminApiKey = adminKeyVal;
-                }
             }
             mergedParams._ts = Date.now();
 
@@ -811,31 +663,12 @@
             document.body.appendChild(script);
         }
 
-        async function fetchOrders() {
-            if (isFetchingOrders || isAdminAuthBlocked) return;
-            if (!getAdminApiKey()) {
-                const enteredKey = await promptForAdminKey('주방 주문 목록을 보려면 ADMIN_API_KEY를 입력해 주세요.');
-                if (!enteredKey) {
-                    isAdminAuthBlocked = true;
-                    const container = document.getElementById('orderContainer');
-                    if (container) {
-                        container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">관리자 키가 입력되지 않았습니다. <button type="button" onclick="isAdminAuthBlocked=false; fetchOrders();" style="margin-left:6px; padding:4px 10px; border-radius:4px; border:1px solid var(--border-color); background:var(--surface-sub); color:var(--accent-gold); cursor:pointer; font-weight:700;">키 입력</button></div>';
-                    }
-                    return;
-                }
-            }
-
+        function fetchOrders() {
+            if (isFetchingOrders) return;
             isFetchingOrders = true;
             callGasAPI('getAdminOrderList', {}, function (data) {
                 isFetchingOrders = false;
                 if (data === null || data === undefined) return;
-                if (isUnauthorizedAdminResponse(data)) {
-                    const container = document.getElementById('orderContainer');
-                    if (container) {
-                        container.innerHTML = '<div style="text-align:center; padding: 25px; color:#f87171;">관리자 인증에 실패했습니다. <button type="button" onclick="isAdminAuthBlocked=false; fetchOrders();" style="margin-left:6px; padding:4px 10px; border-radius:4px; border:1px solid var(--border-color); background:var(--surface-sub); color:var(--accent-gold); cursor:pointer; font-weight:700;">다시 입력</button></div>';
-                    }
-                    return;
-                }
                 const ordersList = Array.isArray(data)
                     ? data
                     : (data && Array.isArray(data.orders) ? data.orders : null);
@@ -959,26 +792,17 @@
             document.getElementById('totalCount').innerText = orders.length;
         }
 
-        async function toggleStatus(rowIndex, currentStatus) {
+        function toggleStatus(rowIndex, currentStatus) {
             getAudioContext();
-            if (!getAdminApiKey()) {
-                const enteredKey = await promptForAdminKey('주문 상태를 변경하려면 ADMIN_API_KEY를 입력해 주세요.');
-                if (!enteredKey) return;
-            }
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
-                if (isUnauthorizedAdminResponse(res)) return;
                 lastOrderSignature = "";
                 fetchOrders();
             });
         }
 
-        async function completeOrder(rowIndex) {
+        function completeOrder(rowIndex) {
             getAudioContext();
-            if (!getAdminApiKey()) {
-                const enteredKey = await promptForAdminKey('수령 완료 처리를 하려면 ADMIN_API_KEY를 입력해 주세요.');
-                if (!enteredKey) return;
-            }
             const modal = document.getElementById('custom-modal');
             const confirmBtn = document.getElementById('modal-confirm-btn');
             const cancelBtn = document.getElementById('modal-cancel-btn');
@@ -993,7 +817,6 @@
             newConfirmBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
                 callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) {
-                    if (isUnauthorizedAdminResponse(res)) return;
                     lastOrderSignature = "";
                     fetchOrders();
                 });
