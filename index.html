@@ -6525,7 +6525,7 @@
         }
 
         // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/폭주 판별]
-        // code.gs에서 A고객 17:30(5점) -> 17:20~17:40(+5), B고객 17:50(5점) -> 17:40~18:00(+5)로 교집합 17:40이 10점이 되며,
+        // 25점 미만: 표시 없음 / 25~39점: 혼잡 / 40점 이상: 폭주
         // 취소/완료/삭제된 예약건은 code.gs 서버 집계에서 제외되어 전달된다.
         function resolveSlotLoadInfo(timeLabel, serverEntry) {
             const mins = parseTimeToMinutes(timeLabel);
@@ -6547,16 +6547,14 @@
             const hasSurgeKeyword = rawLoadStr.includes('폭주') || rawLoadStr.toLowerCase().includes('surge');
             const hasBusyKeyword = rawLoadStr.includes('혼잡') || rawLoadStr.toLowerCase().includes('busy');
 
-            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 10)) {
+            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 40)) {
                 levelType = 'surge';
                 labelText = '폭주';
-                const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
-                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 겹쳐 매우 바쁜 폭주 시간대${scoreSuffix}입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
-            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 5)) {
+                detailMsg = `${timeLabel} 시간대는 예약이 몰려 폭주 상태입니다. 조리 대기가 길어질 수 있으니 여유 있게 방문해 주세요.`;
+            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 25)) {
                 levelType = 'busy';
                 labelText = '혼잡';
-                const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
-                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 몰리는 혼잡 시간대${scoreSuffix}입니다. 픽업 시간에 맞춰 조금만 여유를 두고 와주세요.`;
+                detailMsg = `${timeLabel} 시간대는 예약이 많아 혼잡합니다. 조리 대기가 길어질 수 있습니다.`;
             }
 
             return {
