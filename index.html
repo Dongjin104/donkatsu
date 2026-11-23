@@ -3520,23 +3520,7 @@
         }
 
         function isReservedSessionLocked() {
-            try {
-                let raw = localStorage.getItem(RESERVED_LOCK_KEY);
-                if (!raw && typeof TripleStorage !== 'undefined' && TripleStorage) {
-                    if (typeof TripleStorage.getItem === 'function') raw = TripleStorage.getItem(RESERVED_LOCK_KEY);
-                    else if (typeof TripleStorage.getCookie === 'function') raw = TripleStorage.getCookie(RESERVED_LOCK_KEY);
-                }
-                if (!raw) return false;
-                const parsed = JSON.parse(raw);
-                if (!parsed || !parsed.locked) return false;
-                if (parsed.savedAt && (Date.now() - parsed.savedAt) > 12 * 60 * 60 * 1000) {
-                    clearReservedSessionLock();
-                    return false;
-                }
-                return true;
-            } catch (e) {
-                return false;
-            }
+            return false;
         }
 
         function isOrderFormEditingActive() {
