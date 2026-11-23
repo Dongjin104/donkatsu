@@ -3058,6 +3058,14 @@
             return '';
         }
 
+        function parseImageUrls(rawValue) {
+            if (!rawValue) return [];
+            const parts = Array.isArray(rawValue) ? rawValue : String(rawValue).split(',');
+            return parts
+                .map(part => sanitizeImageUrl(part))
+                .filter(Boolean);
+        }
+
         function purgeLegacyAdminKeyLocalStorage() {
             try {
                 if (window.localStorage) {
@@ -5785,7 +5793,12 @@
                 const origQty = originalReservedItems[name] || 0;
                 const safeName = escapeHtml(name);
                 const safeTitle = escapeHtml(displayTitle);
-                const safeImg = sanitizeImageUrl(item.image || '');
+
+                const imgList = parseImageUrls(item.image || item.imageUrl || '');
+                const thumbImg = imgList[0] || '';
+                const safeThumb = escapeHtml(thumbImg);
+                const modalArg = escapeHtml(imgList.join(','));
+
                 const isSoldOut = Boolean(item.isSoldOut);
                 const isHot = Boolean(item.isHot);
                 const isSelected = qty > 0;
@@ -5795,7 +5808,7 @@
                     <div class="menu-item-card sold-out${isHot ? ' hot-menu' : ''}">
                         <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}">` : ''}
+                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}</div>
@@ -5815,7 +5828,7 @@
                     mHtml += `
                     <div class="menu-item-card sold-out-reserved${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${modalArg}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}<span class="sold-out-reserved-pill">품절·예약중</span></div>
@@ -5835,7 +5848,7 @@
                     mHtml += `
                     <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${modalArg}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
@@ -6357,7 +6370,12 @@
                 const qty = orderItems[name] || 0;
                 const safeName = escapeHtml(name);
                 const safeTitle = escapeHtml(displayTitle);
-                const safeImg = sanitizeImageUrl(item.image || '');
+
+                const imgList = parseImageUrls(item.image || item.imageUrl || '');
+                const thumbImg = imgList[0] || '';
+                const safeThumb = escapeHtml(thumbImg);
+                const modalArg = escapeHtml(imgList.join(','));
+
                 const isSoldOut = Boolean(item.isSoldOut);
                 const isHot = Boolean(item.isHot);
                 const isSelected = qty > 0;
@@ -6367,7 +6385,7 @@
                     <div class="menu-item-card sold-out${isHot ? ' hot-menu' : ''}">
                         <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}">` : ''}
+                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}</div>
@@ -6387,7 +6405,7 @@
                     mHtml += `
                     <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${modalArg}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
