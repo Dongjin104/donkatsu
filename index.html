@@ -2053,10 +2053,25 @@
         }
     }
 </style>
+</head>
 
-```
+<body>
+<div id="kakaoAuthMountPoint"></div>
+<div id="blockedOverlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(28, 27, 24, 0.85); backdrop-filter: blur(6px); z-index: 99998; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; text-align: center;">
+    <div
+        style="background: #ffffff; border-radius: var(--radius-lg); padding: 32px 20px; max-width: 400px; width: 100%; box-shadow: var(--shadow-float); border: 1.5px solid #DFC793;">
+        <div style="font-size: 42px; margin-bottom: 12px;">🚫</div>
+        <h2 style="font-size: 19px; color: var(--text-main); font-weight: 800; margin: 0 0 10px 0;">이용 제한 안내</h2>
+        <p style="font-size: 13.5px; color: var(--text-sub); line-height: 1.6; margin: 0 0 18px 0;">
+            현재 계정의 예약 이용이 제한되었습니다.<br>자세한 사항은 장날 삼촌에게 문의해 주세요.
+        </p>
+        <a href="https://open.kakao.com/o/s5cl8IRi" target="_blank" class="kakao-btn" style="margin-top: 0;">
+            💬 장날 삼촌 1:1 문의하기
+        </a>
+    </div>
+</div>
 
-```
 <div id="maintenanceOverlay"
     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--bg-color); z-index: 99999; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; text-align: center;">
     <div
@@ -4181,7 +4196,6 @@ async function mountKakaoLoginModule() {
         liveSyncStartedAt = 0;
     }
 
-    // [2. 스냅샷 변경 감지 보완] pickupTimesList의 totalLoad 변화까지 시그니처에 포함
     function buildLiveSnapshotSignature(data) {
         if (!data || typeof data !== 'object') return '';
         const s = data.settings || {};
@@ -5696,6 +5710,7 @@ async function mountKakaoLoginModule() {
         preserveScrollPos(keptY);
     }
 
+    // [준비중 시간 및 기존 예약 시간 변경 팝업] 기존 예약 시간이 준비중(지연시간) 구간에 들어간 상태에서 다른 시간을 선택하면 팝업 안내
     function handleEditTimeSelectChange(selectEl) {
         handleTimeChange(selectEl, 'editBusyInfoBox');
 
@@ -5711,8 +5726,8 @@ async function mountKakaoLoginModule() {
         if (isOrigInDelayWindow && selectEl.value && selectEl.value !== editOriginalPickupTime && !editGraceWarnedOnce) {
             editGraceWarnedOnce = true;
             showCustomAlert(
-                "기존 픽업 시간 변경 안내",
-                `현재 선택하신 시간 <b>[${editOriginalPickupTime}]</b>은 매장 준비(지연) 시간(${effectivePrepMins}분) 내에 포함되어 있어,<br><b>다른 시간으로 변경하시면 기존 시간 [${editOriginalPickupTime}]은 다시 선택할 수 없습니다.</b><br><br>(변경 사항을 저장하지 않고 닫으시면 기존 시간은 그대로 유지됩니다.)`
+                "시간 변경 안내",
+                `다른 시간을 선택하면 <b>이전 시간(${editOriginalPickupTime})</b>은 선택 불가능합니다.<br><br>현재 예약하신 시간 <b>[${editOriginalPickupTime}]</b>은 매장 준비중(지연 ${effectivePrepMins}분) 시간대에 포함되었으나 기존 예약 시간으로는 선택 가능하며, 다른 시간으로 변경 후 저장하시면 이전 시간은 다시 선택할 수 없습니다.`
             );
         }
     }
@@ -5729,93 +5744,135 @@ async function mountKakaoLoginModule() {
             const priceNum = formatPriceNumber(item.price);
             const qty = editOrderItems[name] || 0;
             const origQty = originalReservedItems[name] || 0;
-            const isCatalogSoldOut = !!item.isSoldOut;
-            const isCardOverlaySoldOut = isCatalogSoldOut && origQty <= 0 && qty <= 0;
-            const isPlusDisabled = isCatalogSoldOut && qty >= origQty;
+            const safeName = escapeHtml(name);
+            const safeTitle = escapeHtml(displayTitle);
+            const safeImg = sanitizeImageUrl(item.image || '');
+            const isSoldOut = Boolean(item.isSoldOut);
+            const isHot = Boolean(item.isHot);
             const isSelected = qty > 0;
 
-            let imgHtml = '';
-            const safeThumbSrc = sanitizeImageUrl(String(item.imageUrl || '').split(',')[0] || '');
-            const safeFullImgUrl = encodeURIComponent(String(item.imageUrl || ''));
-            if (safeThumbSrc) {
-                imgHtml = `<img src="${escapeHtml(safeThumbSrc)}" class="menu-thumb" onclick="openImageModal(decodeURIComponent('${safeFullImgUrl}'))" alt="${escapeHtml(displayTitle)}">`;
+            if (isSoldOut && qty === 0) {
+                mHtml += `
+                    <div class="menu-item-card sold-out${isHot ? ' hot-menu' : ''}">
+                        <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
+                        <div class="menu-card-top">
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}">` : ''}
+                            <div class="menu-details">
+                                ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
+                                <div class="menu-title">${safeTitle}</div>
+                                <div class="menu-price">${priceNum > 0 ? priceNum.toLocaleString() + '원' : ''}</div>
+                            </div>
+                        </div>
+                        <div class="menu-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" disabled>-</button>
+                                <span style="min-width:24px; text-align:center; font-weight:700; font-size:14px;">0</span>
+                                <button type="button" class="item-q-btn" disabled>+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (isSoldOut && qty > 0) {
+                mHtml += `
+                    <div class="menu-item-card sold-out-reserved${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
+                        <div class="menu-card-top">
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            <div class="menu-details">
+                                ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
+                                <div class="menu-title">${safeTitle}<span class="sold-out-reserved-pill">품절·예약중</span></div>
+                                <div class="menu-price">${priceNum > 0 ? priceNum.toLocaleString() + '원' : ''}</div>
+                            </div>
+                        </div>
+                        <div class="menu-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" onclick="changeEditQty('${safeName}', false, -1)">-</button>
+                                <span style="min-width:24px; text-align:center; font-weight:800; font-size:14px;">${qty}</span>
+                                <button type="button" class="item-q-btn" disabled>+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                mHtml += `
+                    <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
+                        <div class="menu-card-top">
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            <div class="menu-details">
+                                ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
+                                <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
+                                <div class="menu-price">${priceNum > 0 ? priceNum.toLocaleString() + '원' : ''}</div>
+                            </div>
+                        </div>
+                        <div class="menu-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" onclick="changeEditQty('${safeName}', false, -1)" ${qty <= 0 ? 'disabled' : ''}>-</button>
+                                <span style="min-width:24px; text-align:center; font-weight:800; font-size:14px;">${qty}</span>
+                                <button type="button" class="item-q-btn" onclick="changeEditQty('${safeName}', false, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
-            const safeNameArg = encodeURIComponent(String(name));
-
-            mHtml += `
-                <div class="menu-item-card ${isCardOverlaySoldOut ? 'sold-out' : (isCatalogSoldOut && origQty > 0 ? 'sold-out-reserved' : '')} ${isSelected ? 'selected-item' : ''}">
-                    ${isCardOverlaySoldOut ? '<div class="sold-out-badge-overlay"><span class="sold-out-badge-text">SOLD OUT</span></div>' : ''}
-                    <div class="menu-card-top">
-                        ${imgHtml}
-                        <div class="menu-details">
-                            <div class="menu-title">${escapeHtml(displayTitle)}${isCatalogSoldOut && origQty > 0 ? '<span class="sold-out-reserved-pill">재고품절·기존예약유지</span>' : ''}${isSelected ? `<span class="selected-qty-badge">${qty}개 선택</span>` : ''}</div>
-                            <div class="menu-price">${priceNum.toLocaleString()}원</div>
-                        </div>
-                    </div>
-                    <div class="menu-card-bottom">
-                        <div class="item-qty-control">
-                            <button type="button" class="item-q-btn" onclick="changeEditQty(decodeURIComponent('${safeNameArg}'), -1, false)" ${qty <= 0 ? 'disabled' : ''}>-</button>
-                            <span style="font-size:14px; font-weight:700; min-width:24px; text-align:center;">${qty}</span>
-                            <button type="button" class="item-q-btn" onclick="changeEditQty(decodeURIComponent('${safeNameArg}'), 1, false)" ${isPlusDisabled ? 'disabled' : ''}>+</button>
-                        </div>
-                    </div>
-                </div>
-            `;
         });
         menuContainer.innerHTML = mHtml;
 
         let sHtml = '';
-        sauceList.forEach(sauce => {
-            const name = sauce.shortName || sauce.name;
-            const displayTitle = sauce.name;
-            const priceNum = formatPriceNumber(sauce.price);
+        sauceList.forEach(s => {
+            const name = s.shortName || s.name;
+            const priceNum = formatPriceNumber(s.price);
             const qty = editSauceItems[name] || 0;
-            const origQty = originalReservedSauceItems[name] || 0;
-            const isCatalogSoldOut = !!sauce.isSoldOut;
-            const isCardOverlaySoldOut = isCatalogSoldOut && origQty <= 0 && qty <= 0;
-            const isPlusDisabled = isCatalogSoldOut && qty >= origQty;
+            const safeName = escapeHtml(name);
+            const isSoldOut = Boolean(s.isSoldOut);
             const isSelected = qty > 0;
-            const safeSauceArg = encodeURIComponent(String(name));
 
-            sHtml += `
-                <div class="sauce-item-card ${isCardOverlaySoldOut ? 'sold-out' : ''} ${isSelected ? 'selected-item' : ''}">
-                    ${isCardOverlaySoldOut ? '<div class="sold-out-badge-overlay"><span class="sold-out-badge-text">SOLD OUT</span></div>' : ''}
-                    <div>
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main);">${escapeHtml(displayTitle)}${isSelected ? `<span class="selected-qty-badge">${qty}</span>` : ''}</div>
-                        <div style="font-size:12px; color:var(--text-sub); font-weight:600; margin-top:2px;">+${priceNum.toLocaleString()}원</div>
-                    </div>
-                    <div class="sauce-card-bottom">
-                        <div class="item-qty-control">
-                            <button type="button" class="item-q-btn" onclick="changeEditQty(decodeURIComponent('${safeSauceArg}'), -1, true)" ${qty <= 0 ? 'disabled' : ''}>-</button>
-                            <span style="font-size:13.5px; font-weight:700; min-width:20px; text-align:center;">${qty}</span>
-                            <button type="button" class="item-q-btn" onclick="changeEditQty(decodeURIComponent('${safeSauceArg}'), 1, true)" ${isPlusDisabled ? 'disabled' : ''}>+</button>
+            if (isSoldOut && qty === 0) {
+                sHtml += `
+                    <div class="sauce-item-card sold-out">
+                        <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
+                        <div style="font-weight:700; font-size:13.5px; color:var(--text-main);">${safeName}</div>
+                        <div style="font-size:12.5px; color:var(--text-sub); font-weight:700;">${priceNum > 0 ? '+' + priceNum.toLocaleString() + '원' : '추가'}</div>
+                        <div class="sauce-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" disabled>-</button>
+                                <span style="min-width:22px; text-align:center; font-weight:700; font-size:13px;">0</span>
+                                <button type="button" class="item-q-btn" disabled>+</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                sHtml += `
+                    <div class="sauce-item-card${isSelected ? ' selected-item' : ''}">
+                        <div style="font-weight:700; font-size:13.5px; color:var(--text-main);">${safeName}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
+                        <div style="font-size:12.5px; color:var(--text-sub); font-weight:700;">${priceNum > 0 ? '+' + priceNum.toLocaleString() + '원' : '추가'}</div>
+                        <div class="sauce-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" onclick="changeEditQty('${safeName}', true, -1)" ${qty <= 0 ? 'disabled' : ''}>-</button>
+                                <span style="min-width:22px; text-align:center; font-weight:800; font-size:13px;">${qty}</span>
+                                <button type="button" class="item-q-btn" onclick="changeEditQty('${safeName}', true, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         });
         sauceContainer.innerHTML = sHtml;
     }
 
-    function changeEditQty(name, delta, isSauce) {
+    function changeEditQty(name, isSauce, delta) {
         const targetMap = isSauce ? editSauceItems : editOrderItems;
+        const cur = targetMap[name] || 0;
+        const next = cur + delta;
+        if (next < 0) return;
+
         const origMap = isSauce ? originalReservedSauceItems : originalReservedItems;
-        const list = isSauce ? sauceList : menuList;
-
-        const curQty = targetMap[name] || 0;
         const origQty = origMap[name] || 0;
-        const nextQty = Math.max(0, curQty + delta);
+        const list = isSauce ? sauceList : menuList;
+        const matched = list.find(i => (i.shortName || i.name) === name || i.name === name);
 
-        const catalogItem = list.find(it => (it.shortName || it.name) === name || it.name === name);
-        if (delta > 0 && catalogItem && catalogItem.isSoldOut && nextQty > origQty) {
-            showLuxurySoldOutModal(name);
-            return;
-        }
-
-        if (delta < 0 && catalogItem && catalogItem.isSoldOut && nextQty < origQty) {
+        if (delta < 0 && matched && matched.isSoldOut && origQty > 0 && next < origQty) {
             pendingReduceAction = () => {
-                if (nextQty === 0) delete targetMap[name];
-                else targetMap[name] = nextQty;
+                targetMap[name] = next;
                 renderEditMenuAndSauceCards();
                 updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
             };
@@ -5823,30 +5880,26 @@ async function mountKakaoLoginModule() {
             return;
         }
 
-        if (nextQty === 0) delete targetMap[name];
-        else targetMap[name] = nextQty;
-
+        targetMap[name] = next;
         renderEditMenuAndSauceCards();
         updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
     }
 
     async function updateReservation() {
         if (isUpdatingReservation) return;
+        const keptY = captureScrollPos();
 
         const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
         const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
         const nick = (sess.identifier || document.getElementById('nickname')?.value || globalUserNickname || '').trim();
-        if (!nick) {
-            showCustomAlert("알림", "예약자 정보를 찾을 수 없습니다.");
-            return;
-        }
+        if (!nick) return;
 
         const menuParts = [];
         Object.keys(editOrderItems).forEach(k => {
             if ((editOrderItems[k] || 0) > 0) menuParts.push(`${k} ${editOrderItems[k]}개`);
         });
         if (menuParts.length === 0) {
-            showCustomAlert("알림", "최소 1개 이상의 메뉴가 필요합니다!");
+            showCustomAlert("알림", "최소 1개 이상의 메뉴를 선택해 주세요!");
             return;
         }
 
@@ -5857,31 +5910,18 @@ async function mountKakaoLoginModule() {
         const sauceSummary = sauceParts.length > 0 ? sauceParts.join(', ') : '없음';
         const menuSummary = menuParts.join(', ');
 
-        const newTimeSelect = document.getElementById('newPickupTime');
-        const newPickupTime = newTimeSelect ? newTimeSelect.value : '';
-        const selectedOpt = newTimeSelect && newTimeSelect.selectedOptions ? newTimeSelect.selectedOptions[0] : null;
-        if (!newPickupTime || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
+        const editSelectEl = document.getElementById('newPickupTime');
+        const newTime = editSelectEl ? editSelectEl.value : '';
+        const selectedOpt = editSelectEl && editSelectEl.selectedOptions ? editSelectEl.selectedOptions[0] : null;
+        if (!newTime || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
             showCustomAlert("알림", "선택 가능한 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
             return;
         }
 
         const cookEl = document.querySelector('input[name="editCookType"]:checked');
-        const cookType = cookEl ? cookEl.value : '🍗 튀겨서 포장';
+        const newCookType = cookEl ? cookEl.value : '🍗 튀겨서 포장';
         const totalPriceNum = calculateCurrentTotalPrice(editOrderItems, editSauceItems);
         const totalPriceStr = totalPriceNum.toLocaleString() + '원';
-
-        const updatePayload = {
-            action: 'update',
-            nickname: nick,
-            clientId: clientId,
-            kakaoId: sess.kakaoId,
-            rowIndex: currentFoundRowIndex,
-            cookType: cookType,
-            menu: menuSummary,
-            sauce: sauceSummary,
-            pickupTime: newPickupTime,
-            totalPrice: totalPriceStr
-        };
 
         isUpdatingReservation = true;
         const updateBtn = document.getElementById('updateBtn');
@@ -5892,92 +5932,397 @@ async function mountKakaoLoginModule() {
             const res = await fetch(WEB_APP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(updatePayload)
-            });
-            const data = await res.json();
-            hideModal('updatingModal');
-
-            if (data && data.result === 'success') {
-                hideModal('searchModal');
-                lastLiveSnapshotSignature = "";
-
-                const updatedResObj = {
-                    result: 'found',
-                    rowIndex: data.rowIndex || currentFoundRowIndex || null,
+                body: JSON.stringify({
+                    action: 'update',
                     nickname: nick,
-                    cookType: cookType,
+                    clientId: clientId,
+                    kakaoId: sess.kakaoId,
+                    rowIndex: currentFoundRowIndex,
+                    cookType: newCookType,
                     menu: menuSummary,
                     sauce: sauceSummary,
-                    pickupTime: newPickupTime,
-                    totalPrice: totalPriceStr,
-                    status: data.status || currentRenderedStatus || '미확인',
-                    eventPrize: data.eventPrize || (document.getElementById('displayEventPrize')?.innerText || '')
-                };
-                saveCustomerStateCache({
-                    type: 'active_order',
-                    reservation: updatedResObj
-                });
-                renderActiveReservationNotice(updatedResObj);
-                localOptimisticLockUntil = Date.now() + 3500;
+                    pickupTime: newTime,
+                    totalPrice: totalPriceStr
+                })
+            });
+            const text = await res.text();
+            let data = null;
+            try { data = JSON.parse(text); } catch (e) { }
 
-                const lastSummaryRaw = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
-                if (lastSummaryRaw) {
-                    try {
-                        const prevObj = JSON.parse(lastSummaryRaw);
-                        prevObj.cookType = cookType;
-                        prevObj.menu = menuSummary;
-                        prevObj.sauce = sauceSummary;
-                        prevObj.pickupTime = newPickupTime;
-                        prevObj.totalPrice = totalPriceStr;
-                        TripleStorage.save('lastOrderSummary', JSON.stringify(prevObj));
-                    } catch (e) { }
-                }
+            hideModal('updatingModal');
 
-                populateUpdateSuccessModalDetails(updatedResObj);
-                showModal('updateSuccessModal');
-            } else if (data && data.result === 'locked') {
+            if (!data) {
+                showCustomAlert("수정 오류", "서버 응답을 확인하지 못했습니다.");
+                return;
+            }
+
+            if (data.result === 'out_of_stock') {
+                showLuxurySoldOutModal(data.menuName || '선택 메뉴');
+                return;
+            }
+
+            if (data.result === 'locked') {
                 hideModal('searchModal');
                 showModal('lockedModal');
-            } else {
-                showCustomAlert("수정 안내", (data && data.message) || "예약 수정 중 문제가 발생했습니다.");
+                syncCustomerScreenWithSheet(true);
+                return;
             }
-        } catch (err) {
+
+            if (data.result === 'success') {
+                const updatedObj = {
+                    result: 'found',
+                    rowIndex: currentFoundRowIndex,
+                    nickname: nick,
+                    cookType: newCookType,
+                    menu: menuSummary,
+                    sauce: sauceSummary,
+                    pickupTime: newTime,
+                    totalPrice: totalPriceStr,
+                    status: currentRenderedStatus || '미확인',
+                    eventPrize: document.getElementById('displayEventPrize')?.innerText || ''
+                };
+                saveCustomerStateCache({ type: 'active_order', reservation: updatedObj });
+                renderActiveReservationNotice(updatedObj);
+                localOptimisticLockUntil = Date.now() + 3000;
+                lastLiveSnapshotSignature = "";
+                hideModal('searchModal');
+                populateUpdateSuccessModalDetails(updatedObj);
+                showModal('updateSuccessModal');
+                preserveScrollPos(keptY);
+            } else {
+                showCustomAlert("수정 안내", data.message || "예약 수정에 실패했습니다.");
+            }
+        } catch (e) {
             hideModal('updatingModal');
-            showCustomAlert("네트워크 오류", "수정 중 오류가 발생했습니다. 다시 시도해 주세요.");
+            showCustomAlert("네트워크 오류", "예약 수정 중 오류가 발생했습니다.");
         } finally {
             isUpdatingReservation = false;
             if (updateBtn) updateBtn.disabled = false;
         }
     }
 
-    function closeConfirmReduce(confirmed) {
-        hideModal('confirmReduceModal');
-        if (confirmed && typeof pendingReduceAction === 'function') {
-            pendingReduceAction();
+    function setLoadingSkeletonVisible(visible) {
+        const loadingOverlay = document.getElementById('pageLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = visible ? 'flex' : 'none';
         }
-        pendingReduceAction = null;
     }
 
-    function parseSummaryToMap(summaryStr) {
-        const map = {};
-        const str = String(summaryStr || '').trim();
-        if (!str || str === '없음') return map;
+    async function runFullAppInitialization() {
+        const keptY = captureScrollPos();
+        try {
+            purgeLegacyAdminKeyLocalStorage();
 
-        str.split(',').forEach(part => {
-            const token = part.trim();
-            if (!token) return;
-            const match = token.match(/^(.*?)\s*(\d+)\s*개$/);
-            if (match) {
-                const itemName = match[1].trim();
-                const qty = parseInt(match[2], 10) || 0;
-                if (itemName && qty > 0) {
-                    map[itemName] = (map[itemName] || 0) + qty;
+            await mountKakaoLoginModule();
+
+            const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
+            const sess = await activeAuth.restoreSession();
+            syncNicknameUI();
+
+            if (!sess || !sess.kakaoId) {
+                setLoadingSkeletonVisible(false);
+                hideAllMainContentSections();
+                showKakaoGateOverlay("login", "예약을 진행하려면 카카오톡 로그인이 필요합니다.");
+                preserveScrollPos(keptY);
+                return;
+            }
+
+            if (enforcePhone4GateIfNeeded(sess)) {
+                setLoadingSkeletonVisible(false);
+                preserveScrollPos(keptY);
+                return;
+            }
+
+            hideKakaoGateOverlay();
+
+            const cachedSettings = loadSettingsCache();
+            if (cachedSettings) {
+                applySettingsObject(cachedSettings);
+                if (cachedSettings.isBlocked) {
+                    setLoadingSkeletonVisible(false);
+                    preserveScrollPos(keptY);
+                    return;
+                }
+            }
+
+            const cachedState = loadCustomerStateCache();
+            if (cachedSettings && cachedState) {
+                if (cachedSettings.isClosed) {
+                    setLoadingSkeletonVisible(false);
+                    showClosedNoticeScreen();
+                } else if (cachedState.type === 'active_order' && cachedState.reservation && isReservedSessionLocked()) {
+                    renderActiveReservationNotice(cachedState.reservation);
+                } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
+                    setLoadingSkeletonVisible(false);
+                    document.getElementById('pickupCompletedNotice').style.display = 'block';
+                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                    document.getElementById('topNoticeBox').style.display = 'none';
+                    document.getElementById('orderForm').style.display = 'none';
+                    document.getElementById('quickReorderBox').style.display = 'none';
+                    document.getElementById('closedNotice').style.display = 'none';
+                } else if (!isReservedSessionLocked()) {
+                    setLoadingSkeletonVisible(false);
+                    document.getElementById('closedNotice').style.display = 'none';
+                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                    document.getElementById('pickupCompletedNotice').style.display = 'none';
+                    document.getElementById('topNoticeBox').style.display = 'block';
+                    const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
+                    if (hasPrevOrder && cachedState.type === 'quick_reorder') {
+                        document.getElementById('quickReorderBox').style.display = 'block';
+                        document.getElementById('orderForm').style.display = 'none';
+                        renderQuickReorderBox();
+                    } else {
+                        document.getElementById('quickReorderBox').style.display = 'none';
+                        document.getElementById('orderForm').style.display = 'block';
+                        renderMenuAndSauceCards();
+                        populateTimeSelect('pickupTime', '', false);
+                        handleMainCookTypeChange();
+                    }
+                }
+            }
+
+            const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
+
+            const res = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'checkSimple',
+                    nickname: savedNick,
+                    clientId: clientId,
+                    kakaoId: sess.kakaoId,
+                    kakaoNickname: sess.kakaoNickname,
+                    phone4: sess.phone4,
+                    isPolling: false,
+                    _ts: Date.now()
+                })
+            });
+            const text = await res.text();
+            let data = null;
+            try { data = JSON.parse(text); } catch (e) { }
+
+            setLoadingSkeletonVisible(false);
+
+            if (!data) {
+                if (!cachedSettings) {
+                    applySettingsObject({});
+                }
+                showOpenOrderScreen(sess);
+                startHeartbeat();
+                startLiveCustomerSync();
+                preserveScrollPos(keptY);
+                return;
+            }
+
+            const mergedSettings = Object.assign({}, data.settings || {});
+            if (Array.isArray(data.pickupTimesList)) {
+                mergedSettings.pickupTimesList = data.pickupTimesList;
+            }
+            if (data.settings || Array.isArray(data.pickupTimesList)) {
+                saveSettingsCache(mergedSettings);
+                applySettingsObject(mergedSettings);
+                if (mergedSettings.isBlocked) {
+                    preserveScrollPos(keptY);
+                    return;
+                }
+            }
+
+            const reservationData = data.reservation ? data.reservation : (data.result ? data : null);
+            if (reservationData && reservationData.result === "blocked") {
+                enforceBlockedOverlay(reservationData.message);
+                preserveScrollPos(keptY);
+                return;
+            }
+
+            if (mergedSettings.isClosed) {
+                showClosedNoticeScreen();
+                startHeartbeat();
+                startLiveCustomerSync();
+                preserveScrollPos(keptY);
+                return;
+            }
+
+            if (reservationData && reservationData.result === "found") {
+                const st = String(reservationData.status || "").trim();
+                if (st === "완료") {
+                    clearReservedSessionLock();
+                    saveCustomerStateCache({ type: 'completed' });
+                    document.getElementById('pickupCompletedNotice').style.display = 'block';
+                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                    document.getElementById('topNoticeBox').style.display = 'none';
+                    document.getElementById('orderForm').style.display = 'none';
+                    document.getElementById('quickReorderBox').style.display = 'none';
+                    document.getElementById('closedNotice').style.display = 'none';
+                } else {
+                    setReservedSessionLock({
+                        nickname: reservationData.nickname || savedNick,
+                        pickupTime: reservationData.pickupTime || '',
+                        menu: reservationData.menu || ''
+                    });
+                    saveCustomerStateCache({
+                        type: 'active_order',
+                        reservation: reservationData
+                    });
+                    renderActiveReservationNotice(reservationData);
                 }
             } else {
-                map[token] = (map[token] || 0) + 1;
+                clearReservedSessionLock();
+                showOpenOrderScreen(sess);
             }
-        });
-        return map;
+
+            startHeartbeat();
+            startLiveCustomerSync();
+            preserveScrollPos(keptY);
+        } catch (err) {
+            setLoadingSkeletonVisible(false);
+            if (!loadSettingsCache()) {
+                applySettingsObject({});
+                showOpenOrderScreen(null);
+            }
+            preserveScrollPos(keptY);
+        }
+    }
+
+    function showClosedNoticeScreen() {
+        setLoadingSkeletonVisible(false);
+        document.getElementById('closedNotice').style.display = 'block';
+        document.getElementById('topNoticeBox').style.display = 'none';
+        document.getElementById('orderForm').style.display = 'none';
+        document.getElementById('quickReorderBox').style.display = 'none';
+        document.getElementById('alreadyOrderedNotice').style.display = 'none';
+        document.getElementById('pickupCompletedNotice').style.display = 'none';
+        startOpenCountdownTimer();
+    }
+
+    function showOpenOrderScreen(sess) {
+        if (enforcePhone4GateIfNeeded(sess)) return;
+        if (isReservedSessionLocked()) {
+            const cachedState = loadCustomerStateCache();
+            if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
+                renderActiveReservationNotice(cachedState.reservation);
+            } else {
+                showAlreadyOrderedPlaceholder();
+            }
+            return;
+        }
+        setLoadingSkeletonVisible(false);
+        document.getElementById('closedNotice').style.display = 'none';
+        document.getElementById('alreadyOrderedNotice').style.display = 'none';
+        document.getElementById('pickupCompletedNotice').style.display = 'none';
+        document.getElementById('topNoticeBox').style.display = 'block';
+
+        const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
+        if (hasPrevOrder) {
+            saveCustomerStateCache({ type: 'quick_reorder' });
+            document.getElementById('quickReorderBox').style.display = 'block';
+            document.getElementById('orderForm').style.display = 'none';
+            renderQuickReorderBox();
+        } else {
+            saveCustomerStateCache({ type: 'new' });
+            document.getElementById('quickReorderBox').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'block';
+            renderMenuAndSauceCards();
+            populateTimeSelect('pickupTime', '', false);
+            handleMainCookTypeChange();
+        }
+    }
+
+    let __lastCustomerRenderAt = 0;
+
+    function applySettingsObject(s) {
+        if (!s || typeof s !== 'object') return;
+        __lastCustomerRenderAt = Date.now();
+
+        if (s.isBlocked) {
+            enforceBlockedOverlay(s.blockMessage || "");
+            return;
+        }
+
+        const isAdminTest = (() => {
+            try { return sessionStorage.getItem('isAdminTestMode') === 'true'; } catch (e) { return false; }
+        })();
+
+        if (s.maintenanceCode) serverMaintenanceCode = String(s.maintenanceCode).trim();
+        if (s.secretCode) serverSecretCode = String(s.secretCode).trim();
+
+        const maintOverlay = document.getElementById('maintenanceOverlay');
+        if (s.isMaintenance && !isAdminTest) {
+            if (maintOverlay) maintOverlay.style.display = 'flex';
+        } else {
+            if (maintOverlay) maintOverlay.style.display = 'none';
+        }
+
+        if (typeof s.openHour === 'number' && !isNaN(s.openHour)) globalOpenHour = s.openHour;
+        if (typeof s.openMin === 'number' && !isNaN(s.openMin)) globalOpenMin = s.openMin;
+        if (typeof s.closeHour === 'number' && !isNaN(s.closeHour)) globalCloseHour = s.closeHour;
+        if (typeof s.closeMin === 'number' && !isNaN(s.closeMin)) globalCloseMin = s.closeMin;
+
+        if (typeof s.pickupStartHour === 'number' && !isNaN(s.pickupStartHour)) globalPickupStartHour = s.pickupStartHour;
+        if (typeof s.pickupStartMin === 'number' && !isNaN(s.pickupStartMin)) globalPickupStartMin = s.pickupStartMin;
+        if (typeof s.pickupCloseHour === 'number' && !isNaN(s.pickupCloseHour)) globalPickupCloseHour = s.pickupCloseHour;
+        if (typeof s.pickupCloseMin === 'number' && !isNaN(s.pickupCloseMin)) globalPickupCloseMin = s.pickupCloseMin;
+
+        // 설정 시트 지연시간 (예: 20이면 현재시간 + 20분까지 준비중)
+        const rawPrep = (s.prepMinutes !== undefined && s.prepMinutes !== null)
+            ? s.prepMinutes
+            : (s.delayMinutes !== undefined && s.delayMinutes !== null ? s.delayMinutes : 0);
+        const parsedPrep = Number(rawPrep);
+        globalPrepMinutes = (!isNaN(parsedPrep) && parsedPrep >= 0) ? parsedPrep : 0;
+
+        globalIsPreOpenWait = Boolean(s.isPreOpenWait);
+        globalNextOpenDateTime = s.nextOpenDateTime ? String(s.nextOpenDateTime) : "";
+        globalOpenDateRaw = s.openDateRaw ? String(s.openDateRaw) : "";
+        const tsNum = Number(s.openDateTimestamp || 0);
+        globalOpenDateTimestamp = (!isNaN(tsNum) && tsNum > 0) ? tsNum : 0;
+
+        if (typeof s.fortuneEnabled === 'boolean') globalFortuneEnabled = s.fortuneEnabled;
+        if (Array.isArray(s.fortuneList)) globalFortuneList = s.fortuneList;
+        if (Array.isArray(s.menuList)) menuList = s.menuList;
+        if (Array.isArray(s.sauceList)) sauceList = s.sauceList;
+        if (Array.isArray(s.pickupTimesList)) globalPickupTimesList = s.pickupTimesList;
+
+        const closedRangeEl = document.getElementById('closedTimeRange');
+        if (closedRangeEl) {
+            const oStr = formatKoreanHourMin(globalOpenHour, globalOpenMin);
+            const cStr = formatKoreanHourMin(globalCloseHour, globalCloseMin);
+            closedRangeEl.innerText = `${oStr} ~ ${cStr}`;
+        }
+
+        if (document.getElementById('orderForm')?.style.display === 'block' && !isOrderFormEditingActive()) {
+            renderMenuAndSauceCards();
+            const curP = document.getElementById('pickupTime');
+            populateTimeSelect('pickupTime', curP ? curP.value : '', false);
+        }
+        if (document.getElementById('quickReorderBox')?.style.display === 'block') {
+            renderQuickReorderBox();
+        }
+
+        startOpenCountdownTimer();
+    }
+
+    function formatKoreanHourMin(h, m) {
+        const hh = Number(h || 0);
+        const mm = Number(m || 0);
+        const ampm = hh >= 12 ? '오후' : '오전';
+        const h12 = hh === 0 ? 12 : (hh > 12 ? hh - 12 : hh);
+        return `${ampm} ${h12}:${String(mm).padStart(2, '0')}`;
+    }
+
+    function checkClosedStatus() {
+        const nowKst = getKoreanNowDate();
+        const day = nowKst.getDay();
+        const curMins = nowKst.getHours() * 60 + nowKst.getMinutes();
+        const openMins = globalOpenHour * 60 + globalOpenMin;
+        const closeMins = globalCloseHour * 60 + globalCloseMin;
+
+        const targetMs = getScheduledOpenTimestampMs();
+        if (targetMs !== null && Date.now() < targetMs) {
+            return true;
+        }
+
+        if (day === 0 || day === 6) return true;
+        if (curMins < openMins || curMins > closeMins) return true;
+        return false;
     }
 
     function renderMenuAndSauceCards() {
@@ -5991,703 +6336,435 @@ async function mountKakaoLoginModule() {
             const displayTitle = item.name;
             const priceNum = formatPriceNumber(item.price);
             const qty = orderItems[name] || 0;
-            const isSoldOut = !!item.isSoldOut;
-            const isHot = !!item.isHot;
+            const safeName = escapeHtml(name);
+            const safeTitle = escapeHtml(displayTitle);
+            const safeImg = sanitizeImageUrl(item.image || '');
+            const isSoldOut = Boolean(item.isSoldOut);
+            const isHot = Boolean(item.isHot);
             const isSelected = qty > 0;
 
-            let imgHtml = '';
-            const safeThumbSrc = sanitizeImageUrl(String(item.imageUrl || '').split(',')[0] || '');
-            const safeFullImgUrl = encodeURIComponent(String(item.imageUrl || ''));
-            if (safeThumbSrc) {
-                imgHtml = `<img src="${escapeHtml(safeThumbSrc)}" class="menu-thumb" onclick="openImageModal(decodeURIComponent('${safeFullImgUrl}'))" alt="${escapeHtml(displayTitle)}">`;
+            if (isSoldOut) {
+                mHtml += `
+                    <div class="menu-item-card sold-out${isHot ? ' hot-menu' : ''}">
+                        <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
+                        <div class="menu-card-top">
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}">` : ''}
+                            <div class="menu-details">
+                                ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
+                                <div class="menu-title">${safeTitle}</div>
+                                <div class="menu-price">${priceNum > 0 ? priceNum.toLocaleString() + '원' : ''}</div>
+                            </div>
+                        </div>
+                        <div class="menu-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" disabled>-</button>
+                                <span style="min-width:24px; text-align:center; font-weight:700; font-size:14px;">0</span>
+                                <button type="button" class="item-q-btn" disabled>+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                mHtml += `
+                    <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
+                        <div class="menu-card-top">
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            <div class="menu-details">
+                                ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
+                                <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
+                                <div class="menu-price">${priceNum > 0 ? priceNum.toLocaleString() + '원' : ''}</div>
+                            </div>
+                        </div>
+                        <div class="menu-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" onclick="changeMainQty('${safeName}', false, -1)" ${qty <= 0 ? 'disabled' : ''}>-</button>
+                                <span style="min-width:24px; text-align:center; font-weight:800; font-size:14px;">${qty}</span>
+                                <button type="button" class="item-q-btn" onclick="changeMainQty('${safeName}', false, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
-            const safeNameArg = encodeURIComponent(String(name));
-
-            mHtml += `
-                <div class="menu-item-card ${isSoldOut ? 'sold-out' : ''} ${isHot ? 'hot-menu' : ''} ${isSelected ? 'selected-item' : ''}">
-                    ${isSoldOut ? '<div class="sold-out-badge-overlay"><span class="sold-out-badge-text">SOLD OUT</span></div>' : ''}
-                    <div class="menu-card-top">
-                        ${imgHtml}
-                        <div class="menu-details">
-                            ${isHot ? '<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>' : ''}
-                            <div class="menu-title">${escapeHtml(displayTitle)}${isSelected ? `<span class="selected-qty-badge">${qty}개 선택</span>` : ''}</div>
-                            <div class="menu-price">${priceNum.toLocaleString()}원</div>
-                        </div>
-                    </div>
-                    <div class="menu-card-bottom">
-                        <div class="item-qty-control">
-                            <button type="button" class="item-q-btn" onclick="changeQty(decodeURIComponent('${safeNameArg}'), -1, false)" ${isSoldOut || qty <= 0 ? 'disabled' : ''}>-</button>
-                            <span style="font-size:14px; font-weight:700; min-width:24px; text-align:center;">${qty}</span>
-                            <button type="button" class="item-q-btn" onclick="changeQty(decodeURIComponent('${safeNameArg}'), 1, false)" ${isSoldOut ? 'disabled' : ''}>+</button>
-                        </div>
-                    </div>
-                </div>
-            `;
         });
         menuContainer.innerHTML = mHtml;
 
         let sHtml = '';
-        sauceList.forEach(sauce => {
-            const name = sauce.shortName || sauce.name;
-            const displayTitle = sauce.name;
-            const priceNum = formatPriceNumber(sauce.price);
+        sauceList.forEach(s => {
+            const name = s.shortName || s.name;
+            const priceNum = formatPriceNumber(s.price);
             const qty = sauceItems[name] || 0;
-            const isSoldOut = !!sauce.isSoldOut;
+            const safeName = escapeHtml(name);
+            const isSoldOut = Boolean(s.isSoldOut);
             const isSelected = qty > 0;
-            const safeSauceArg = encodeURIComponent(String(name));
 
-            sHtml += `
-                <div class="sauce-item-card ${isSoldOut ? 'sold-out' : ''} ${isSelected ? 'selected-item' : ''}">
-                    ${isSoldOut ? '<div class="sold-out-badge-overlay"><span class="sold-out-badge-text">SOLD OUT</span></div>' : ''}
-                    <div>
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main);">${escapeHtml(displayTitle)}${isSelected ? `<span class="selected-qty-badge">${qty}</span>` : ''}</div>
-                        <div style="font-size:12px; color:var(--text-sub); font-weight:600; margin-top:2px;">+${priceNum.toLocaleString()}원</div>
-                    </div>
-                    <div class="sauce-card-bottom">
-                        <div class="item-qty-control">
-                            <button type="button" class="item-q-btn" onclick="changeQty(decodeURIComponent('${safeSauceArg}'), -1, true)" ${isSoldOut || qty <= 0 ? 'disabled' : ''}>-</button>
-                            <span style="font-size:13.5px; font-weight:700; min-width:20px; text-align:center;">${qty}</span>
-                            <button type="button" class="item-q-btn" onclick="changeQty(decodeURIComponent('${safeSauceArg}'), 1, true)" ${isSoldOut ? 'disabled' : ''}>+</button>
+            if (isSoldOut) {
+                sHtml += `
+                    <div class="sauce-item-card sold-out">
+                        <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
+                        <div style="font-weight:700; font-size:13.5px; color:var(--text-main);">${safeName}</div>
+                        <div style="font-size:12.5px; color:var(--text-sub); font-weight:700;">${priceNum > 0 ? '+' + priceNum.toLocaleString() + '원' : '추가'}</div>
+                        <div class="sauce-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" disabled>-</button>
+                                <span style="min-width:22px; text-align:center; font-weight:700; font-size:13px;">0</span>
+                                <button type="button" class="item-q-btn" disabled>+</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                sHtml += `
+                    <div class="sauce-item-card${isSelected ? ' selected-item' : ''}">
+                        <div style="font-weight:700; font-size:13.5px; color:var(--text-main);">${safeName}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
+                        <div style="font-size:12.5px; color:var(--text-sub); font-weight:700;">${priceNum > 0 ? '+' + priceNum.toLocaleString() + '원' : '추가'}</div>
+                        <div class="sauce-card-bottom">
+                            <div class="item-qty-control">
+                                <button type="button" class="item-q-btn" onclick="changeMainQty('${safeName}', true, -1)" ${qty <= 0 ? 'disabled' : ''}>-</button>
+                                <span style="min-width:22px; text-align:center; font-weight:800; font-size:13px;">${qty}</span>
+                                <button type="button" class="item-q-btn" onclick="changeMainQty('${safeName}', true, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         });
         sauceContainer.innerHTML = sHtml;
+        updateLiveSummary(orderItems, sauceItems, 'mainSelectedSummaryList', 'mainTotalPrice');
     }
 
-    function changeQty(name, delta, isSauce) {
+    function changeMainQty(name, isSauce, delta) {
         userInteractedWithForm = true;
+        localOptimisticLockUntil = Date.now() + 8000;
+        const targetMap = isSauce ? sauceItems : orderItems;
+        const cur = targetMap[name] || 0;
+        const next = cur + delta;
+        if (next < 0) return;
+
         const list = isSauce ? sauceList : menuList;
-        const catalogItem = list.find(it => (it.shortName || it.name) === name || it.name === name);
-        if (delta > 0 && catalogItem && catalogItem.isSoldOut) {
+        const matched = list.find(i => (i.shortName || i.name) === name || i.name === name);
+        if (delta > 0 && matched && matched.isSoldOut) {
             showLuxurySoldOutModal(name);
             return;
         }
 
-        const targetMap = isSauce ? sauceItems : orderItems;
-        const curQty = targetMap[name] || 0;
-        const nextQty = Math.max(0, curQty + delta);
-
-        if (nextQty === 0) delete targetMap[name];
-        else targetMap[name] = nextQty;
-
+        targetMap[name] = next;
         renderMenuAndSauceCards();
-        updateLiveSummary(orderItems, sauceItems, 'mainSelectedSummaryList', 'mainTotalPrice');
-    }
-
-    function formatHourMinuteToKoreanLabel(totalMinutes) {
-        const norm = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
-        const h24 = Math.floor(norm / 60);
-        const m = norm % 60;
-        const period = h24 >= 12 ? '오후' : '오전';
-        const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-        const mStr = m < 10 ? '0' + m : String(m);
-        return `${period} ${h12}:${mStr}`;
-    }
-
-    function normalizeKoreanTimeLabel(rawStr) {
-        if (!rawStr) return '';
-        const s = String(rawStr).trim();
-        if (!s) return '';
-
-        if (s.includes('오전') || s.includes('오후')) {
-            const m = s.match(/(오전|오후)\s*(\d{1,2})\s*:\s*(\d{1,2})/);
-            if (m) {
-                const period = m[1];
-                const h12 = parseInt(m[2], 10);
-                const min = parseInt(m[3], 10);
-                return `${period} ${h12}:${min < 10 ? '0' + min : min}`;
-            }
-            return s.replace(/\s+/g, ' ');
-        }
-
-        const colonMatch = s.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
-        if (colonMatch) {
-            const h24 = parseInt(colonMatch[1], 10);
-            const min = parseInt(colonMatch[2], 10);
-            return formatHourMinuteToKoreanLabel(h24 * 60 + min);
-        }
-
-        return s;
-    }
-
-    function parseTimeToMinutes(timeStr) {
-        if (!timeStr) return -1;
-        const s = String(timeStr).trim();
-        if (!s) return -1;
-
-        const ampmMatch = s.match(/(오전|오후)\s*(\d{1,2})\s*:\s*(\d{1,2})/);
-        if (ampmMatch) {
-            const period = ampmMatch[1];
-            let hour = parseInt(ampmMatch[2], 10);
-            const min = parseInt(ampmMatch[3], 10);
-            if (period === '오후' && hour < 12) hour += 12;
-            if (period === '오전' && hour === 12) hour = 0;
-            return hour * 60 + min;
-        }
-
-        const hmMatch = s.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
-        if (hmMatch) {
-            return parseInt(hmMatch[1], 10) * 60 + parseInt(hmMatch[2], 10);
-        }
-
-        return -1;
     }
 
     function getCurrentKoreanMinutes() {
-        const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
-        const now = new Date(nowStr);
-        return now.getHours() * 60 + now.getMinutes();
+        const nowKst = getKoreanNowDate();
+        return nowKst.getHours() * 60 + nowKst.getMinutes();
     }
 
-    // [1. ±10분 교집합 혼잡도·폭주 반영] code.gs가 픽업 시간 기준 ±10분 구간 합산 점수로 내려준 load("혼잡","폭주","")와 totalLoad를 직접 읽음
-    function getPickupLoadInfo(timeLabel) {
-        const normTarget = normalizeKoreanTimeLabel(timeLabel);
-        const targetMins = parseTimeToMinutes(normTarget);
-        const list = Array.isArray(globalPickupTimesList) ? globalPickupTimesList : [];
+    function normalizeKoreanTimeLabel(rawLabel) {
+        let s = String(rawLabel || '').trim();
+        if (!s) return '';
 
-        let matchedEntry = null;
-        for (let i = 0; i < list.length; i++) {
-            const item = list[i];
-            if (!item || typeof item !== 'object') continue;
-            const candidateLabel = normalizeKoreanTimeLabel(item.time || item.pickupTime || item.label || item.slot || '');
-            if (candidateLabel && candidateLabel === normTarget) {
-                matchedEntry = item;
-                break;
-            }
-            if (targetMins >= 0) {
-                const cMins = parseTimeToMinutes(candidateLabel);
-                if (cMins === targetMins) {
-                    matchedEntry = item;
-                    break;
+        const match = s.match(/(오전|오후)?\s*(\d{1,2}):(\d{1,2})/);
+        if (match) {
+            const explicitAmPm = match[1];
+            let h = parseInt(match[2], 10);
+            const m = parseInt(match[3], 10);
+            if (!isNaN(h) && !isNaN(m)) {
+                let ampm = explicitAmPm;
+                if (!ampm) {
+                    ampm = h >= 12 ? '오후' : '오전';
                 }
+                let h12 = h;
+                if (ampm === '오후' && h < 12) {
+                    h12 = h;
+                } else if (ampm === '오후' && h === 12) {
+                    h12 = 12;
+                } else if (ampm === '오전' && h === 12) {
+                    h12 = 12;
+                } else if (h > 12) {
+                    h12 = h - 12;
+                }
+                return `${ampm} ${h12}:${String(m).padStart(2, '0')}`;
             }
         }
+        return s.replace(/\s+/g, ' ');
+    }
 
-        const rawLoadStr = matchedEntry
-            ? String(matchedEntry.load !== undefined ? matchedEntry.load : (matchedEntry.status || matchedEntry.congestion || '')).trim()
+    function parseTimeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        const s = String(timeStr).trim();
+        const match = s.match(/(오전|오후)?\s*(\d{1,2}):(\d{1,2})/);
+        if (!match) return 0;
+        const ampm = match[1];
+        let h = parseInt(match[2], 10);
+        const m = parseInt(match[3], 10);
+        if (ampm === '오후' && h < 12) h += 12;
+        if (ampm === '오전' && h === 12) h = 0;
+        return h * 60 + m;
+    }
+
+    // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/폭주 판별]
+    // code.gs에서 A고객 17:30(5점) -> 17:20~17:40(+5), B고객 17:50(5점) -> 17:40~18:00(+5)로 교집합 17:40이 10점이 되며,
+    // 취소/완료/삭제된 예약건은 code.gs 서버 집계에서 제외되어 전달된다.
+    function resolveSlotLoadInfo(timeLabel, serverEntry) {
+        const mins = parseTimeToMinutes(timeLabel);
+        const isLateBatch = mins >= 18 * 60 + 35;
+
+        const rawLoadStr = serverEntry
+            ? String(serverEntry.load || serverEntry.status || serverEntry.congestion || serverEntry.level || '').trim()
             : '';
-        const rawTotalLoad = matchedEntry
-            ? Number(
-                matchedEntry.totalLoad !== undefined
-                    ? matchedEntry.totalLoad
-                    : (matchedEntry.loadScore !== undefined ? matchedEntry.loadScore : 0)
-            )
-            : 0;
-        const totalLoad = isNaN(rawTotalLoad) ? 0 : rawTotalLoad;
+        const scoreVal = serverEntry && serverEntry.totalLoad !== undefined
+            ? Number(serverEntry.totalLoad)
+            : (serverEntry && serverEntry.loadScore !== undefined
+                ? Number(serverEntry.loadScore)
+                : (serverEntry && serverEntry.score !== undefined ? Number(serverEntry.score) : NaN));
 
-        let level = '';
-        if (rawLoadStr.includes('폭주') || rawLoadStr.toUpperCase() === 'SURGE' || rawLoadStr.toUpperCase() === 'RED') {
-            level = 'surge';
-        } else if (rawLoadStr.includes('혼잡') || rawLoadStr.toUpperCase() === 'BUSY' || rawLoadStr.toUpperCase() === 'YELLOW') {
-            level = 'busy';
-        } else if (totalLoad >= 20) {
-            level = 'surge';
-        } else if (totalLoad >= 10) {
-            level = 'busy';
+        let levelType = 'normal';
+        let labelText = '';
+        let detailMsg = '';
+
+        const hasSurgeKeyword = rawLoadStr.includes('폭주') || rawLoadStr.toLowerCase().includes('surge');
+        const hasBusyKeyword = rawLoadStr.includes('혼잡') || rawLoadStr.toLowerCase().includes('busy');
+
+        if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 10)) {
+            levelType = 'surge';
+            labelText = '폭주';
+            const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
+            detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 겹쳐 매우 바쁜 폭주 시간대${scoreSuffix}입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
+        } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 5)) {
+            levelType = 'busy';
+            labelText = '혼잡';
+            const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
+            detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 몰리는 혼잡 시간대${scoreSuffix}입니다. 픽업 시간에 맞춰 조금만 여유를 두고 와주세요.`;
         }
 
         return {
-            level: level,
-            rawLoad: rawLoadStr,
-            totalLoad: totalLoad,
-            matchedEntry: matchedEntry
+            levelType,
+            labelText,
+            detailMsg,
+            isLateBatch,
+            totalLoad: !isNaN(scoreVal) ? scoreVal : 0
         };
     }
 
-    // [1. ±10분 교집합 혼잡도·폭주 반영] 픽업 후보 시간 목록 생성 및 load/totalLoad 반영
-    function getPickupTimeCandidates(isEditMode = false) {
-        let startMins = globalPickupStartHour * 60 + globalPickupStartMin;
-        let endMins = globalPickupCloseHour * 60 + globalPickupCloseMin;
-        if (endMins < startMins) {
-            endMins = 20 * 60;
-        }
+    function findServerSlotEntry(timeLabel) {
+        if (!Array.isArray(globalPickupTimesList) || globalPickupTimesList.length === 0) return null;
+        const normTarget = normalizeKoreanTimeLabel(timeLabel);
+        const targetMins = parseTimeToMinutes(timeLabel);
 
-        const candidates = [];
-        const seenMins = new Set();
-
-        for (let m = startMins; m <= endMins; m += 5) {
-            seenMins.add(m);
-            const label = formatHourMinuteToKoreanLabel(m);
-            const loadInfo = getPickupLoadInfo(label);
-            candidates.push({
-                mins: m,
-                label: label,
-                level: loadInfo.level,
-                totalLoad: loadInfo.totalLoad
-            });
-        }
-
-        if (Array.isArray(globalPickupTimesList) && globalPickupTimesList.length > 0) {
-            globalPickupTimesList.forEach(item => {
-                if (!item || typeof item !== 'object') return;
-                const label = normalizeKoreanTimeLabel(item.time || item.pickupTime || item.label || item.slot || '');
-                const mins = parseTimeToMinutes(label);
-                if (mins >= 0 && !seenMins.has(mins)) {
-                    seenMins.add(mins);
-                    const loadInfo = getPickupLoadInfo(label);
-                    candidates.push({
-                        mins: mins,
-                        label: label,
-                        level: loadInfo.level,
-                        totalLoad: loadInfo.totalLoad
-                    });
-                }
-            });
-            candidates.sort((a, b) => a.mins - b.mins);
-        }
-
-        return candidates;
+        return globalPickupTimesList.find(p => {
+            if (!p) return false;
+            const rawT = p.time || p.pickupTime || p.label || '';
+            if (normalizeKoreanTimeLabel(rawT) === normTarget) return true;
+            if (rawT && parseTimeToMinutes(rawT) === targetMins && targetMins > 0) return true;
+            return false;
+        }) || null;
     }
 
-    // [1. ±10분 교집합 혼잡도·폭주 반영] 셀렉트 옵션에 혼잡 / 주문 폭주 라벨 및 스타일 반영
-    function populateTimeSelect(selectId, preferredValue = '', isEditMode = false) {
-        const selectEl = document.getElementById(selectId);
-        if (!selectEl) return;
+    function populateTimeSelect(selectId, selectedValue, isEditModal) {
+        const sel = document.getElementById(selectId);
+        if (!sel) return;
 
-        const isRawCook = isEditMode
+        const nowMins = getCurrentKoreanMinutes();
+        const isRawCook = isEditModal
             ? !!(document.getElementById('editCook2') && document.getElementById('editCook2').checked)
             : !!(document.getElementById('cook2') && document.getElementById('cook2').checked);
 
+        // 설정 시트 지연시간(예: 20분): 현재시간 이전 시간대는 제외하고, 현재시간 ~ 현재시간+지연시간 구간은 (준비중) 표시
         const effectivePrepMins = isRawCook ? 0 : (globalPrepMinutes || 0);
-        const nowMins = getCurrentKoreanMinutes();
         const minAllowedMins = nowMins + effectivePrepMins;
 
-        const normPreferred = normalizeKoreanTimeLabel(preferredValue || '');
-        const prevSelected = selectEl.value ? normalizeKoreanTimeLabel(selectEl.value) : '';
-        const targetTimeStr = normPreferred || prevSelected;
+        const startMins = globalPickupStartHour * 60 + globalPickupStartMin;
+        const endMins = globalPickupCloseHour * 60 + globalPickupCloseMin;
 
-        const candidates = getPickupTimeCandidates(isEditMode);
-        selectEl.innerHTML = '';
+        const timeSlots = [];
+        for (let m = startMins; m <= endMins; m += 5) {
+            const h = Math.floor(m / 60);
+            const min = m % 60;
+            const ampm = h >= 12 ? '오후' : '오전';
+            const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+            timeSlots.push(`${ampm} ${h12}:${String(min).padStart(2, '0')}`);
+        }
 
-        let hasEnabledOption = false;
-        let matchedTargetOption = null;
-        let firstEnabledValue = '';
+        const normalizedSelected = normalizeKoreanTimeLabel(selectedValue || '');
+        const origNormTime = isEditModal ? normalizeKoreanTimeLabel(editOriginalPickupTime || '') : '';
+        const origMins = origNormTime ? parseTimeToMinutes(origNormTime) : -1;
 
-        candidates.forEach(cand => {
+        sel.innerHTML = '';
+        const placeholderOpt = document.createElement('option');
+        placeholderOpt.value = '';
+        placeholderOpt.textContent = '-- 픽업 시간을 선택해 주세요 --';
+        sel.appendChild(placeholderOpt);
+
+        let matchedValueToSelect = '';
+
+        timeSlots.forEach(tLabel => {
+            const slotMins = parseTimeToMinutes(tLabel);
+            const isPastNow = slotMins < nowMins;
+            const isInDelayWindow = !isPastNow && (effectivePrepMins > 0) && (slotMins < minAllowedMins);
+            const isMyOriginalReservedSlot = Boolean(isEditModal && editAlreadyReserved && origNormTime && (tLabel === origNormTime || slotMins === origMins));
+
+            // 현재시간 이전 시간대는 픽업시간 드롭박스에 나오지 않도록 제외(단, 기존 예약 시간은 예외 허용)
+            if (isPastNow && !isMyOriginalReservedSlot) {
+                return;
+            }
+
+            const serverEntry = findServerSlotEntry(tLabel);
+            const loadInfo = resolveSlotLoadInfo(tLabel, serverEntry);
+
             const opt = document.createElement('option');
-            opt.value = cand.label;
+            opt.value = tLabel;
+            opt.dataset.loadLevel = loadInfo.levelType;
+            opt.dataset.loadLabel = loadInfo.labelText;
+            opt.dataset.loadMsg = loadInfo.detailMsg;
+            opt.dataset.isLate = loadInfo.isLateBatch ? '1' : '0';
+            opt.dataset.totalLoad = String(loadInfo.totalLoad);
 
-            const isPassedOrPrep = cand.mins < minAllowedMins;
-            const isProtectedOrigInEdit = isEditMode && editAlreadyReserved && (cand.label === editOriginalPickupTime);
-
-            if (isPassedOrPrep && !isProtectedOrigInEdit) {
+            if (isInDelayWindow && isMyOriginalReservedSlot) {
+                // 시간이 흘러 (준비중) 시간에 포함된 경우: 본인이 기존에 예약했던 시간은 선택 가능
+                opt.disabled = false;
+                opt.dataset.isPrep = '0';
+                opt.dataset.isGraceOriginal = '1';
+                opt.className = 'slot-grace';
+                let text = `${tLabel} (기존 예약시간·선택가능)`;
+                if (loadInfo.labelText) text += ` [${loadInfo.labelText}]`;
+                opt.textContent = text;
+            } else if (isInDelayWindow) {
+                // 현재시간 ~ 현재시간 + 지연시간(예: 20분) 구간은 (준비중) 표시 및 선택 불가
                 opt.disabled = true;
                 opt.dataset.isPrep = '1';
                 opt.className = 'slot-prep';
-                opt.text = `${cand.label} (준비중)`;
+                let text = `${tLabel} (준비중)`;
+                if (loadInfo.labelText) text += ` [${loadInfo.labelText}]`;
+                opt.textContent = text;
             } else {
                 opt.disabled = false;
                 opt.dataset.isPrep = '0';
-                hasEnabledOption = true;
-                if (!firstEnabledValue) firstEnabledValue = cand.label;
-
-                if (cand.level === 'surge') {
-                    opt.className = 'slot-surge';
-                    opt.text = `${cand.label} · 픽업 ±10분 주문 폭주`;
-                } else if (cand.level === 'busy') {
-                    opt.className = 'slot-busy';
-                    opt.text = `${cand.label} · 픽업 ±10분 혼잡`;
-                } else {
-                    opt.className = '';
-                    opt.text = cand.label;
+                let text = tLabel;
+                if (loadInfo.labelText) {
+                    text += ` [${loadInfo.labelText}]`;
+                    opt.className = loadInfo.levelType === 'surge' ? 'slot-surge' : 'slot-busy';
                 }
+                opt.textContent = text;
             }
 
-            if (targetTimeStr && cand.label === targetTimeStr && !opt.disabled) {
-                matchedTargetOption = opt;
+            if (normalizedSelected && (tLabel === normalizedSelected || slotMins === parseTimeToMinutes(normalizedSelected)) && !opt.disabled) {
+                matchedValueToSelect = tLabel;
             }
 
-            selectEl.appendChild(opt);
+            sel.appendChild(opt);
         });
 
-        if (!hasEnabledOption) {
-            const emptyOpt = document.createElement('option');
-            emptyOpt.value = '';
-            emptyOpt.disabled = true;
-            emptyOpt.selected = true;
-            emptyOpt.text = '선택 가능한 픽업 시간이 없습니다';
-            selectEl.appendChild(emptyOpt);
-            selectEl.disabled = true;
-            return;
-        }
-
-        selectEl.disabled = false;
-        if (matchedTargetOption) {
-            selectEl.value = matchedTargetOption.value;
-        } else if (firstEnabledValue) {
-            selectEl.value = firstEnabledValue;
+        if (matchedValueToSelect) {
+            sel.value = matchedValueToSelect;
+        } else {
+            sel.value = '';
         }
     }
 
-    // [1. ±10분 교집합 혼잡도·폭주 반영] 픽업 시간 선택 시 ±10분 혼잡 / 주문 폭주 배지 표시
     function handleTimeChange(selectEl, infoBoxId) {
-        const box = document.getElementById(infoBoxId);
-        if (!box) return;
+        const infoBox = document.getElementById(infoBoxId);
+        if (!infoBox) return;
 
         const val = selectEl ? selectEl.value : '';
-        if (!val) {
-            box.style.display = 'none';
-            box.innerHTML = '';
+        const selectedOpt = selectEl && selectEl.selectedOptions ? selectEl.selectedOptions[0] : null;
+
+        if (!val || !selectedOpt || selectedOpt.value === '') {
+            infoBox.style.display = 'none';
+            infoBox.innerHTML = '';
+            infoBox.className = 'busy-info-box';
             return;
         }
 
-        const mins = parseTimeToMinutes(val);
-        const isLateBatch = mins >= 18 * 60 + 35;
-        const loadInfo = getPickupLoadInfo(val);
+        const loadLevel = selectedOpt.dataset.loadLevel || 'normal';
+        const loadLabel = selectedOpt.dataset.loadLabel || '';
+        const loadMsg = selectedOpt.dataset.loadMsg || '';
+        const isLate = selectedOpt.dataset.isLate === '1';
+        const isGrace = selectedOpt.dataset.isGraceOriginal === '1';
 
-        const notices = [];
+        const blocks = [];
 
-        if (loadInfo.level === 'surge') {
-            notices.push({
-                cls: 'busy-level-surge',
-                badgeClass: 'pill-surge',
-                badgeText: '픽업 ±10분 주문 폭주',
-                msg: `<b>${escapeHtml(val)}</b> 전후 ±10분 구간에 주문이 폭주하고 있습니다. 조리 및 포장이 평소보다 지연될 수 있으니 여유 있게 방문해 주세요.`
-            });
-        } else if (loadInfo.level === 'busy') {
-            notices.push({
-                cls: 'busy-level-busy',
-                badgeClass: 'pill-busy',
-                badgeText: '픽업 ±10분 혼잡',
-                msg: `<b>${escapeHtml(val)}</b> 전후 ±10분 구간에 예약 주문이 혼잡합니다. 현장 대기나 수령 시간이 다소 소요될 수 있습니다.`
+        if (isGrace) {
+            blocks.push({
+                cls: 'busy-level-red',
+                pillCls: 'pill-surge',
+                pillText: '기존 예약 시간',
+                text: '현재 시간이 지나 매장 준비중(지연시간) 구간에 들어왔지만, 기존 예약 시간으로 유지·선택이 가능합니다. 다른 시간으로 변경하면 이전 시간은 다시 선택할 수 없습니다.'
             });
         }
 
-        if (isLateBatch) {
-            notices.push({
+        if (loadLevel === 'surge') {
+            blocks.push({
+                cls: 'busy-level-red',
+                pillCls: 'pill-surge',
+                pillText: loadLabel || '폭주',
+                text: loadMsg
+            });
+        } else if (loadLevel === 'busy') {
+            blocks.push({
+                cls: 'busy-level-yellow',
+                pillCls: 'pill-busy',
+                pillText: loadLabel || '혼잡',
+                text: loadMsg
+            });
+        }
+
+        if (isLate) {
+            blocks.push({
                 cls: 'busy-level-late',
-                badgeClass: 'pill-late',
-                badgeText: '18:30 마감 일괄 조리',
-                msg: `<b>${escapeHtml(val)}</b> 픽업 주문은 튀김기 마감으로 <b>오후 6시 30분에 일괄 조리</b>되어 포장됩니다. 늦게 오시면 음식이 식을 수 있습니다.`
+                pillCls: 'pill-late',
+                pillText: '18:30 일괄 조리',
+                text: '오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리되어 포장됩니다.'
             });
         }
 
-        if (notices.length === 0) {
-            box.style.display = 'none';
-            box.className = 'busy-info-box';
-            box.innerHTML = '';
+        if (blocks.length === 0) {
+            infoBox.style.display = 'none';
+            infoBox.innerHTML = '';
+            infoBox.className = 'busy-info-box';
             return;
         }
 
-        const primaryCls = notices[0].cls;
-        box.className = `busy-info-box ${primaryCls}`;
-        box.innerHTML = notices.map((n, idx) => `
-            <div class="busy-info-item" style="${idx === 0 ? 'margin-top:0; padding-top:0; border-top:none;' : ''}">
-                <span class="busy-badge-pill ${n.badgeClass}">${n.badgeText}</span>
-                <span>${n.msg}</span>
+        const primaryCls = blocks[0].cls;
+        infoBox.className = `busy-info-box ${primaryCls}`;
+        infoBox.innerHTML = blocks.map(b => `
+            <div class="busy-info-item">
+                <span class="busy-badge-pill ${b.pillCls}">${escapeHtml(b.pillText)}</span>
+                <span>${escapeHtml(b.text)}</span>
             </div>
         `).join('');
-        box.style.display = 'block';
+        infoBox.style.display = 'block';
     }
 
-    function checkClosedStatus() {
-        const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
-        const now = new Date(nowStr);
-        const curMins = now.getHours() * 60 + now.getMinutes();
-
-        const openMins = globalOpenHour * 60 + globalOpenMin;
-        const closeMins = globalCloseHour * 60 + globalCloseMin;
-
-        const customTargetMs = getScheduledOpenTimestampMs();
-        if (customTargetMs !== null && customTargetMs > 0 && Date.now() < customTargetMs) {
-            return true;
-        }
-
-        if (globalIsPreOpenWait) {
-            return true;
-        }
-
-        if (closeMins < openMins) {
-            return !(curMins >= openMins || curMins <= closeMins);
-        }
-        return !(curMins >= openMins && curMins <= closeMins);
-    }
-
-    function updateClosedTimeRangeLabel() {
-        const labelEl = document.getElementById('closedTimeRange');
-        if (!labelEl) return;
-        const startLabel = formatHourMinuteToKoreanLabel(globalOpenHour * 60 + globalOpenMin);
-        const endLabel = formatHourMinuteToKoreanLabel(globalCloseHour * 60 + globalCloseMin);
-        labelEl.textContent = `${startLabel} ~ ${endLabel}`;
-    }
-
-    function applySettingsObject(s) {
-        if (!s || typeof s !== 'object') return;
-
-        if (s.maintenanceCode) serverMaintenanceCode = String(s.maintenanceCode).trim();
-        if (s.secretCode) serverSecretCode = String(s.secretCode).trim();
-
-        if (isValidHourMinutePair(Number(s.openHour), Number(s.openMin))) {
-            globalOpenHour = Number(s.openHour);
-            globalOpenMin = Number(s.openMin);
-        }
-        if (isValidHourMinutePair(Number(s.closeHour), Number(s.closeMin))) {
-            globalCloseHour = Number(s.closeHour);
-            globalCloseMin = Number(s.closeMin);
-        }
-        if (isValidHourMinutePair(Number(s.pickupStartHour), Number(s.pickupStartMin))) {
-            globalPickupStartHour = Number(s.pickupStartHour);
-            globalPickupStartMin = Number(s.pickupStartMin);
-        }
-        if (isValidHourMinutePair(Number(s.pickupCloseHour), Number(s.pickupCloseMin))) {
-            globalPickupCloseHour = Number(s.pickupCloseHour);
-            globalPickupCloseMin = Number(s.pickupCloseMin);
-        }
-
-        if (s.prepMinutes !== undefined && !isNaN(Number(s.prepMinutes))) {
-            globalPrepMinutes = Math.max(0, Number(s.prepMinutes));
-        }
-        if (s.fortuneEnabled !== undefined) {
-            globalFortuneEnabled = Boolean(s.fortuneEnabled);
-        }
-        if (Array.isArray(s.fortuneList)) {
-            globalFortuneList = s.fortuneList;
-        }
-        if (Array.isArray(s.pickupTimesList)) {
-            globalPickupTimesList = s.pickupTimesList;
-        }
-        if (Array.isArray(s.eventMenuList) && s.eventMenuList.length > 0) {
-            cachedEventMenuList = s.eventMenuList;
-        }
-        if (Array.isArray(s.menuList)) {
-            menuList = s.menuList;
-        }
-        if (Array.isArray(s.sauceList)) {
-            sauceList = s.sauceList;
-        }
-
-        const rawNextDt = s.nextOpenDateTime ? String(s.nextOpenDateTime).trim() : '';
-        const rawOpenRaw = s.openDateRaw ? String(s.openDateRaw).trim() : '';
-        const parsedTs = Number(s.openDateTimestamp || 0) || parseKoreanDateTimeToMs(rawNextDt || rawOpenRaw) || 0;
-        const hasFutureTarget = parsedTs > 0 && Date.now() < parsedTs;
-
-        if (hasFutureTarget) {
-            globalNextOpenDateTime = rawNextDt;
-            globalOpenDateRaw = rawOpenRaw;
-            globalOpenDateTimestamp = parsedTs;
-            globalIsPreOpenWait = true;
-        } else {
-            clearCustomOpenTargetState();
-        }
-
-        updateClosedTimeRangeLabel();
-
-        if (s.isMaintenance) {
-            const adminKey = getAdminApiKeyValue();
-            const isAdminMode = (() => {
-                try {
-                    return (window.sessionStorage && window.sessionStorage.getItem('isAdminTestMode') === 'true') &&
-                        !!adminKey && (!serverMaintenanceCode || adminKey === String(serverMaintenanceCode).trim());
-                } catch (e) {
-                    return false;
-                }
-            })();
-            if (!isAdminMode) {
-                const maintOverlay = document.getElementById('maintenanceOverlay');
-                if (maintOverlay) maintOverlay.style.display = 'flex';
-            }
-        } else {
-            const maintOverlay = document.getElementById('maintenanceOverlay');
-            if (maintOverlay) maintOverlay.style.display = 'none';
-        }
-
-        if (s.isBlocked) {
-            enforceBlockedOverlay(s.blockMessage || '');
-        }
-    }
-
-    function setLoadingSkeletonVisible(isVisible) {
-        const overlay = document.getElementById('pageLoadingOverlay');
-        if (overlay) {
-            overlay.style.display = isVisible ? 'flex' : 'none';
-        }
-    }
-
-    let __lastCustomerRenderAt = 0;
-
-    async function renderCustomerScreenWithData(initialData, isFastCacheRender = false) {
-        const keptY = captureScrollPos();
-        __lastCustomerRenderAt = Date.now();
-        setLoadingSkeletonVisible(false);
-
-        const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
-        const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
-        if (!sess.kakaoId) {
-            hideAllMainContentSections();
-            showKakaoGateOverlay("login", "예약과 단골 적립을 위해 카카오톡 로그인을 진행해 주세요.");
-            return;
-        }
-        if (enforcePhone4GateIfNeeded(sess)) return;
-
-        const s = (initialData && initialData.settings) ? initialData.settings : {};
-        const r = (initialData && initialData.reservation) ? initialData.reservation : null;
-
-        const nowMs = Date.now();
-        const parsedTargetTs =
-            Number(s.openDateTimestamp || 0) ||
-            parseKoreanDateTimeToMs(s.nextOpenDateTime || s.openDateRaw || '') ||
-            0;
-        const hasFutureCustomOpen = parsedTargetTs > 0 && nowMs < parsedTargetTs;
-
-        const isClosedNow = hasFutureCustomOpen || Boolean(s.isClosed) || checkClosedStatus();
-
-        if (isClosedNow) {
-            document.getElementById('closedNotice').style.display = 'block';
-            document.getElementById('pickupCompletedNotice').style.display = 'none';
-            document.getElementById('alreadyOrderedNotice').style.display = 'none';
-            document.getElementById('topNoticeBox').style.display = 'none';
-            document.getElementById('quickReorderBox').style.display = 'none';
-            document.getElementById('orderForm').style.display = 'none';
-
-            if (hasFutureCustomOpen) {
-                globalIsPreOpenWait = true;
-                globalOpenDateTimestamp = parsedTargetTs;
-                if (s.nextOpenDateTime) globalNextOpenDateTime = String(s.nextOpenDateTime).trim();
-                if (s.openDateRaw) globalOpenDateRaw = String(s.openDateRaw).trim();
-                startOpenCountdownTimer();
-            } else {
-                clearCustomOpenTargetState();
-                stopOpenCountdownTimer();
-                const cardEl = document.getElementById('ddayOpenCountdownCard');
-                if (cardEl) cardEl.style.display = 'none';
-            }
-            preserveScrollPos(keptY);
-            return;
-        }
-
-        clearCustomOpenTargetState();
-        stopOpenCountdownTimer();
-        const cardEl = document.getElementById('ddayOpenCountdownCard');
-        if (cardEl) cardEl.style.display = 'none';
-        document.getElementById('closedNotice').style.display = 'none';
-
-        if (r && r.result === 'found') {
-            const st = String(r.status || '').trim();
-            if (st === '완료') {
-                clearReservedSessionLock();
-                if (!userDismissedCompletedNotice) {
-                    document.getElementById('pickupCompletedNotice').style.display = 'block';
-                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                    document.getElementById('topNoticeBox').style.display = 'none';
-                    document.getElementById('quickReorderBox').style.display = 'none';
-                    document.getElementById('orderForm').style.display = 'none';
-                    preserveScrollPos(keptY);
-                    return;
+    function parseSummaryToMap(summaryStr) {
+        const result = {};
+        if (!summaryStr || summaryStr === '없음') return result;
+        const parts = String(summaryStr).split(',');
+        parts.forEach(p => {
+            const trimmed = p.trim();
+            if (!trimmed) return;
+            const match = trimmed.match(/^(.*?)\s*(\d+)\s*개$/);
+            if (match) {
+                const name = match[1].trim();
+                const qty = parseInt(match[2], 10);
+                if (name && !isNaN(qty) && qty > 0) {
+                    result[name] = (result[name] || 0) + qty;
                 }
             } else {
-                renderActiveReservationNotice(r);
-                preserveScrollPos(keptY);
-                return;
+                result[trimmed] = (result[trimmed] || 0) + 1;
             }
-        }
-
-        if (isReservedSessionLocked() && isFastCacheRender) {
-            const cachedState = loadCustomerStateCache();
-            if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
-                renderActiveReservationNotice(cachedState.reservation);
-            } else {
-                showAlreadyOrderedPlaceholder();
-            }
-            preserveScrollPos(keptY);
-            return;
-        }
-
-        document.getElementById('pickupCompletedNotice').style.display = 'none';
-        document.getElementById('alreadyOrderedNotice').style.display = 'none';
-        document.getElementById('topNoticeBox').style.display = 'block';
-
-        const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
-        if (hasPrevOrder && !isOrderFormEditingActive()) {
-            document.getElementById('quickReorderBox').style.display = 'block';
-            document.getElementById('orderForm').style.display = 'none';
-            renderQuickReorderBox();
-        } else {
-            document.getElementById('quickReorderBox').style.display = 'none';
-            document.getElementById('orderForm').style.display = 'block';
-            if (!userInteractedWithForm) {
-                renderMenuAndSauceCards();
-                updateLiveSummary(orderItems, sauceItems, 'mainSelectedSummaryList', 'mainTotalPrice');
-                populateTimeSelect('pickupTime', '', false);
-                handleMainCookTypeChange();
-            }
-        }
-        preserveScrollPos(keptY);
+        });
+        return result;
     }
 
-    async function runFullAppInitialization() {
-        purgeLegacyAdminKeyLocalStorage();
-        await mountKakaoLoginModule();
-
-        const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
-        const sess = await activeAuth.restoreSession();
-        syncNicknameUI();
-
-        if (!sess || !sess.kakaoId) {
-            setLoadingSkeletonVisible(false);
-            hideAllMainContentSections();
-            showKakaoGateOverlay("login", "예약과 단골 적립을 위해 카카오톡 로그인을 진행해 주세요.");
-            return;
+    function closeConfirmReduce(confirmed) {
+        hideModal('confirmReduceModal');
+        if (confirmed && typeof pendingReduceAction === 'function') {
+            pendingReduceAction();
         }
-
-        if (enforcePhone4GateIfNeeded(sess)) {
-            setLoadingSkeletonVisible(false);
-            return;
-        }
-
-        hideKakaoGateOverlay();
-
-        const cachedSettings = loadSettingsCache();
-        const cachedCustomerState = loadCustomerStateCache();
-
-        if (cachedSettings) {
-            applySettingsObject(cachedSettings);
-            if (cachedSettings.isBlocked) return;
-
-            let fastReservation = null;
-            if (cachedCustomerState) {
-                if (cachedCustomerState.type === 'active_order' && cachedCustomerState.reservation) {
-                    fastReservation = cachedCustomerState.reservation;
-                } else if (cachedCustomerState.type === 'completed') {
-                    fastReservation = { result: 'found', status: '완료' };
-                }
-            }
-            if (!fastReservation && isReservedSessionLocked()) {
-                fastReservation = {
-                    result: 'found',
-                    status: '미확인',
-                    nickname: sess.identifier || globalUserNickname || ''
-                };
-            }
-            await renderCustomerScreenWithData({
-                settings: cachedSettings,
-                reservation: fastReservation
-            }, true);
-        }
-
-        startHeartbeat();
-        startLiveCustomerSync();
-        await syncCustomerScreenWithSheet(true);
+        pendingReduceAction = null;
     }
 
-    window.addEventListener('DOMContentLoaded', function () {
-        purgeLegacyAdminKeyLocalStorage();
-        const isAdminTestMode = (() => {
-            try {
-                const keyVal = getAdminApiKeyValue();
-                return (window.sessionStorage && window.sessionStorage.getItem('isAdminTestMode') === 'true') &&
-                    !!keyVal && (!serverMaintenanceCode || keyVal === String(serverMaintenanceCode).trim());
-            } catch (e) {
-                return false;
-            }
-        })();
-
-        if (isAdminTestMode) {
-            runFullAppInitialization();
-            return;
-        }
-
+    document.addEventListener('DOMContentLoaded', function () {
         runFullAppInitialization();
     });
 </script>
+</body>
+
+</html>
