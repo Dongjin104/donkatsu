@@ -3763,7 +3763,7 @@
             } catch (e) { }
 
             stopOpenCountdownTimer();
-            //window.location.reload();
+            window.location.reload();
         }
 
         function triggerOpenTransitionNow(cardEl) {
@@ -6210,7 +6210,12 @@
                             type: 'active_order',
                             reservation: reservationData
                         });
-                        renderActiveReservationNotice(reservationData);
+                        const isEditingNow =
+                            (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                            !!window.isEditingReservation;
+                        if (!isEditingNow) {
+                            renderActiveReservationNotice(reservationData);
+                        }
                     }
                 } else {
                     clearReservedSessionLock();
