@@ -3541,8 +3541,23 @@
 
         function isOrderFormEditingActive() {
             const orderFrm = document.getElementById('orderForm');
-            const isFormVisible = !!(orderFrm && orderFrm.style.display === 'block');
-            return Boolean(userInteractedWithForm || isFormVisible);
+            const searchModalEl = document.getElementById('searchModal');
+            const isFormVisible = !!(orderFrm && orderFrm.style.display !== 'none' && orderFrm.style.display !== '');
+            const isModalVisible = !!(
+                searchModalEl &&
+                searchModalEl.style.display !== 'none' &&
+                (
+                    searchModalEl.classList.contains('show') ||
+                    searchModalEl.classList.contains('active') ||
+                    searchModalEl.style.display === 'block' ||
+                    searchModalEl.style.display === 'flex'
+                )
+            );
+            const hasEditFlag =
+                !!window.isEditingReservation ||
+                !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved);
+
+            return Boolean(userInteractedWithForm || isFormVisible || isModalVisible || hasEditFlag);
         }
 
         function showAlreadyOrderedPlaceholder() {
