@@ -4353,22 +4353,8 @@
                         }
 
                         const orderFormEl = document.getElementById('orderForm');
-                        const searchModalEl = document.getElementById('searchModal');
                         const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-                        const isSearchModalVisible = !!(
-                            searchModalEl &&
-                            searchModalEl.style.display !== 'none' &&
-                            (searchModalEl.classList.contains('show') ||
-                             searchModalEl.classList.contains('active') ||
-                             searchModalEl.style.display === 'block' ||
-                             searchModalEl.style.display === 'flex')
-                        );
-                        const isEditingNow =
-                            (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                            !!window.isEditingReservation ||
-                            !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
-                            isOrderFormVisible ||
-                            isSearchModalVisible;
+                        const isEditingNow = (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) || isOrderFormVisible;
 
                         if (!isEditingNow) {
                             renderActiveReservationNotice(reservationData);
