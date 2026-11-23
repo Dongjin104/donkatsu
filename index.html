@@ -5227,6 +5227,13 @@
             if (enforcePhone4GateIfNeeded(sess)) return;
 
             if (isReservedSessionLocked()) {
+                const orderFormEl = document.getElementById('orderForm');
+                const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
+                const isEditingNow =
+                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                    !!window.isEditingReservation ||
+                    isOrderFormVisible;
+                if (isEditingNow) return;
                 const cachedState = loadCustomerStateCache();
                 if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
                     renderActiveReservationNotice(cachedState.reservation);
