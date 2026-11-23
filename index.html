@@ -6161,8 +6161,27 @@
                     }
                 }
 
+                // ▼▼▼ [여기부터] 기존 cachedState 블록을 이 덩어리로 교체 ▼▼▼
                 const cachedState = loadCustomerStateCache();
-                if (cachedSettings && cachedState) {
+                const orderFormEl = document.getElementById('orderForm');
+                const searchModalEl = document.getElementById('searchModal');
+                const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
+                const isSearchModalVisible = !!(
+                    searchModalEl &&
+                    searchModalEl.style.display !== 'none' &&
+                    (searchModalEl.classList.contains('show') ||
+                     searchModalEl.classList.contains('active') ||
+                     searchModalEl.style.display === 'block' ||
+                     searchModalEl.style.display === 'flex')
+                );
+                const isEditingNow =
+                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                    !!window.isEditingReservation ||
+                    !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
+                    isOrderFormVisible ||
+                    isSearchModalVisible;
+
+                if (cachedSettings && cachedState && !isEditingNow) {
                     if (cachedSettings.isClosed) {
                         setLoadingSkeletonVisible(false);
                         showClosedNoticeScreen();
@@ -6175,10 +6194,10 @@
                         document.getElementById('quickReorderBox').style.display = 'none';
                         document.getElementById('closedNotice').style.display = 'none';
                     } else if (cachedState.type === 'active_order' && cachedState.reservation) {
-                        // ▼ [여기 추가] 서버 응답 기다리기 전에 캐시된 내역으로 먼저 그려서 빈 화면 방지
                         renderActiveReservationNotice(cachedState.reservation);
                     }
                 }
+                // ▲▲▲ [여기까지] ▲▲▲
 
                 const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
 
