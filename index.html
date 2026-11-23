@@ -1348,11 +1348,27 @@
         }
 
         @keyframes secretShake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-6px); }
-            40% { transform: translateX(6px); }
-            60% { transform: translateX(-4px); }
-            80% { transform: translateX(4px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-6px);
+            }
+
+            40% {
+                transform: translateX(6px);
+            }
+
+            60% {
+                transform: translateX(-4px);
+            }
+
+            80% {
+                transform: translateX(4px);
+            }
         }
 
         /* 수정 저장 진행중 프리미엄 로더 */
@@ -2432,9 +2448,8 @@
                     <label for="secretGateInput" class="secret-gate-input-label">오늘의 시크릿 코드</label>
                     <span id="secretGateSavedChip" class="secret-gate-saved-chip">✓ 이전 입력 코드 자동입력</span>
                 </div>
-                <input type="text" id="secretGateInput" class="secret-gate-field"
-                    placeholder="오픈채팅방 공지 코드 입력" autocomplete="off"
-                    oninput="clearSecretGateError()"
+                <input type="text" id="secretGateInput" class="secret-gate-field" placeholder="오픈채팅방 공지 코드 입력"
+                    autocomplete="off" oninput="clearSecretGateError()"
                     onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleSecretGateDrawSubmit(); }">
 
                 <div id="secretGateErrorMsg" class="secret-gate-error-msg">
@@ -3709,7 +3724,7 @@
             );
             return targetUtcMs;
         }
-        
+
         function formatTargetDateKorean(targetMs) {
             if (globalOpenDateRaw && String(globalOpenDateRaw).trim() !== '') {
                 return String(globalOpenDateRaw).trim() + ' 오픈';
@@ -6044,7 +6059,7 @@ ${safeCode}
             return null;
         }
 
-function populateTimeSelect(selectId, preselectValue = '', allowGracePast = false) {
+        function populateTimeSelect(selectId, preselectValue = '', allowGracePast = false) {
             const selectEl = document.getElementById(selectId);
             if (!selectEl) return;
 
@@ -6052,6 +6067,16 @@ function populateTimeSelect(selectId, preselectValue = '', allowGracePast = fals
             const slots = (Array.isArray(globalPickupTimesList) && globalPickupTimesList.length > 0)
                 ? globalPickupTimesList
                 : generateDefaultPickupSlots();
+
+            // 동일 픽업 시간대별 튀김 부하 점수(load) 합산
+            const slotLoadMap = {};
+            slots.forEach(slotObj => {
+                const rawLabel = typeof slotObj === 'string' ? slotObj : (slotObj.time || '');
+                const label = normalizeKoreanTimeLabel(rawLabel);
+                if (!label) return;
+                const rowLoad = typeof slotObj === 'object' ? (Number(slotObj.load) || 0) : 0;
+                slotLoadMap[label] = Math.round(((slotLoadMap[label] || 0) + rowLoad) * 100) / 100;
+            });
 
             const nowMins = getCurrentKoreanMinutes();
             const isEditSelect = (selectId === 'newPickupTime');
@@ -6073,7 +6098,7 @@ function populateTimeSelect(selectId, preselectValue = '', allowGracePast = fals
                 if (!label) return;
 
                 const slotMins = parseTimeToMinutes(label);
-                const load = typeof slotObj === 'object' ? (Number(slotObj.load) || 0) : 0;
+                const load = slotLoadMap[label] || 0;
                 const isPreselectedSlot = Boolean(normalizedPreselect && label === normalizedPreselect);
 
                 const isInDelayWindow = (slotMins < minAllowedMins);
