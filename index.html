@@ -6196,25 +6196,31 @@ ${safeCode}
             }
 
             if (Array.isArray(globalPickupTimesList) && globalPickupTimesList.length > 0) {
-                const matchedSlot = globalPickupTimesList.find(slot => {
-                    if (!slot || !slot.time) return false;
-                    return parseTimeToMinutes(slot.time) === mins;
+                globalPickupTimesList.forEach(item => {
+                    if (!item || item.time === undefined || item.time === null || item.time === '') return;
+
+                    let m = 9999;
+                    let normLabel = '';
+
+                    if (typeof item.time === 'number' && !isNaN(item.time)) {
+                        m = item.time;
+                        normLabel = typeof formatMinutesToKoreanTime === 'function'
+                            ? formatMinutesToKoreanTime(m)
+                            : String(item.time);
+                    } else {
+                        normLabel = normalizeKoreanTimeLabel(item.time);
+                        m = parseTimeToMinutes(normLabel);
+                    }
+
+                    if (m >= startMins && m <= closeMins) {
+                        if (!normLabel && typeof formatMinutesToKoreanTime === 'function') {
+                            normLabel = formatMinutesToKoreanTime(m);
+                        }
+                        const existing = slotMap.get(m) || { mins: m, label: normLabel, load: '' };
+                        existing.load = String(item.load || '').trim();
+                        slotMap.set(m, existing);
+                    }
                 });
-                const rawLoad = matchedSlot ? String(matchedSlot.load || '').trim() : '';
-                if (rawLoad.includes('폭주')) {
-                    return {
-                        tier: 'surge',
-                        badgeText: '폭주',
-                        message: '해당 시간대는 예약 주문이 폭주하여 조리가 다소 지연될 수 있습니다.'
-                    };
-                }
-                if (rawLoad.includes('혼잡')) {
-                    return {
-                        tier: 'busy',
-                        badgeText: '혼잡',
-                        message: '해당 시간대는 예약 주문이 몰려 혼잡한 시간대입니다.'
-                    };
-                }
             }
 
             return null;
