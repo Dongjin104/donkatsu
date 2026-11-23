@@ -6524,8 +6524,8 @@
             return h * 60 + m;
         }
 
-        // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/폭주 판별]
-        // 25점 미만: 표시 없음 / 25~39점: 혼잡 / 40점 이상: 폭주
+        // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/몰림 판별]
+        // 25점 미만: 표시 없음 / 25~39점: 혼잡 / 40점 이상: 몰림
         // 취소/완료/삭제된 예약건은 code.gs 서버 집계에서 제외되어 전달된다.
         function resolveSlotLoadInfo(timeLabel, serverEntry) {
             const mins = parseTimeToMinutes(timeLabel);
@@ -6544,13 +6544,13 @@
             let labelText = '';
             let detailMsg = '';
 
-            const hasSurgeKeyword = rawLoadStr.includes('폭주') || rawLoadStr.toLowerCase().includes('surge');
+            const hasSurgeKeyword = rawLoadStr.includes('몰림') || rawLoadStr.toLowerCase().includes('surge');
             const hasBusyKeyword = rawLoadStr.includes('혼잡') || rawLoadStr.toLowerCase().includes('busy');
 
             if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 40)) {
                 levelType = 'surge';
-                labelText = '폭주';
-                detailMsg = `${timeLabel} 시간대는 예약이 몰려 폭주 상태입니다. 조리 대기가 길어질 수 있으니 여유 있게 방문해 주세요.`;
+                labelText = '몰림';
+                detailMsg = `${timeLabel} 시간대는 예약이 몰려 몰림 상태입니다. 조리 대기가 길어질 수 있으니 여유 있게 방문해 주세요.`;
             } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 25)) {
                 levelType = 'busy';
                 labelText = '혼잡';
@@ -6723,7 +6723,7 @@
                 blocks.push({
                     cls: 'busy-level-red',
                     pillCls: 'pill-surge',
-                    pillText: loadLabel || '폭주',
+                    pillText: loadLabel || '몰림',
                     text: loadMsg
                 });
             } else if (loadLevel === 'busy') {
