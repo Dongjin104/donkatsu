@@ -4352,11 +4352,7 @@
                             showModal('lockedModal');
                         }
 
-                        const orderFormEl = document.getElementById('orderForm');
-                        const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-                        const isEditingNow = (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) || isOrderFormVisible;
-
-                        if (!isEditingNow) {
+                        if (isAlreadyOrderedScreenVisible() || !isOrderFormEditingActive()) {
                             renderActiveReservationNotice(reservationData);
                         }
                         return;
@@ -4399,9 +4395,9 @@
                         const isClosedNow = checkClosedStatus();
 
                         if ((!isClosedScreenVisible && isClosedNow) || (isClosedScreenVisible && !isClosedNow)) {
-                            // if (typeof forceReloadForOpenCheck === 'function') {
-                            //     forceReloadForOpenCheck(isClosedNow ? 'now_closed' : 'now_open');
-                            // }
+                            if (typeof forceReloadForOpenCheck === 'function') {
+                                forceReloadForOpenCheck(isClosedNow ? 'now_closed' : 'now_open');
+                            }
                         }
                     }
                 } catch (err) { }
