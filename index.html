@@ -4976,6 +4976,7 @@
             const container = document.getElementById('modalImageContainer');
             if (!container) return;
             container.innerHTML = '';
+            container.scrollLeft = 0;
 
             let urls = String(imageUrl || '').split(',').map(u => sanitizeImageUrl(u)).filter(Boolean);
             urls.forEach(finalUrl => {
@@ -4986,6 +4987,7 @@
             });
 
             if (urls.length === 0) return;
+            container.scrollLeft = 0;
             showModal('imageModal');
         }
 
