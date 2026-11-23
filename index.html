@@ -3520,7 +3520,21 @@
         }
 
         function isReservedSessionLocked() {
-            return false;
+            try {
+                const raw =
+                    localStorage.getItem(RESERVED_LOCK_KEY) ||
+                    (typeof TripleStorage !== 'undefined' && TripleStorage && TripleStorage.getItem && TripleStorage.getItem(RESERVED_LOCK_KEY)) ||
+                    (typeof TripleStorage !== 'undefined' && TripleStorage && TripleStorage.getCookie && TripleStorage.getCookie(RESERVED_LOCK_KEY));
+                if (!raw) return false;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !parsed.locked) return false;
+                if (parsed.savedAt && (Date.now() - Number(parsed.savedAt)) > 12 * 60 * 60 * 1000) {
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
         }
 
         function isOrderFormEditingActive() {
@@ -4344,7 +4358,7 @@
 
                     if (reservationData.result === "not_found") {
                         clearReservedSessionLock();
-                        try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) {}
+                        try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
 
                         const alreadyEl = document.getElementById('alreadyOrderedNotice');
                         const pickupEl = document.getElementById('pickupCompletedNotice');
@@ -6091,24 +6105,6 @@
                         document.getElementById('orderForm').style.display = 'none';
                         document.getElementById('quickReorderBox').style.display = 'none';
                         document.getElementById('closedNotice').style.display = 'none';
-                    } else if (!isReservedSessionLocked()) {
-                        setLoadingSkeletonVisible(false);
-                        document.getElementById('closedNotice').style.display = 'none';
-                        document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                        document.getElementById('pickupCompletedNotice').style.display = 'none';
-                        document.getElementById('topNoticeBox').style.display = 'block';
-                        const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
-                        if (hasPrevOrder) {
-                            document.getElementById('quickReorderBox').style.display = 'block';
-                            document.getElementById('orderForm').style.display = 'none';
-                            renderQuickReorderBox();
-                        } else {
-                            document.getElementById('quickReorderBox').style.display = 'none';
-                            document.getElementById('orderForm').style.display = 'block';
-                            renderMenuAndSauceCards();
-                            populateTimeSelect('pickupTime', '', false);
-                            handleMainCookTypeChange();
-                        }
                     }
                 }
 
