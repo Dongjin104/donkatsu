@@ -6059,6 +6059,18 @@ ${safeCode}
             return null;
         }
 
+        function toSlotTimeLabel(rawVal) {
+            if (rawVal === null || rawVal === undefined || rawVal === '') return '';
+            if (typeof rawVal === 'number' && !isNaN(rawVal)) {
+                return normalizeKoreanTimeLabel(formatKoreanMinutesToStr(rawVal));
+            }
+            const str = String(rawVal).trim();
+            if (/^\d+$/.test(str)) {
+                return normalizeKoreanTimeLabel(formatKoreanMinutesToStr(Number(str)));
+            }
+            return normalizeKoreanTimeLabel(str);
+        }
+
         function populateTimeSelect(selectId, preselectValue = '', allowGracePast = false) {
             const selectEl = document.getElementById(selectId);
             if (!selectEl) return;
@@ -6068,13 +6080,13 @@ ${safeCode}
                 ? globalPickupTimesList
                 : generateDefaultPickupSlots();
 
-            // 동일 픽업 시간대별 튀김 부하 점수(load) 합산
+            // 시간대("오전/오후 H:MM")별 튀김 부하 점수 합산
             const slotLoadMap = {};
             slots.forEach(slotObj => {
-                const rawLabel = typeof slotObj === 'string' ? slotObj : (slotObj.time || '');
-                const label = normalizeKoreanTimeLabel(rawLabel);
+                const rawTime = typeof slotObj === 'string' ? slotObj : (slotObj ? slotObj.time : '');
+                const label = toSlotTimeLabel(rawTime);
                 if (!label) return;
-                const rowLoad = typeof slotObj === 'object' ? (Number(slotObj.load) || 0) : 0;
+                const rowLoad = typeof slotObj === 'object' && slotObj !== null ? (Number(slotObj.load) || 0) : 0;
                 slotLoadMap[label] = Math.round(((slotLoadMap[label] || 0) + rowLoad) * 100) / 100;
             });
 
@@ -6093,8 +6105,8 @@ ${safeCode}
             let matchedPreselectValue = '';
 
             slots.forEach(slotObj => {
-                const rawLabel = typeof slotObj === 'string' ? slotObj : (slotObj.time || '');
-                const label = normalizeKoreanTimeLabel(rawLabel);
+                const rawTime = typeof slotObj === 'string' ? slotObj : (slotObj ? slotObj.time : '');
+                const label = toSlotTimeLabel(rawTime);
                 if (!label) return;
 
                 const slotMins = parseTimeToMinutes(label);
