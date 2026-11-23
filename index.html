@@ -5095,6 +5095,16 @@
         });
 
         function renderQuickReorderBox() {
+            const orderFormEl = document.getElementById('orderForm');
+            const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
+            const isEditingNow =
+                (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                !!window.isEditingReservation ||
+                isOrderFormVisible;
+
+            if (isEditingNow) {
+                return;
+            }
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
