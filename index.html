@@ -6095,8 +6095,6 @@
                     if (cachedSettings.isClosed) {
                         setLoadingSkeletonVisible(false);
                         showClosedNoticeScreen();
-                    } else if (cachedState.type === 'active_order' && cachedState.reservation && isReservedSessionLocked()) {
-                        renderActiveReservationNotice(cachedState.reservation);
                     } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
                         setLoadingSkeletonVisible(false);
                         document.getElementById('pickupCompletedNotice').style.display = 'block';
