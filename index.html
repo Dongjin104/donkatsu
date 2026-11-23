@@ -4364,32 +4364,23 @@
 
                         const alreadyEl = document.getElementById('alreadyOrderedNotice');
                         const pickupEl = document.getElementById('pickupCompletedNotice');
+                        const closedEl = document.getElementById('closedNotice');
+                        const topNoticeEl = document.getElementById('topNoticeBox');
+                        const quickBoxEl = document.getElementById('quickReorderBox');
+                        const orderFormEl = document.getElementById('orderForm');
+
                         if (alreadyEl) alreadyEl.style.display = 'none';
                         if (pickupEl) pickupEl.style.display = 'none';
+                        if (closedEl) closedEl.style.display = 'none';
+                        if (topNoticeEl) topNoticeEl.style.display = 'block';
 
-                        const closedEl = document.getElementById('closedNotice');
-                        const isClosedScreenVisible = !!(closedEl && closedEl.style.display !== 'none');
-                        if (!isOrderFormEditingActive()) {
-                            const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
-                            saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
-                            const isClosed = checkClosedStatus();
-                            if (!isClosed && !enforcePhone4GateIfNeeded(sess)) {
-                                if (closedEl) closedEl.style.display = 'none';
-                                const topNoticeEl = document.getElementById('topNoticeBox');
-                                if (topNoticeEl) topNoticeEl.style.display = 'block';
-                                if (hasPrevOrder) {
-                                    document.getElementById('quickReorderBox').style.display = 'block';
-                                    document.getElementById('orderForm').style.display = 'none';
-                                    renderQuickReorderBox();
-                                } else {
-                                    document.getElementById('quickReorderBox').style.display = 'none';
-                                    document.getElementById('orderForm').style.display = 'block';
-                                    renderMenuAndSauceCards();
-                                    populateTimeSelect('pickupTime', '', false);
-                                    handleMainCookTypeChange();
-                                }
-                            } else if (isClosedScreenVisible && closedEl) {
-                                closedEl.style.display = 'block';
+                        saveCustomerStateCache({ type: 'quick_reorder' });
+
+                        if (quickBoxEl && orderFormEl) {
+                            quickBoxEl.style.display = 'block';
+                            orderFormEl.style.display = 'none';
+                            if (typeof renderQuickReorderBox === 'function') {
+                                renderQuickReorderBox();
                             }
                         }
                     }
