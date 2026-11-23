@@ -6452,8 +6452,12 @@ ${safeCode}
             if (Array.isArray(settings.fortuneList) && settings.fortuneList.length > 0) {
                 globalFortuneList = settings.fortuneList;
             }
-            if (Array.isArray(settings.pickupTimesList)) {
-                globalPickupTimesList = settings.pickupTimesList;
+            const resolvedPickupTimesList = Array.isArray(data.pickupTimesList)
+                ? data.pickupTimesList
+                : (settings && Array.isArray(settings.pickupTimesList) ? settings.pickupTimesList : []);
+
+            if (Array.isArray(resolvedPickupTimesList)) {
+                globalPickupTimesList = resolvedPickupTimesList;
             }
             if (Array.isArray(settings.menuList) && settings.menuList.length > 0) {
                 menuList = settings.menuList;
