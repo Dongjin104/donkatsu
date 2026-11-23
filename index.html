@@ -6163,7 +6163,6 @@
                 
                 // ▼▼▼ [여기부터] 기존 cachedState 블록을 이 덩어리로 교체 ▼▼▼
                 const cachedState = loadCustomerStateCache();
-                console.log('[INIT CACHE CHECK]', { cachedSettings, cachedState, locked: isReservedSessionLocked() });
                 const orderFormEl = document.getElementById('orderForm');
                 const searchModalEl = document.getElementById('searchModal');
                 const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
