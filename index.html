@@ -6573,9 +6573,16 @@
 
             return globalPickupTimesList.find(p => {
                 if (!p) return false;
-                const rawT = p.time || p.pickupTime || p.label || '';
-                if (normalizeKoreanTimeLabel(rawT) === normTarget) return true;
-                if (rawT && parseTimeToMinutes(rawT) === targetMins && targetMins > 0) return true;
+                const rawT = (p.time !== undefined && p.time !== null)
+                    ? p.time
+                    : (p.pickupTime || p.label || '');
+
+                if (typeof rawT === 'number' || (typeof rawT === 'string' && /^\d+$/.test(rawT.trim()))) {
+                    return targetMins >= 0 && Number(rawT) === targetMins;
+                }
+
+                if (normTarget && normalizeKoreanTimeLabel(rawT) === normTarget) return true;
+                if (rawT && parseTimeToMinutes(rawT) === targetMins && targetMins >= 0) return true;
                 return false;
             }) || null;
         }
