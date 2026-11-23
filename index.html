@@ -6050,7 +6050,7 @@
                         document.getElementById('pickupCompletedNotice').style.display = 'none';
                         document.getElementById('topNoticeBox').style.display = 'block';
                         const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
-                        if (hasPrevOrder && cachedState.type === 'quick_reorder') {
+                        if (hasPrevOrder) {
                             document.getElementById('quickReorderBox').style.display = 'block';
                             document.getElementById('orderForm').style.display = 'none';
                             renderQuickReorderBox();
