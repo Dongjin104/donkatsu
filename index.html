@@ -4399,9 +4399,9 @@
                         const isClosedNow = checkClosedStatus();
 
                         if ((!isClosedScreenVisible && isClosedNow) || (isClosedScreenVisible && !isClosedNow)) {
-                            if (typeof forceReloadForOpenCheck === 'function') {
-                                forceReloadForOpenCheck(isClosedNow ? 'now_closed' : 'now_open');
-                            }
+                            // if (typeof forceReloadForOpenCheck === 'function') {
+                            //     forceReloadForOpenCheck(isClosedNow ? 'now_closed' : 'now_open');
+                            // }
                         }
                     }
                 } catch (err) { }
