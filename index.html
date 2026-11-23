@@ -4987,8 +4987,17 @@
             });
 
             if (urls.length === 0) return;
-            container.scrollLeft = 0;
             showModal('imageModal');
+            container.scrollLeft = 0;
+            if (container.parentElement) {
+                container.parentElement.scrollLeft = 0;
+            }
+            requestAnimationFrame(() => {
+                container.scrollLeft = 0;
+                if (container.parentElement) {
+                    container.parentElement.scrollLeft = 0;
+                }
+            });
         }
 
         function closeImageModal() {
