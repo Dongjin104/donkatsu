@@ -4043,13 +4043,6 @@
                                 .replace(/\b(const|let|var)\s+KakaoAuthManager\s*=/g, 'window.KakaoAuthManager =');
 
                             safeCode = `(function() {
-
-```
-
-\${safeCode}
-})();\`;
-
-```
                             const inlineScript = document.createElement('script');
                             inlineScript.textContent = safeCode;
                             document.body.appendChild(inlineScript);
