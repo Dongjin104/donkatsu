@@ -6174,6 +6174,9 @@
                         document.getElementById('orderForm').style.display = 'none';
                         document.getElementById('quickReorderBox').style.display = 'none';
                         document.getElementById('closedNotice').style.display = 'none';
+                    } else if (cachedState.type === 'active_order' && cachedState.reservation) {
+                        // ▼ [여기 추가] 서버 응답 기다리기 전에 캐시된 내역으로 먼저 그려서 빈 화면 방지
+                        renderActiveReservationNotice(cachedState.reservation);
                     }
                 }
 
