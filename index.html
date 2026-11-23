@@ -4457,6 +4457,16 @@
         }
 
         function renderActiveReservationNotice(resData) {
+            const orderFormEl = document.getElementById('orderForm');
+            const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
+            const isEditingNow =
+                (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                !!window.isEditingReservation ||
+                isOrderFormVisible;
+
+            if (isEditingNow) {
+                return;
+            }
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
