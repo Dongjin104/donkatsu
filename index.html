@@ -6547,11 +6547,11 @@
             const hasSurgeKeyword = rawLoadStr.includes('몰림') || rawLoadStr.toLowerCase().includes('surge');
             const hasBusyKeyword = rawLoadStr.includes('혼잡') || rawLoadStr.toLowerCase().includes('busy');
 
-            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 40)) {
+            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 30)) {
                 levelType = 'surge';
                 labelText = '몰림';
                 detailMsg = `${timeLabel} 시간대는 예약이 몰려 몰림 상태입니다. 조리 대기가 길어질 수 있으니 여유 있게 방문해 주세요.`;
-            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 25)) {
+            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 15)) {
                 levelType = 'busy';
                 labelText = '혼잡';
                 detailMsg = `${timeLabel} 시간대는 예약이 많아 혼잡합니다. 조리 대기가 길어질 수 있습니다.`;
