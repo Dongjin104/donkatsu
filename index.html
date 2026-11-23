@@ -6182,8 +6182,12 @@
                     isOrderFormVisible ||
                     isSearchModalVisible;
 
-                if (cachedSettings && cachedState && !isEditingNow) {
-                    if (cachedSettings.isClosed) {
+                if (cachedState && !isEditingNow) {
+                    if (cachedSettings && cachedSettings.isBlocked) {
+                        setLoadingSkeletonVisible(false);
+                        preserveScrollPos(keptY);
+                        return;
+                    } else if (cachedSettings && cachedSettings.isClosed) {
                         setLoadingSkeletonVisible(false);
                         showClosedNoticeScreen();
                     } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
