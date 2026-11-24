@@ -4229,7 +4229,7 @@
             ].join('##');
         }
 
-async function syncCustomerScreenWithSheet(forceApply = false) {
+        async function syncCustomerScreenWithSheet(forceApply = false) {
             if (document.hidden || isSubmitting || isQuickSubmitting || isUpdatingReservation) return;
             if (!forceApply && isPageSkeletonLoadingActive()) return;
             if (!forceApply && Date.now() < localOptimisticLockUntil) return;
@@ -6130,7 +6130,7 @@ async function syncCustomerScreenWithSheet(forceApply = false) {
             }
         }
 
-async function runFullAppInitialization() {
+        async function runFullAppInitialization() {
             const keptY = captureScrollPos();
             const restoreScrollIfSafe = () => {
                 if (typeof __userScrolledSinceInit !== 'undefined' && __userScrolledSinceInit) {
@@ -6314,13 +6314,19 @@ async function runFullAppInitialization() {
 
         function showClosedNoticeScreen() {
             setLoadingSkeletonVisible(false);
-            document.getElementById('closedNotice').style.display = 'block';
-            document.getElementById('topNoticeBox').style.display = 'none';
-            document.getElementById('orderForm').style.display = 'none';
-            document.getElementById('quickReorderBox').style.display = 'none';
-            document.getElementById('alreadyOrderedNotice').style.display = 'none';
-            document.getElementById('pickupCompletedNotice').style.display = 'none';
-            startOpenCountdownTimer();
+            const setDisplay = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = val;
+            };
+            setDisplay('closedNotice', 'block');
+            setDisplay('topNoticeBox', 'none');
+            setDisplay('orderForm', 'none');
+            setDisplay('quickReorderBox', 'none');
+            setDisplay('alreadyOrderedNotice', 'none');
+            setDisplay('pickupCompletedNotice', 'none');
+            if (typeof startOpenCountdownTimer === 'function') {
+                startOpenCountdownTimer();
+            }
         }
 
         function showOpenOrderScreen(sess) {
@@ -6381,15 +6387,22 @@ async function runFullAppInitialization() {
                 if (maintOverlay) maintOverlay.style.display = 'none';
             }
 
-            if (typeof s.openHour === 'number' && !isNaN(s.openHour)) globalOpenHour = s.openHour;
-            if (typeof s.openMin === 'number' && !isNaN(s.openMin)) globalOpenMin = s.openMin;
-            if (typeof s.closeHour === 'number' && !isNaN(s.closeHour)) globalCloseHour = s.closeHour;
-            if (typeof s.closeMin === 'number' && !isNaN(s.closeMin)) globalCloseMin = s.closeMin;
+            const applyHourMin = (hVal, mVal, setH, setM) => {
+                if (hVal !== undefined && hVal !== null && hVal !== '') {
+                    const numH = Number(hVal);
+                    if (!isNaN(numH)) setH(numH);
+                }
+                if (mVal !== undefined && mVal !== null && mVal !== '') {
+                    const numM = Number(mVal);
+                    if (!isNaN(numM)) setM(numM);
+                }
+            };
 
-            if (typeof s.pickupStartHour === 'number' && !isNaN(s.pickupStartHour)) globalPickupStartHour = s.pickupStartHour;
-            if (typeof s.pickupStartMin === 'number' && !isNaN(s.pickupStartMin)) globalPickupStartMin = s.pickupStartMin;
-            if (typeof s.pickupCloseHour === 'number' && !isNaN(s.pickupCloseHour)) globalPickupCloseHour = s.pickupCloseHour;
-            if (typeof s.pickupCloseMin === 'number' && !isNaN(s.pickupCloseMin)) globalPickupCloseMin = s.pickupCloseMin;
+            applyHourMin(s.openHour, s.openMin, v => { globalOpenHour = v; }, v => { globalOpenMin = v; });
+            applyHourMin(s.closeHour, s.closeMin, v => { globalCloseHour = v; }, v => { globalCloseMin = v; });
+
+            applyHourMin(s.pickupStartHour, s.pickupStartMin, v => { globalPickupStartHour = v; }, v => { globalPickupStartMin = v; });
+            applyHourMin(s.pickupCloseHour, s.pickupCloseMin, v => { globalPickupCloseHour = v; }, v => { globalPickupCloseMin = v; });
 
             // 설정 시트 지연시간 (예: 20이면 현재시간 + 20분까지 준비중)
             const rawPrep = (s.prepMinutes !== undefined && s.prepMinutes !== null)
@@ -6411,10 +6424,18 @@ async function runFullAppInitialization() {
             if (Array.isArray(s.pickupTimesList)) globalPickupTimesList = s.pickupTimesList;
 
             const closedRangeEl = document.getElementById('closedTimeRange');
-            if (closedRangeEl) {
+            if (closedRangeEl && typeof formatKoreanHourMin === 'function') {
                 const oStr = formatKoreanHourMin(globalOpenHour, globalOpenMin);
                 const cStr = formatKoreanHourMin(globalCloseHour, globalCloseMin);
                 closedRangeEl.innerText = `${oStr} ~ ${cStr}`;
+            }
+
+            const isClosedNow = Boolean(s.isClosed) || (typeof checkClosedStatus === 'function' && checkClosedStatus());
+            if (isClosedNow && !isAdminTest) {
+                if (typeof showClosedNoticeScreen === 'function') {
+                    showClosedNoticeScreen();
+                }
+                return;
             }
 
             if (document.getElementById('orderForm')?.style.display === 'block' && !isOrderFormEditingActive()) {
@@ -6426,7 +6447,9 @@ async function runFullAppInitialization() {
                 renderQuickReorderBox();
             }
 
-            startOpenCountdownTimer();
+            if (typeof startOpenCountdownTimer === 'function') {
+                startOpenCountdownTimer();
+            }
         }
 
         function formatKoreanHourMin(h, m) {
