@@ -7115,7 +7115,12 @@
                 const origQty = originalReservedItems[name] || 0;
                 const safeName = escapeHtml(name);
                 const safeTitle = escapeHtml(displayTitle);
-                const safeImg = sanitizeImageUrl(item.image || '');
+                const imgList = typeof extractMenuImageList === 'function'
+                    ? extractMenuImageList(item.image || '')
+                    : (sanitizeImageUrl(item.image || '') ? [sanitizeImageUrl(item.image || '')] : []);
+                const safeImg = imgList[0] || '';
+                const encodedImgList = escapeHtml(JSON.stringify(imgList));
+                const safeTitleArg = safeTitle.replace(/'/g, "\\'");
                 const isSoldOut = Boolean(item.isSoldOut);
                 const isHot = Boolean(item.isHot);
                 const isSelected = qty > 0;
@@ -7145,7 +7150,7 @@
                     mHtml += `
                     <div class="menu-item-card sold-out-reserved${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal(${encodedImgList}, '${safeTitleArg}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}<span class="sold-out-reserved-pill">품절·예약중</span></div>
@@ -7165,7 +7170,7 @@
                     mHtml += `
                     <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal(${encodedImgList}, '${safeTitleArg}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
@@ -7814,7 +7819,7 @@
             if (!rawImage) return [];
             const rawList = Array.isArray(rawImage)
                 ? rawImage
-                : String(rawImage).split(',');
+                : String(rawImage).split(/[\n,\s]+/);
             const cleaned = [];
             rawList.forEach(part => {
                 const trimmed = String(part || '').trim();
