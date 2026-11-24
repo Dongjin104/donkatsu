@@ -5099,6 +5099,17 @@
                 try { return sessionStorage.getItem('isAdminTestMode') === 'true'; } catch (e) { return false; }
             })();
 
+            const isDismissedCompletedForReorder = () => {
+                if (typeof userDismissedCompletedNotice !== 'undefined' && userDismissedCompletedNotice) {
+                    return true;
+                }
+                try {
+                    return sessionStorage.getItem('donkatsu_dismissed_completed_v1') === 'true';
+                } catch (e) {
+                    return false;
+                }
+            };
+
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (!sess.kakaoId) return;
@@ -5184,12 +5195,15 @@
                             clearReservedSessionLock();
                             const quickBox = document.getElementById('quickReorderBox');
                             const orderFrm = document.getElementById('orderForm');
+                            const dismissedCompleted = isDismissedCompletedForReorder();
                             const isReorderingNow = !!(
-                                typeof userDismissedCompletedNotice !== 'undefined' &&
-                                userDismissedCompletedNotice &&
+                                dismissedCompleted &&
                                 ((quickBox && quickBox.style.display !== 'none') || (orderFrm && orderFrm.style.display !== 'none'))
                             );
                             if (isReorderingNow || isOrderFormEditingActive()) {
+                                const hasPrevOrder = (typeof hasValidLastOrderSummary === 'function') ? hasValidLastOrderSummary() : false;
+                                saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
+                                setLoadingSkeletonVisible(false);
                                 return;
                             }
 
@@ -5741,6 +5755,7 @@
             saveCustomerStateCache({ type: 'new' });
             document.getElementById('pickupCompletedNotice').style.display = 'none';
             userDismissedCompletedNotice = true;
+            try { sessionStorage.setItem('donkatsu_dismissed_completed_v1', 'true'); } catch (e) { }
             const isClosed = checkClosedStatus();
             if (!isClosed) {
                 document.getElementById('topNoticeBox').style.display = 'block';
@@ -7180,13 +7195,48 @@
             }
         }
 
-        async function runFullAppInitialization() {
+async function runFullAppInitialization() {
             const keptY = captureScrollPos();
             const restoreScrollIfSafe = () => {
                 if (typeof __userScrolledSinceInit !== 'undefined' && __userScrolledSinceInit) {
                     return;
                 }
                 preserveScrollPos(keptY);
+            };
+
+            const isDismissedCompletedForReorder = () => {
+                if (typeof userDismissedCompletedNotice !== 'undefined' && userDismissedCompletedNotice) {
+                    return true;
+                }
+                try {
+                    return sessionStorage.getItem('donkatsu_dismissed_completed_v1') === 'true';
+                } catch (e) {
+                    return false;
+                }
+            };
+
+            const applyReorderOrNewOrderScreen = () => {
+                document.getElementById('closedNotice').style.display = 'none';
+                document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                document.getElementById('pickupCompletedNotice').style.display = 'none';
+                document.getElementById('topNoticeBox').style.display = 'block';
+
+                const hasPrevOrder = hasValidLastOrderSummary();
+                saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
+
+                if (hasPrevOrder) {
+                    document.getElementById('quickReorderBox').style.display = 'block';
+                    document.getElementById('orderForm').style.display = 'none';
+                    if (typeof renderQuickReorderBox === 'function') {
+                        renderQuickReorderBox();
+                    }
+                } else {
+                    document.getElementById('quickReorderBox').style.display = 'none';
+                    document.getElementById('orderForm').style.display = 'block';
+                    renderMenuAndSauceCards();
+                    populateTimeSelect('pickupTime', '', false);
+                    handleMainCookTypeChange();
+                }
             };
 
             const keepActiveMenuEditView = () => {
@@ -7254,7 +7304,7 @@
                     } else if (cachedState.type === 'active_order' && cachedState.reservation) {
                         // 직전 내역(quickReorderBox)으로 새지 않고 예약완료 화면을 먼저 즉시 표시
                         renderActiveReservationNotice(cachedState.reservation);
-                    } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
+                    } else if (cachedState.type === 'completed' && !isReservedSessionLocked() && !isDismissedCompletedForReorder()) {
                         document.getElementById('pickupCompletedNotice').style.display = 'block';
                         document.getElementById('alreadyOrderedNotice').style.display = 'none';
                         document.getElementById('topNoticeBox').style.display = 'none';
@@ -7263,22 +7313,7 @@
                         document.getElementById('closedNotice').style.display = 'none';
                         setLoadingSkeletonVisible(false);
                     } else if (!isReservedSessionLocked() && !keepActiveMenuEditView()) {
-                        document.getElementById('closedNotice').style.display = 'none';
-                        document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                        document.getElementById('pickupCompletedNotice').style.display = 'none';
-                        document.getElementById('topNoticeBox').style.display = 'block';
-                        const hasPrevOrder = hasValidLastOrderSummary();
-                        if (hasPrevOrder) {
-                            document.getElementById('quickReorderBox').style.display = 'block';
-                            document.getElementById('orderForm').style.display = 'none';
-                            renderQuickReorderBox();
-                        } else {
-                            document.getElementById('quickReorderBox').style.display = 'none';
-                            document.getElementById('orderForm').style.display = 'block';
-                            renderMenuAndSauceCards();
-                            populateTimeSelect('pickupTime', '', false);
-                            handleMainCookTypeChange();
-                        }
+                        applyReorderOrNewOrderScreen();
                         setLoadingSkeletonVisible(false);
                     }
                 }
@@ -7351,13 +7386,19 @@
                     const st = String(reservationData.status || "").trim();
                     if (st === "완료") {
                         clearReservedSessionLock();
-                        saveCustomerStateCache({ type: 'completed' });
-                        document.getElementById('pickupCompletedNotice').style.display = 'block';
-                        document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                        document.getElementById('topNoticeBox').style.display = 'none';
-                        document.getElementById('orderForm').style.display = 'none';
-                        document.getElementById('quickReorderBox').style.display = 'none';
-                        document.getElementById('closedNotice').style.display = 'none';
+                        if (isDismissedCompletedForReorder()) {
+                            if (!keepActiveMenuEditView()) {
+                                applyReorderOrNewOrderScreen();
+                            }
+                        } else {
+                            saveCustomerStateCache({ type: 'completed' });
+                            document.getElementById('pickupCompletedNotice').style.display = 'block';
+                            document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                            document.getElementById('topNoticeBox').style.display = 'none';
+                            document.getElementById('orderForm').style.display = 'none';
+                            document.getElementById('quickReorderBox').style.display = 'none';
+                            document.getElementById('closedNotice').style.display = 'none';
+                        }
                     } else {
                         setReservedSessionLock({
                             nickname: reservationData.nickname || savedNick,
