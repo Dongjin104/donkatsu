@@ -4224,7 +4224,7 @@
             ].join('##');
         }
 
-        async function syncCustomerScreenWithSheet(forceApply = false) {
+async function syncCustomerScreenWithSheet(forceApply = false) {
             if (document.hidden || isSubmitting || isQuickSubmitting || isUpdatingReservation) return;
             if (!forceApply && isPageSkeletonLoadingActive()) return;
             if (!forceApply && Date.now() < localOptimisticLockUntil) return;
@@ -4238,7 +4238,7 @@
             if (!sess.kakaoId) return;
             if (enforcePhone4GateIfNeeded(sess)) return;
 
-            const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
+            const savedNick = sess.identifier || localStorage.getItem('savedNickname') || (typeof TripleStorage !== 'undefined' && typeof TripleStorage.getCookie === 'function' ? TripleStorage.getCookie('savedNickname') : '') || globalUserNickname || "";
 
             isLiveSyncRequest = true;
             try {
@@ -4310,13 +4310,13 @@
                             }
 
                             saveCustomerStateCache({ type: 'completed' });
-                            setLoadingSkeletonVisible(false);
                             document.getElementById('pickupCompletedNotice').style.display = 'block';
                             document.getElementById('alreadyOrderedNotice').style.display = 'none';
                             document.getElementById('topNoticeBox').style.display = 'none';
                             document.getElementById('orderForm').style.display = 'none';
                             document.getElementById('quickReorderBox').style.display = 'none';
                             document.getElementById('closedNotice').style.display = 'none';
+                            setLoadingSkeletonVisible(false);
                             return;
                         }
 
@@ -4336,7 +4336,7 @@
                             showModal('lockedModal');
                         }
 
-                        if (isAlreadyOrderedScreenVisible() || !isOrderFormEditingActive()) {
+                        if ((typeof isAlreadyOrderedScreenVisible === 'function' && isAlreadyOrderedScreenVisible()) || !isOrderFormEditingActive()) {
                             renderActiveReservationNotice(reservationData);
                         }
                         return;
@@ -4358,15 +4358,42 @@
                         if (closedEl) closedEl.style.display = 'none';
                         if (topNoticeEl) topNoticeEl.style.display = 'block';
 
-                        saveCustomerStateCache({ type: 'quick_reorder' });
+                        const hasRealLastOrder = (typeof hasValidLastOrderSummary === 'function')
+                            ? hasValidLastOrderSummary()
+                            : (() => {
+                                try {
+                                    const raw = localStorage.getItem('lastOrderSummary') || '';
+                                    if (!raw) return false;
+                                    const obj = JSON.parse(raw);
+                                    return !!(obj && (String(obj.menu || '').trim() || Number(obj.totalPrice || 0) > 0));
+                                } catch (err) {
+                                    return false;
+                                }
+                            })();
 
-                        if (quickBoxEl && orderFormEl) {
-                            quickBoxEl.style.display = 'block';
-                            orderFormEl.style.display = 'none';
+                        if (hasRealLastOrder) {
+                            saveCustomerStateCache({ type: 'quick_reorder' });
+                            if (quickBoxEl) quickBoxEl.style.display = 'block';
+                            if (orderFormEl) orderFormEl.style.display = 'none';
                             if (typeof renderQuickReorderBox === 'function') {
                                 renderQuickReorderBox();
                             }
+                        } else {
+                            saveCustomerStateCache({ type: 'new' });
+                            if (quickBoxEl) quickBoxEl.style.display = 'none';
+                            if (orderFormEl) {
+                                const isEditingNow =
+                                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                                    !!window.isEditingReservation;
+                                orderFormEl.style.display = 'block';
+                                if (!isEditingNow) {
+                                    if (typeof renderMenuAndSauceCards === 'function') renderMenuAndSauceCards();
+                                    if (typeof populateTimeSelect === 'function') populateTimeSelect('pickupTime', '', false);
+                                    if (typeof handleMainCookTypeChange === 'function') handleMainCookTypeChange();
+                                }
+                            }
                         }
+                        setLoadingSkeletonVisible(false);
                     }
                 }
             } catch (e) {
