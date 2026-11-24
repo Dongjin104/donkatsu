@@ -6441,16 +6441,31 @@ async function runFullAppInitialization() {
             const nowKst = getKoreanNowDate();
             const day = nowKst.getDay();
             const curMins = nowKst.getHours() * 60 + nowKst.getMinutes();
-            const openMins = globalOpenHour * 60 + globalOpenMin;
-            const closeMins = globalCloseHour * 60 + globalCloseMin;
 
-            const targetMs = getScheduledOpenTimestampMs();
+            const openH = Number(typeof globalOpenHour !== 'undefined' ? globalOpenHour : 0);
+            const openM = Number(typeof globalOpenMin !== 'undefined' ? globalOpenMin : 0);
+            const closeH = Number(typeof globalCloseHour !== 'undefined' ? globalCloseHour : 23);
+            const closeM = Number(typeof globalCloseMin !== 'undefined' ? globalCloseMin : 59);
+
+            const openMins = (isNaN(openH) ? 0 : openH) * 60 + (isNaN(openM) ? 0 : openM);
+            const closeMins = (isNaN(closeH) ? 23 : closeH) * 60 + (isNaN(closeM) ? 59 : closeM);
+
+            const targetMs = typeof getScheduledOpenTimestampMs === 'function' ? getScheduledOpenTimestampMs() : null;
             if (targetMs !== null && Date.now() < targetMs) {
                 return true;
             }
 
             if (day === 0 || day === 6) return true;
-            if (curMins < openMins || curMins > closeMins) return true;
+
+            if (openMins <= closeMins) {
+                // 예: 00:00 ~ 06:00 -> 이 범위 안에 있을 때만 운영중, 밖이면 마감(true)
+                if (curMins < openMins || curMins > closeMins) return true;
+            } else {
+                // 예: 22:00 ~ 06:00 (자정 걸침) -> 22:00 이상이거나 06:00 이하일 때만 운영중
+                const isWithinOvernightOpen = (curMins >= openMins) || (curMins <= closeMins);
+                if (!isWithinOvernightOpen) return true;
+            }
+
             return false;
         }
 
