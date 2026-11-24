@@ -5735,6 +5735,8 @@
             }
         }
 
+        let isManualFormEditing = false;
+
         function loadPreviousToForm() {
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -5751,6 +5753,7 @@
             }
 
             const keptY = captureScrollPos();
+            isManualFormEditing = true;
             userInteractedWithForm = true;
             localOptimisticLockUntil = Date.now() + 8000;
             const lastSummaryRaw = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
