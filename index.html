@@ -5002,7 +5002,16 @@ async function syncCustomerScreenWithSheet(forceApply = false) {
             if (!container) return;
             container.innerHTML = '';
 
-            let urls = String(imageUrl || '').split(',').map(u => sanitizeImageUrl(u)).filter(Boolean);
+            const rawSource = Array.isArray(imageUrl) ? imageUrl.join(',') : String(imageUrl || '');
+            const urls = rawSource
+                .split(',')
+                .map(u => String(u || '').trim())
+                .filter(Boolean)
+                .map(u => (typeof sanitizeImageUrl === 'function' ? sanitizeImageUrl(u) : u))
+                .filter(Boolean);
+
+            if (urls.length === 0) return;
+
             urls.forEach(finalUrl => {
                 const img = document.createElement('img');
                 img.src = finalUrl;
@@ -5010,8 +5019,17 @@ async function syncCustomerScreenWithSheet(forceApply = false) {
                 container.appendChild(img);
             });
 
-            if (urls.length === 0) return;
+            const resetGalleryScroll = () => {
+                container.scrollLeft = 0;
+                const modalEl = document.getElementById('imageModal');
+                if (modalEl) {
+                    modalEl.scrollLeft = 0;
+                }
+            };
+
+            resetGalleryScroll();
             showModal('imageModal');
+            requestAnimationFrame(resetGalleryScroll);
         }
 
         function closeImageModal() {
@@ -6445,6 +6463,23 @@ async function runFullAppInitialization() {
             return false;
         }
 
+        function extractMenuImageList(rawImage) {
+            if (!rawImage) return [];
+            const rawList = Array.isArray(rawImage)
+                ? rawImage
+                : String(rawImage).split(',');
+            const cleaned = [];
+            rawList.forEach(part => {
+                const trimmed = String(part || '').trim();
+                if (!trimmed) return;
+                const safe = typeof sanitizeImageUrl === 'function' ? sanitizeImageUrl(trimmed) : trimmed;
+                if (safe && !cleaned.includes(safe)) {
+                    cleaned.push(safe);
+                }
+            });
+            return cleaned;
+        }
+
         function renderMenuAndSauceCards() {
             const menuContainer = document.getElementById('menuCardContainer');
             const sauceContainer = document.getElementById('sauceCardContainer');
@@ -6458,7 +6493,9 @@ async function runFullAppInitialization() {
                 const qty = orderItems[name] || 0;
                 const safeName = escapeHtml(name);
                 const safeTitle = escapeHtml(displayTitle);
-                const safeImg = sanitizeImageUrl(item.image || '');
+                const imgList = extractMenuImageList(item.image || '');
+                const safeImg = imgList[0] || '';
+                const encodedImgList = escapeHtml(JSON.stringify(imgList));
                 const isSoldOut = Boolean(item.isSoldOut);
                 const isHot = Boolean(item.isHot);
                 const isSelected = qty > 0;
@@ -6488,7 +6525,7 @@ async function runFullAppInitialization() {
                     mHtml += `
                     <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal(${encodedImgList}, '${safeTitle.replace(/'/g, "\\'")}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
