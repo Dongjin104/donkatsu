@@ -2347,9 +2347,6 @@
                     *</label>
                 <select id="quickPickupTime" style="padding: 11px 12px; font-size: 14px;"
                     onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
-                <div class="inline-helper-note">
-                    ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다.
-                </div>
                 <div id="quickBusyInfoBox" class="busy-info-box"></div>
             </div>
 
@@ -2415,9 +2412,6 @@
             <div class="form-group" id="pickupFormGroup">
                 <label for="pickupTime">5. 픽업 시간 선택 *</label>
                 <select id="pickupTime" required onchange="handleTimeChange(this, 'mainBusyInfoBox')"></select>
-                <div class="inline-helper-note">
-                    ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다. (늦게 오실 경우 음식이 식을 수 있습니다)
-                </div>
                 <div id="mainBusyInfoBox" class="busy-info-box"></div>
             </div>
 
@@ -3006,9 +3000,6 @@
                         픽업 시간 선택</span>
                     <select id="newPickupTime" style="padding:11px; font-size:14px;"
                         onchange="handleEditTimeSelectChange(this)"></select>
-                    <div class="inline-helper-note">
-                        ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다.
-                    </div>
                     <div id="editBusyInfoBox" class="busy-info-box"></div>
                 </div>
             </div>
