@@ -5601,6 +5601,15 @@
         }
 
         function renderQuickReorderBox() {
+            if (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) {
+                const orderFrm = document.getElementById('orderForm');
+                const quickBox = document.getElementById('quickReorderBox');
+                if (orderFrm && orderFrm.style.display === 'block') {
+                    if (quickBox) quickBox.style.display = 'none';
+                    return;
+                }
+            }
+
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
