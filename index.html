@@ -3187,8 +3187,10 @@
             style="position: relative; display: flex; flex-direction: column; max-height: 88vh; padding: 22px 16px;">
             <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
 
-            <div id="modalLoadingBox" class="menu-grid atelier-unified-card" style="margin: 10px 0; padding: 16px 14px; text-align: center;">
-                <div class="atelier-eyebrow-pill" style="align-self: center; font-size: 10.5px; padding: 6px 12px;">✦ EDIT RESERVATION</div>
+            <div id="modalLoadingBox" class="menu-grid atelier-unified-card"
+                style="margin: 10px 0; padding: 16px 14px; text-align: center;">
+                <div class="atelier-eyebrow-pill" style="align-self: center; font-size: 10.5px; padding: 6px 12px;">✦
+                    EDIT RESERVATION</div>
 
                 <div class="atelier-ring-loader" style="width: 58px; height: 58px; margin: 10px auto 8px;">
                     <div class="atelier-ring-arc"></div>
@@ -3225,85 +3227,89 @@
                 </div>
             </div>
 
-    <div id="searchResultArea"
-        style="margin-top:10px; text-align:left; background:#FAFAF9; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 20px;">
-        <div
-            style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; color: #8C6D1F; text-align: center; margin-bottom: 12px; line-height: 1.4; font-weight: 500;">
-            💡 <b>돈까스 소스는 기본 1개만 제공 됩니다.</b><br>(추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
-        </div>
-
-        <div class="form-group" style="margin-bottom:12px;">
-            <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">조리
-                방식 변경</span>
-            <div class="radio-group">
-                <div class="radio-btn">
-                    <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장"
-                        onchange="handleEditCookTypeChange()">
-                    <label for="editCook1" style="font-size:13.5px; min-height:42px;">튀겨서 포장</label>
+            <div id="searchResultArea"
+                style="margin-top:10px; text-align:left; background:#FAFAF9; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 20px;">
+                <div
+                    style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; color: #8C6D1F; text-align: center; margin-bottom: 12px; line-height: 1.4; font-weight: 500;">
+                    💡 <b>돈까스 소스는 기본 1개만 제공 됩니다.</b><br>(추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
                 </div>
-                <div class="radio-btn">
-                    <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)"
-                        onchange="handleEditCookTypeChange()">
-                    <label for="editCook2" style="font-size:13.5px; min-height:42px;">생고기(반죽+빵가루)</label>
+
+                <div class="form-group" style="margin-bottom:12px;">
+                    <span
+                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">조리
+                        방식 변경</span>
+                    <div class="radio-group">
+                        <div class="radio-btn">
+                            <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장"
+                                onchange="handleEditCookTypeChange()">
+                            <label for="editCook1" style="font-size:13.5px; min-height:42px;">튀겨서 포장</label>
+                        </div>
+                        <div class="radio-btn">
+                            <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)"
+                                onchange="handleEditCookTypeChange()">
+                            <label for="editCook2" style="font-size:13.5px; min-height:42px;">생고기(반죽+빵가루)</label>
+                        </div>
+                    </div>
+                    <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
+                        <div class="cook-guide-copy">
+                            <span id="editCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
+                            <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해
+                                주세요.</span>
+                        </div>
+                        <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn"
+                            onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:6px; margin-bottom:10px;">
+                    <span
+                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">메뉴별
+                        수량 변경</span>
+                    <div id="editMenuCardContainer" class="menu-grid"></div>
+                </div>
+
+                <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
+                    <span
+                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">추가
+                        소스 변경</span>
+                    <div class="inline-helper-note" style="margin-top: 0; margin-bottom: 6px;">
+                        💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가분만 선택해 주세요.
+                    </div>
+                    <div id="editSauceCardContainer" class="sauce-grid"></div>
+                </div>
+
+                <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
+                        style="color:var(--text-main); font-weight:700;"></span></p>
+
+                <div class="form-group" style="margin-top:6px; margin-bottom:4px;" id="editPickupFormGroup">
+                    <span
+                        style="font-size:14px; display:block; margin-bottom:5px; font-weight:700; color:var(--text-main);">변경할
+                        픽업 시간 선택</span>
+                    <select id="newPickupTime" style="padding:11px; font-size:14px;"
+                        onchange="handleEditTimeSelectChange(this)"></select>
+                    <div id="editBusyInfoBox" class="busy-info-box"></div>
                 </div>
             </div>
-            <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
-                <div class="cook-guide-copy">
-                    <span id="editCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
-                    <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해
-                        주세요.</span>
+
+            <div id="searchModalActionBtns"
+                style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
+                <div class="sticky-summary-bar" style="margin-bottom: 6px;">
+                    <div class="sticky-summary-header">
+                        <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
+                        <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span
+                                id="editTotalPrice" style="color: #B45309;">0</span>원</span>
+                    </div>
+                    <div id="editSelectedSummary" style="color: var(--text-main); line-height: 1.35;">선택된 메뉴가 없습니다.
+                    </div>
                 </div>
-                <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn"
-                    onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
+
+                <button id="updateBtn" class="modal-btn"
+                    style="background-color:var(--accent-dark); margin-top:0; padding:12px; margin-bottom:5px;"
+                    onclick="updateReservation()">변경된 내용 저장하기</button>
+                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:10px;"
+                    onclick="closeSearchModal()">닫기</button>
             </div>
         </div>
-
-        <div class="form-group" style="margin-top:6px; margin-bottom:10px;">
-            <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">메뉴별
-                수량 변경</span>
-            <div id="editMenuCardContainer" class="menu-grid"></div>
-        </div>
-
-        <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
-            <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">추가
-                소스 변경</span>
-            <div class="inline-helper-note" style="margin-top: 0; margin-bottom: 6px;">
-                💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가분만 선택해 주세요.
-            </div>
-            <div id="editSauceCardContainer" class="sauce-grid"></div>
-        </div>
-
-        <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
-                style="color:var(--text-main); font-weight:700;"></span></p>
-
-        <div class="form-group" style="margin-top:6px; margin-bottom:4px;" id="editPickupFormGroup">
-            <span style="font-size:14px; display:block; margin-bottom:5px; font-weight:700; color:var(--text-main);">변경할
-                픽업 시간 선택</span>
-            <select id="newPickupTime" style="padding:11px; font-size:14px;"
-                onchange="handleEditTimeSelectChange(this)"></select>
-            <div id="editBusyInfoBox" class="busy-info-box"></div>
-        </div>
-    </div>
-
-    <div id="searchModalActionBtns"
-        style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
-        <div class="sticky-summary-bar" style="margin-bottom: 6px;">
-            <div class="sticky-summary-header">
-                <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
-                <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span id="editTotalPrice"
-                        style="color: #B45309;">0</span>원</span>
-            </div>
-            <div id="editSelectedSummary" style="color: var(--text-main); line-height: 1.35;">선택된 메뉴가 없습니다.
-            </div>
-        </div>
-
-        <button id="updateBtn" class="modal-btn"
-            style="background-color:var(--accent-dark); margin-top:0; padding:12px; margin-bottom:5px;"
-            onclick="updateReservation()">변경된 내용 저장하기</button>
-        <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:10px;"
-            onclick="closeSearchModal()">닫기</button>
-    </div>
-    </div>
     </div>
 
     <script>
@@ -6984,9 +6990,28 @@
             return h * 60 + m;
         }
 
-        // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/폭주 판별]
-        // code.gs에서 A고객 17:30(5점) -> 17:20~17:40(+5), B고객 17:50(5점) -> 17:40~18:00(+5)로 교집합 17:40이 10점이 되며,
-        // 취소/완료/삭제된 예약건은 code.gs 서버 집계에서 제외되어 전달된다.
+        function findServerSlotEntry(timeLabel) {
+            if (!Array.isArray(globalPickupTimesList) || globalPickupTimesList.length === 0) return null;
+            const normTarget = normalizeKoreanTimeLabel(timeLabel);
+            const targetMins = parseTimeToMinutes(timeLabel);
+
+            return globalPickupTimesList.find(p => {
+                if (!p) return false;
+                const rawT = p.time !== undefined ? p.time : (p.pickupTime || p.label || '');
+                if (typeof rawT === 'number' && !isNaN(rawT)) {
+                    return Number(rawT) === targetMins && targetMins > 0;
+                }
+                const strT = String(rawT).trim();
+                if (/^\d+$/.test(strT)) {
+                    return Number(strT) === targetMins && targetMins > 0;
+                }
+                if (normalizeKoreanTimeLabel(strT) === normTarget) return true;
+                if (strT && parseTimeToMinutes(strT) === targetMins && targetMins > 0) return true;
+                return false;
+            }) || null;
+        }
+
+        // [code.gs 연동: 15점 이상 혼잡 / 30점 이상 몰림 판별]
         function resolveSlotLoadInfo(timeLabel, serverEntry) {
             const mins = parseTimeToMinutes(timeLabel);
             const isLateBatch = mins >= 18 * 60 + 35;
@@ -7004,15 +7029,20 @@
             let labelText = '';
             let detailMsg = '';
 
-            const hasSurgeKeyword = rawLoadStr.includes('폭주') || rawLoadStr.toLowerCase().includes('surge');
-            const hasBusyKeyword = rawLoadStr.includes('혼잡') || rawLoadStr.toLowerCase().includes('busy');
+            const hasSurgeKeyword =
+                rawLoadStr.includes('몰림') ||
+                rawLoadStr.includes('폭주') ||
+                rawLoadStr.toLowerCase().includes('surge');
+            const hasBusyKeyword =
+                rawLoadStr.includes('혼잡') ||
+                rawLoadStr.toLowerCase().includes('busy');
 
-            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 10)) {
+            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 30)) {
                 levelType = 'surge';
-                labelText = '폭주';
+                labelText = '몰림';
                 const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
-                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 겹쳐 매우 바쁜 폭주 시간대${scoreSuffix}입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
-            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 5)) {
+                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 많이 겹친 몰림 시간대${scoreSuffix}입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
+            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 15)) {
                 levelType = 'busy';
                 labelText = '혼잡';
                 const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
@@ -7026,20 +7056,6 @@
                 isLateBatch,
                 totalLoad: !isNaN(scoreVal) ? scoreVal : 0
             };
-        }
-
-        function findServerSlotEntry(timeLabel) {
-            if (!Array.isArray(globalPickupTimesList) || globalPickupTimesList.length === 0) return null;
-            const normTarget = normalizeKoreanTimeLabel(timeLabel);
-            const targetMins = parseTimeToMinutes(timeLabel);
-
-            return globalPickupTimesList.find(p => {
-                if (!p) return false;
-                const rawT = p.time || p.pickupTime || p.label || '';
-                if (normalizeKoreanTimeLabel(rawT) === normTarget) return true;
-                if (rawT && parseTimeToMinutes(rawT) === targetMins && targetMins > 0) return true;
-                return false;
-            }) || null;
         }
 
         function populateTimeSelect(selectId, selectedValue, isEditModal) {
