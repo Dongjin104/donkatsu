@@ -4842,6 +4842,16 @@
                         if (closedEl) closedEl.style.display = 'none';
                         if (topNoticeEl) topNoticeEl.style.display = 'block';
 
+                        const isEditingNow =
+                            (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                            !!window.isEditingReservation;
+
+                        if (isEditingNow && orderFormEl && orderFormEl.style.display === 'block') {
+                            if (quickBoxEl) quickBoxEl.style.display = 'none';
+                            setLoadingSkeletonVisible(false);
+                            return;
+                        }
+
                         const hasRealLastOrder = (typeof hasValidLastOrderSummary === 'function')
                             ? hasValidLastOrderSummary()
                             : (() => {
@@ -4866,9 +4876,6 @@
                             saveCustomerStateCache({ type: 'new' });
                             if (quickBoxEl) quickBoxEl.style.display = 'none';
                             if (orderFormEl) {
-                                const isEditingNow =
-                                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                                    !!window.isEditingReservation;
                                 orderFormEl.style.display = 'block';
                                 if (!isEditingNow) {
                                     if (typeof renderMenuAndSauceCards === 'function') renderMenuAndSauceCards();
