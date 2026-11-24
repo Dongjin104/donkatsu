@@ -2743,20 +2743,23 @@
                 <button type="button" id="toggleUncleFeedbackBtn" class="uncle-feedback-trigger"
                     onclick="toggleUncleFeedbackCard()" aria-expanded="false">
                     <span class="uncle-feedback-trigger-left">
-                        <span class="uncle-feedback-badge">의견</span>
+                        <span class="uncle-feedback-badge">VOICE</span>
                         <span class="uncle-feedback-trigger-text">삼촌에게 한마디 남기기</span>
                     </span>
-                    <span id="uncleFeedbackChevron" class="uncle-feedback-chevron">⌄</span>
+                    <span id="uncleFeedbackChevron" class="uncle-feedback-chevron" aria-hidden="true">⌄</span>
                 </button>
 
                 <div id="uncleFeedbackPanel" class="uncle-feedback-panel" style="display: none;">
-                    <p class="uncle-feedback-guide">
-                        예약하시면서 불편했던 점이나 지난번 돈가스 드시면서 아쉬웠던 점, 바라는 점이 있다면 편하게 남겨주세요. 삼촌이 꼼꼼히 읽고 꼭 반영할게요.
-                    </p>
+                    <div class="uncle-feedback-header">
+                        <span class="uncle-feedback-eyebrow">DIRECT NOTE TO UNCLE</span>
+                        <p class="uncle-feedback-guide">
+                            예약 과정이나 맛·구성에서 아쉬웠던 점, 혹은 바라는 점이 있다면 편하게 적어주세요. 삼촌이 한 줄 한 줄 꼼꼼히 읽고 반영하겠습니다.
+                        </p>
+                    </div>
 
                     <div class="uncle-feedback-field">
                         <textarea id="uncleFeedbackInput" class="uncle-feedback-textarea" rows="3" maxlength="400"
-                            placeholder="예) 예약 완료 화면에서 메뉴가 한눈에 보이면 좋겠어요 / 지난번 소스가 조금 아쉬웠어요"
+                            placeholder="예) 예약 완료 화면에서 메뉴가 한눈에 보이면 좋겠어요 / 소스가 조금 더 넉넉했으면 좋겠어요"
                             oninput="updateUncleFeedbackCounter()"></textarea>
                         <div class="uncle-feedback-meta">
                             <span class="uncle-feedback-hint">보내주신 아이디어, 다음 운영에 차근차근 반영할게요</span>
@@ -2779,9 +2782,9 @@
 
             <style>
                 .uncle-feedback-wrap {
-                    margin-top: 14px;
-                    padding-top: 14px;
-                    border-top: 1px solid var(--border-color, #E5E7EB);
+                    margin-top: 16px;
+                    padding-top: 16px;
+                    border-top: 1px solid rgba(44, 36, 28, 0.08);
                 }
 
                 .uncle-feedback-trigger {
@@ -2789,119 +2792,205 @@
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 13px 16px;
-                    border-radius: var(--radius-sm, 12px);
-                    border: 1px solid #E5DFD5;
-                    background: #FAF8F5;
-                    color: var(--text-main, #1F2937);
-                    font-size: 14px;
-                    font-weight: 700;
+                    padding: 14px 16px;
+                    border-radius: 14px;
+                    border: 1px solid #DFD5C5;
+                    background: linear-gradient(180deg, #FCFBF8 0%, #F5F0E6 100%);
+                    color: #241F1C;
+                    font-size: 14.5px;
+                    font-weight: 800;
+                    letter-spacing: -0.01em;
                     cursor: pointer;
-                    transition: background-color 0.2s ease, border-color 0.2s ease;
+                    box-shadow: 0 2px 8px rgba(36, 31, 28, 0.04);
+                    transition: all 0.2s ease;
                 }
 
                 .uncle-feedback-trigger:hover {
-                    background: #F4F0E8;
-                    border-color: #D6CEC0;
+                    background: linear-gradient(180deg, #FFFFFF 0%, #EFE8DA 100%);
+                    border-color: #C8B598;
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 14px rgba(36, 31, 28, 0.07);
+                }
+
+                .uncle-feedback-trigger:active {
+                    transform: translateY(0);
                 }
 
                 .uncle-feedback-trigger-left {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 9px;
+                    min-width: 0;
                 }
 
                 .uncle-feedback-badge {
-                    font-size: 11px;
+                    font-size: 10px;
                     font-weight: 800;
-                    padding: 3px 7px;
+                    letter-spacing: 0.06em;
+                    padding: 4px 8px;
                     border-radius: 999px;
-                    background: #EAE3D5;
-                    color: #5C4E3C;
+                    background: #241F1C;
+                    color: #E8C78B;
+                    flex-shrink: 0;
+                }
+
+                .uncle-feedback-trigger-text {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
 
                 .uncle-feedback-chevron {
-                    font-size: 16px;
-                    color: #7A7267;
+                    font-size: 17px;
+                    color: #6E5F4F;
                     line-height: 1;
+                    transition: transform 0.22s ease;
+                    flex-shrink: 0;
+                    margin-left: 8px;
+                }
+
+                .uncle-feedback-chevron.is-open {
+                    transform: rotate(180deg);
                 }
 
                 .uncle-feedback-panel {
                     margin-top: 10px;
-                    padding: 15px;
-                    border-radius: var(--radius-sm, 14px);
-                    border: 1px solid #E7E1D7;
+                    padding: 18px 16px;
+                    border-radius: 16px;
+                    border: 1px solid #E3DACB;
                     background: #FFFFFF;
-                    box-shadow: 0 6px 20px rgba(34, 28, 20, 0.05);
+                    box-shadow: 0 10px 26px rgba(36, 31, 28, 0.06);
+                    text-align: left;
+                }
+
+                .uncle-feedback-header {
+                    margin-bottom: 12px;
+                }
+
+                .uncle-feedback-eyebrow {
+                    display: inline-block;
+                    font-size: 10px;
+                    font-weight: 800;
+                    letter-spacing: 0.08em;
+                    color: #9A743B;
+                    margin-bottom: 5px;
                 }
 
                 .uncle-feedback-guide {
-                    margin: 0 0 11px 0;
+                    margin: 0;
                     font-size: 12.5px;
-                    line-height: 1.55;
-                    color: var(--text-sub, #4B5563);
+                    line-height: 1.58;
+                    color: #575049;
                     word-break: keep-all;
+                    text-align: left;
+                }
+
+                .uncle-feedback-field {
+                    margin-top: 4px;
                 }
 
                 .uncle-feedback-textarea {
                     width: 100%;
                     box-sizing: border-box;
-                    padding: 12px 13px;
-                    border-radius: 10px;
-                    border: 1px solid #DDD5C7;
-                    background: #FCFBF9;
-                    color: var(--text-main, #1F2937);
+                    padding: 13px 14px;
+                    border-radius: 12px;
+                    border: 1px solid #DDD3C3;
+                    background: #FAF8F4;
+                    color: #241F1C;
                     font-size: 13.5px;
-                    line-height: 1.5;
+                    line-height: 1.55;
                     resize: vertical;
-                    min-height: 82px;
+                    min-height: 92px;
                     outline: none;
+                    text-align: left;
                     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+                }
+
+                .uncle-feedback-textarea::placeholder {
+                    color: #9C9388;
+                    font-size: 12.5px;
                 }
 
                 .uncle-feedback-textarea:focus {
                     background: #FFFFFF;
-                    border-color: #8C6D46;
-                    box-shadow: 0 0 0 3px rgba(140, 109, 70, 0.12);
+                    border-color: #A67C3E;
+                    box-shadow: 0 0 0 3px rgba(166, 124, 62, 0.14);
                 }
 
                 .uncle-feedback-meta {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    margin-top: 6px;
+                    align-items: flex-start;
+                    gap: 10px;
+                    margin-top: 8px;
                     font-size: 11.5px;
-                    color: #8A8277;
+                    line-height: 1.4;
+                    color: #877E73;
+                }
+
+                .uncle-feedback-hint {
+                    word-break: keep-all;
+                    text-align: left;
+                }
+
+                .uncle-feedback-count {
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                    font-variant-numeric: tabular-nums;
+                    font-weight: 600;
+                    color: #7D7469;
                 }
 
                 .uncle-feedback-actions {
                     display: flex;
+                    align-items: center;
                     justify-content: flex-end;
                     gap: 8px;
-                    margin-top: 12px;
+                    margin-top: 14px;
                 }
 
                 .uncle-feedback-cancel {
-                    padding: 9px 14px;
-                    border-radius: 10px;
-                    border: 1px solid #E2DBD0;
-                    background: #FFFFFF;
-                    color: #6B6359;
+                    height: 42px;
+                    padding: 0 16px;
+                    border-radius: 11px;
+                    border: 1px solid #DED5C7;
+                    background: #FAF8F5;
+                    color: #5E564D;
                     font-size: 13px;
-                    font-weight: 600;
+                    font-weight: 700;
+                    white-space: nowrap;
                     cursor: pointer;
+                    transition: background-color 0.18s ease, border-color 0.18s ease;
+                }
+
+                .uncle-feedback-cancel:hover {
+                    background: #F1ECE2;
+                    border-color: #C9BEAC;
                 }
 
                 .uncle-feedback-submit {
-                    padding: 9px 18px;
-                    border-radius: 10px;
-                    border: none;
-                    background: var(--accent-dark, #2C2825);
-                    color: #FFFFFF;
+                    height: 42px;
+                    padding: 0 20px;
+                    border-radius: 11px;
+                    border: 1px solid #241F1C;
+                    background: linear-gradient(180deg, #322B26 0%, #1F1B18 100%);
+                    color: #F5DEB3;
                     font-size: 13px;
-                    font-weight: 700;
+                    font-weight: 800;
+                    letter-spacing: -0.01em;
+                    white-space: nowrap;
                     cursor: pointer;
-                    transition: opacity 0.2s ease;
+                    box-shadow: 0 4px 12px rgba(31, 27, 24, 0.18);
+                    transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+                }
+
+                .uncle-feedback-submit:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 16px rgba(31, 27, 24, 0.24);
+                }
+
+                .uncle-feedback-submit:active:not(:disabled) {
+                    transform: translateY(0);
                 }
 
                 .uncle-feedback-submit:disabled {
@@ -2910,16 +2999,17 @@
                 }
 
                 .uncle-feedback-thanks {
-                    margin-top: 12px;
+                    margin-top: 14px;
                     padding: 13px 14px;
-                    border-radius: 10px;
-                    background: #F4F7F2;
-                    border: 1px solid #D7E5D0;
-                    color: #2E4A27;
-                    font-size: 13.5px;
+                    border-radius: 12px;
+                    background: #F3F7F1;
+                    border: 1px solid #CFE1C7;
+                    color: #274721;
+                    font-size: 13px;
                     font-weight: 700;
                     line-height: 1.5;
                     word-break: keep-all;
+                    text-align: left;
                 }
             </style>
 
@@ -2944,7 +3034,7 @@
                         if (thanksEl) thanksEl.style.display = 'none';
                         panel.style.display = 'block';
                         if (btn) btn.setAttribute('aria-expanded', 'true');
-                        if (chevron) chevron.textContent = '⌃';
+                        if (chevron) chevron.classList.add('is-open');
                         const input = document.getElementById('uncleFeedbackInput');
                         if (input) setTimeout(() => input.focus(), 60);
                     }
@@ -2962,7 +3052,7 @@
                     if (panel) panel.style.display = 'none';
                     if (thanksEl) thanksEl.style.display = 'none';
                     if (btn) btn.setAttribute('aria-expanded', 'false');
-                    if (chevron) chevron.textContent = '⌄';
+                    if (chevron) chevron.classList.remove('is-open');
                 }
 
                 function updateUncleFeedbackCounter() {
@@ -7090,7 +7180,7 @@
             }
         }
 
-async function runFullAppInitialization() {
+        async function runFullAppInitialization() {
             const keptY = captureScrollPos();
             const restoreScrollIfSafe = () => {
                 if (typeof __userScrolledSinceInit !== 'undefined' && __userScrolledSinceInit) {
