@@ -3661,8 +3661,10 @@
             <div id="modalImageCounter" class="gallery-counter-pill">1 / 1</div>
             <div style="margin-top: 10px; color: #fff; font-size: 13.5px; font-weight: 500;">↔ 좌우로 밀어서 다른 사진도 확인하세요
             </div>
-            <button onclick="closeImageModal()"
-                style="margin-top: 14px; padding: 9px 20px; background:#fff; color:#1C1B18; border:none; border-radius:6px; font-weight:700; cursor:pointer;">닫기</button>
+            <button type="button" onclick="closeImageModal()"
+                style="margin-top: 14px; padding: 10px 28px; background: rgba(28, 27, 24, 0.86); color: #F6DFA4; border: 1px solid rgba(197, 160, 89, 0.55); border-radius: 999px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; backdrop-filter: blur(6px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); transition: all 0.2s ease;"
+                onmouseover="this.style.background='rgba(44, 41, 35, 0.96)'; this.style.color='#FFFFFF'; this.style.borderColor='rgba(230, 197, 132, 0.85)';"
+                onmouseout="this.style.background='rgba(28, 27, 24, 0.86)'; this.style.color='#F6DFA4'; this.style.borderColor='rgba(197, 160, 89, 0.55)';">닫기</button>
         </div>
     </div>
 
