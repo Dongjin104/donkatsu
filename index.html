@@ -2408,7 +2408,9 @@
             background: #F9FAFB;
             border-color: #E5E7EB;
         }
-        .compact-order-summary {
+
+        .compact-order-summary,
+        #mainSelectedSummaryList {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -2424,9 +2426,12 @@
             scrollbar-width: thin;
         }
 
-        .compact-order-summary > span,
-        .compact-order-summary > div,
-        .compact-order-summary .order-chip {
+        .compact-order-summary>span,
+        .compact-order-summary>div,
+        .compact-order-summary .order-chip,
+        #mainSelectedSummaryList>span,
+        #mainSelectedSummaryList>div,
+        #mainSelectedSummaryList .order-chip {
             display: inline-flex;
             align-items: center;
             flex: 0 0 auto;
@@ -2828,11 +2833,12 @@
             <div class="sticky-submit-wrapper">
                 <div id="mainSelectedSummaryBox" class="sticky-summary-bar">
                     <div class="sticky-summary-header">
-                        <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">선택하신 예약 내역</span>
+                        <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">선택하신 예약 내역 <span
+                                style="font-weight: 500; color: #8A8175;">(좌우 스크롤)</span></span>
                         <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span
                                 id="mainTotalPrice" style="color: #B45309;">0</span>원</span>
                     </div>
-                    <div id="mainSelectedSummaryList" style="color: var(--text-main); line-height: 1.35;">선택된 메뉴가 없습니다.
+                    <div id="mainSelectedSummaryList" class="compact-order-summary">선택된 메뉴가 없습니다.
                     </div>
                 </div>
 
@@ -3443,7 +3449,8 @@
             <div id="searchModalActionBtns"
                 style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 6px; border-top: 1px solid var(--border-color); margin-top: 4px;">
                 <div id="editDiffSummaryCard" class="diff-summary-card" style="display: none;">
-                    <button type="button" id="editDiffToggleBtn" class="diff-toggle-btn" onclick="toggleEditDiffChips()" aria-expanded="false">
+                    <button type="button" id="editDiffToggleBtn" class="diff-toggle-btn" onclick="toggleEditDiffChips()"
+                        aria-expanded="false">
                         <span class="diff-toggle-left">
                             <span class="diff-summary-eyebrow">✦ 직전 예약과 비교</span>
                             <span id="editDiffBriefText" class="diff-summary-brief">변경 없음</span>
@@ -3458,7 +3465,8 @@
 
                 <div class="sticky-summary-bar" style="margin-bottom: 6px; padding: 8px 10px;">
                     <div class="sticky-summary-header" style="margin-bottom: 2px;">
-                        <span style="font-weight: 700; color: var(--text-sub); font-size: 11.5px;">변경할 예약 내역 <span style="font-weight: 500; color: #8A8175;">(좌우 스크롤)</span></span>
+                        <span style="font-weight: 700; color: var(--text-sub); font-size: 11.5px;">변경할 예약 내역 <span
+                                style="font-weight: 500; color: #8A8175;">(좌우 스크롤)</span></span>
                         <span style="font-weight: 800; color: var(--accent-dark); font-size: 13.5px;">총 <span
                                 id="editTotalPrice" style="color: #B45309;">0</span>원</span>
                     </div>
