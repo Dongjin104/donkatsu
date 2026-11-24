@@ -6119,13 +6119,47 @@
 
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = visible ? 'flex' : 'none';
+            if (!loadingOverlay) return;
+
+            if (visible) {
+                loadingOverlay.style.display = 'flex';
+                return;
             }
+
+            // 화면에 보여줄 영역이 실제로 켜졌는지 확인한 뒤 스켈레톤을 끔
+            const checkAndHide = () => {
+                const activeIds = [
+                    'closedNotice',
+                    'pickupCompletedNotice',
+                    'alreadyOrderedNotice',
+                    'quickReorderBox',
+                    'orderForm',
+                    'kakaoGateOverlay',
+                    'blockedOverlay',
+                    'maintenanceOverlay'
+                ];
+                const hasVisibleScreen = activeIds.some((id) => {
+                    const el = document.getElementById(id);
+                    if (!el) return false;
+                    const styleVal = el.style.display || getComputedStyle(el).display;
+                    return styleVal && styleVal !== 'none';
+                });
+
+                if (hasVisibleScreen) {
+                    loadingOverlay.style.display = 'none';
+                } else {
+                    requestAnimationFrame(() => {
+                        loadingOverlay.style.display = 'none';
+                    });
+                }
+            };
+
+            checkAndHide();
         }
 
         async function runFullAppInitialization() {
             const keptY = captureScrollPos();
+            setLoadingSkeletonVisible(true);
 
             const showOnlyCompletedView = () => {
                 clearReservedSessionLock();
@@ -6158,6 +6192,19 @@
                 setLoadingSkeletonVisible(false);
             };
 
+            const showOnlyQuickReorderView = () => {
+                document.getElementById('closedNotice').style.display = 'none';
+                document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                document.getElementById('pickupCompletedNotice').style.display = 'none';
+                document.getElementById('topNoticeBox').style.display = 'block';
+                document.getElementById('quickReorderBox').style.display = 'block';
+                document.getElementById('orderForm').style.display = 'none';
+                if (typeof renderQuickReorderBox === 'function') {
+                    renderQuickReorderBox();
+                }
+                setLoadingSkeletonVisible(false);
+            };
+
             try {
                 purgeLegacyAdminKeyLocalStorage();
 
@@ -6185,7 +6232,7 @@
 
                 const cachedSettings = loadSettingsCache();
                 if (cachedSettings) {
-                    applySettingsObject(cachedSettings);
+                    applySettingsObject(cachedSettings, { skipSkeletonHide: true });
                     if (cachedSettings.isBlocked) {
                         setLoadingSkeletonVisible(false);
                         preserveScrollPos(keptY);
@@ -6212,28 +6259,20 @@
                     isOrderFormVisible ||
                     isSearchModalVisible;
 
+                let renderedFromCache = false;
                 if (cachedState && !isEditingNow) {
-                    if (cachedSettings && cachedSettings.isBlocked) {
-                        setLoadingSkeletonVisible(false);
-                        preserveScrollPos(keptY);
-                        return;
-                    } else if (cachedSettings && cachedSettings.isClosed) {
+                    if (cachedSettings && cachedSettings.isClosed) {
                         showClosedNoticeScreen();
+                        renderedFromCache = true;
                     } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
                         showOnlyCompletedView();
+                        renderedFromCache = true;
                     } else if (cachedState.type === 'active_order' && cachedState.reservation) {
                         showOnlyActiveOrderView(cachedState.reservation);
+                        renderedFromCache = true;
                     } else if (cachedState.type === 'quick_reorder' && !isReservedSessionLocked()) {
-                        document.getElementById('closedNotice').style.display = 'none';
-                        document.getElementById('alreadyOrderedNotice').style.display = 'none';
-                        document.getElementById('pickupCompletedNotice').style.display = 'none';
-                        document.getElementById('topNoticeBox').style.display = 'block';
-                        document.getElementById('quickReorderBox').style.display = 'block';
-                        document.getElementById('orderForm').style.display = 'none';
-                        if (typeof renderQuickReorderBox === 'function') {
-                            renderQuickReorderBox();
-                        }
-                        setLoadingSkeletonVisible(false);
+                        showOnlyQuickReorderView();
+                        renderedFromCache = true;
                     }
                 }
 
