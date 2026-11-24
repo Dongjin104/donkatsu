@@ -2738,6 +2738,316 @@
                 <a id="kakaoInquireBtn" href="https://open.kakao.com/o/s5cl8IRi" target="_blank" class="kakao-btn"
                     style="display: none;">💬 삼촌한테 내역 확인 요청하기</a>
             </div>
+            <!-- 삼촌에게 한마디 남기기 -->
+            <section id="uncleFeedbackSection" class="uncle-feedback-wrap" aria-label="삼촌에게 의견 남기기">
+                <button type="button" id="toggleUncleFeedbackBtn" class="uncle-feedback-trigger"
+                    onclick="toggleUncleFeedbackCard()" aria-expanded="false">
+                    <span class="uncle-feedback-trigger-left">
+                        <span class="uncle-feedback-badge">의견</span>
+                        <span class="uncle-feedback-trigger-text">삼촌에게 한마디 남기기</span>
+                    </span>
+                    <span id="uncleFeedbackChevron" class="uncle-feedback-chevron">⌄</span>
+                </button>
+
+                <div id="uncleFeedbackPanel" class="uncle-feedback-panel" style="display: none;">
+                    <p class="uncle-feedback-guide">
+                        예약하시면서 불편했던 점이나 지난번 돈가스 드시면서 아쉬웠던 점, 바라는 점이 있다면 편하게 남겨주세요. 삼촌이 꼼꼼히 읽고 꼭 반영할게요.
+                    </p>
+
+                    <div class="uncle-feedback-field">
+                        <textarea id="uncleFeedbackInput" class="uncle-feedback-textarea" rows="3" maxlength="400"
+                            placeholder="예) 예약 완료 화면에서 메뉴가 한눈에 보이면 좋겠어요 / 지난번 소스가 조금 아쉬웠어요"
+                            oninput="updateUncleFeedbackCounter()"></textarea>
+                        <div class="uncle-feedback-meta">
+                            <span class="uncle-feedback-hint">로그인된 닉네임으로 함께 전달돼요</span>
+                            <span id="uncleFeedbackCount" class="uncle-feedback-count">0 / 400</span>
+                        </div>
+                    </div>
+
+                    <div class="uncle-feedback-actions">
+                        <button type="button" class="uncle-feedback-cancel"
+                            onclick="closeUncleFeedbackCard()">닫기</button>
+                        <button type="button" id="submitUncleFeedbackBtn" class="uncle-feedback-submit"
+                            onclick="submitUncleFeedback()">의견 보내기</button>
+                    </div>
+
+                    <div id="uncleFeedbackThanks" class="uncle-feedback-thanks" style="display: none;">
+                        소중한 의견 남겨주셔서 감사합니다. 삼촌이 꼭 확인하겠습니다!
+                    </div>
+                </div>
+            </section>
+
+            <style>
+                .uncle-feedback-wrap {
+                    margin-top: 14px;
+                    padding-top: 14px;
+                    border-top: 1px solid var(--border-color, #E5E7EB);
+                }
+
+                .uncle-feedback-trigger {
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 13px 16px;
+                    border-radius: var(--radius-sm, 12px);
+                    border: 1px solid #E5DFD5;
+                    background: #FAF8F5;
+                    color: var(--text-main, #1F2937);
+                    font-size: 14px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease, border-color 0.2s ease;
+                }
+
+                .uncle-feedback-trigger:hover {
+                    background: #F4F0E8;
+                    border-color: #D6CEC0;
+                }
+
+                .uncle-feedback-trigger-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .uncle-feedback-badge {
+                    font-size: 11px;
+                    font-weight: 800;
+                    padding: 3px 7px;
+                    border-radius: 999px;
+                    background: #EAE3D5;
+                    color: #5C4E3C;
+                }
+
+                .uncle-feedback-chevron {
+                    font-size: 16px;
+                    color: #7A7267;
+                    line-height: 1;
+                }
+
+                .uncle-feedback-panel {
+                    margin-top: 10px;
+                    padding: 15px;
+                    border-radius: var(--radius-sm, 14px);
+                    border: 1px solid #E7E1D7;
+                    background: #FFFFFF;
+                    box-shadow: 0 6px 20px rgba(34, 28, 20, 0.05);
+                }
+
+                .uncle-feedback-guide {
+                    margin: 0 0 11px 0;
+                    font-size: 12.5px;
+                    line-height: 1.55;
+                    color: var(--text-sub, #4B5563);
+                    word-break: keep-all;
+                }
+
+                .uncle-feedback-textarea {
+                    width: 100%;
+                    box-sizing: border-box;
+                    padding: 12px 13px;
+                    border-radius: 10px;
+                    border: 1px solid #DDD5C7;
+                    background: #FCFBF9;
+                    color: var(--text-main, #1F2937);
+                    font-size: 13.5px;
+                    line-height: 1.5;
+                    resize: vertical;
+                    min-height: 82px;
+                    outline: none;
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+                }
+
+                .uncle-feedback-textarea:focus {
+                    background: #FFFFFF;
+                    border-color: #8C6D46;
+                    box-shadow: 0 0 0 3px rgba(140, 109, 70, 0.12);
+                }
+
+                .uncle-feedback-meta {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 6px;
+                    font-size: 11.5px;
+                    color: #8A8277;
+                }
+
+                .uncle-feedback-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 8px;
+                    margin-top: 12px;
+                }
+
+                .uncle-feedback-cancel {
+                    padding: 9px 14px;
+                    border-radius: 10px;
+                    border: 1px solid #E2DBD0;
+                    background: #FFFFFF;
+                    color: #6B6359;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                }
+
+                .uncle-feedback-submit {
+                    padding: 9px 18px;
+                    border-radius: 10px;
+                    border: none;
+                    background: var(--accent-dark, #2C2825);
+                    color: #FFFFFF;
+                    font-size: 13px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: opacity 0.2s ease;
+                }
+
+                .uncle-feedback-submit:disabled {
+                    opacity: 0.55;
+                    cursor: not-allowed;
+                }
+
+                .uncle-feedback-thanks {
+                    margin-top: 12px;
+                    padding: 13px 14px;
+                    border-radius: 10px;
+                    background: #F4F7F2;
+                    border: 1px solid #D7E5D0;
+                    color: #2E4A27;
+                    font-size: 13.5px;
+                    font-weight: 700;
+                    line-height: 1.5;
+                    word-break: keep-all;
+                }
+            </style>
+
+            <script>
+                let isSubmittingUncleFeedback = false;
+                let uncleFeedbackCloseTimer = null;
+
+                function toggleUncleFeedbackCard() {
+                    const panel = document.getElementById('uncleFeedbackPanel');
+                    const btn = document.getElementById('toggleUncleFeedbackBtn');
+                    const chevron = document.getElementById('uncleFeedbackChevron');
+                    if (!panel) return;
+
+                    if (panel.style.display === 'block') {
+                        closeUncleFeedbackCard();
+                    } else {
+                        if (uncleFeedbackCloseTimer) {
+                            clearTimeout(uncleFeedbackCloseTimer);
+                            uncleFeedbackCloseTimer = null;
+                        }
+                        const thanksEl = document.getElementById('uncleFeedbackThanks');
+                        if (thanksEl) thanksEl.style.display = 'none';
+                        panel.style.display = 'block';
+                        if (btn) btn.setAttribute('aria-expanded', 'true');
+                        if (chevron) chevron.textContent = '⌃';
+                        const input = document.getElementById('uncleFeedbackInput');
+                        if (input) setTimeout(() => input.focus(), 60);
+                    }
+                }
+
+                function closeUncleFeedbackCard() {
+                    if (uncleFeedbackCloseTimer) {
+                        clearTimeout(uncleFeedbackCloseTimer);
+                        uncleFeedbackCloseTimer = null;
+                    }
+                    const panel = document.getElementById('uncleFeedbackPanel');
+                    const btn = document.getElementById('toggleUncleFeedbackBtn');
+                    const chevron = document.getElementById('uncleFeedbackChevron');
+                    const thanksEl = document.getElementById('uncleFeedbackThanks');
+                    if (panel) panel.style.display = 'none';
+                    if (thanksEl) thanksEl.style.display = 'none';
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                    if (chevron) chevron.textContent = '⌄';
+                }
+
+                function updateUncleFeedbackCounter() {
+                    const input = document.getElementById('uncleFeedbackInput');
+                    const countEl = document.getElementById('uncleFeedbackCount');
+                    if (!input || !countEl) return;
+                    countEl.textContent = `${input.value.length} / 400`;
+                }
+
+                function getUncleFeedbackIdentity() {
+                    const activeAuth = window.KakaoAuthManager || (typeof KakaoAuthManager !== 'undefined' ? KakaoAuthManager : null);
+                    const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
+                    const nickInput = document.getElementById('nickname');
+                    const dispNick = document.getElementById('displayNick');
+
+                    const nickname =
+                        (nickInput && nickInput.value ? nickInput.value.trim() : '') ||
+                        (dispNick && dispNick.textContent ? dispNick.textContent.trim() : '') ||
+                        sess.identifier ||
+                        sess.kakaoNickname ||
+                        (typeof globalUserNickname !== 'undefined' ? globalUserNickname : '') ||
+                        '고객';
+
+                    const kakaoId = sess.kakaoId ? String(sess.kakaoId).trim() : '';
+                    return { nickname, kakaoId };
+                }
+
+                async function submitUncleFeedback() {
+                    if (isSubmittingUncleFeedback) return;
+
+                    const input = document.getElementById('uncleFeedbackInput');
+                    const submitBtn = document.getElementById('submitUncleFeedbackBtn');
+                    const thanksEl = document.getElementById('uncleFeedbackThanks');
+                    if (!input) return;
+
+                    const message = input.value.trim();
+                    if (!message) {
+                        alert('남겨주실 의견을 한 줄이라도 적어주세요.');
+                        input.focus();
+                        return;
+                    }
+
+                    const { nickname, kakaoId } = getUncleFeedbackIdentity();
+                    isSubmittingUncleFeedback = true;
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '전송 중...';
+                    }
+                    if (thanksEl) thanksEl.style.display = 'none';
+
+                    try {
+                        await fetch(WEB_APP_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({
+                                action: 'submitCustomerFeedback',
+                                nickname: nickname,
+                                kakaoId: kakaoId,
+                                feedback: message,
+                                submittedAt: new Date().toISOString()
+                            })
+                        });
+
+                        input.value = '';
+                        updateUncleFeedbackCounter();
+
+                        if (thanksEl) {
+                            thanksEl.textContent = '소중한 의견 남겨주셔서 감사합니다. 삼촌이 꼭 확인하겠습니다!';
+                            thanksEl.style.display = 'block';
+                        }
+
+                        uncleFeedbackCloseTimer = setTimeout(() => {
+                            closeUncleFeedbackCard();
+                        }, 2400);
+                    } catch (err) {
+                        alert('전송 중 잠시 문제가 생겼어요. 한 번만 다시 눌러주세요.');
+                    } finally {
+                        isSubmittingUncleFeedback = false;
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = '의견 보내기';
+                        }
+                    }
+                }
+            </script>
         </div>
 
         <div class="notice-box" id="topNoticeBox">
