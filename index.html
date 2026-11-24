@@ -3738,16 +3738,16 @@
         }
 
         function forceReloadForOpenCheck(reason = 'open_time_reached') {
-            try {
-                const guardKey = 'donkatsu_auto_reload_once';
-                const now = Date.now();
-                const lastReload = Number(sessionStorage.getItem(guardKey) || '0');
-                if (now - lastReload < 5000) return;
-                sessionStorage.setItem(guardKey, String(now));
-            } catch (e) { }
-
             stopOpenCountdownTimer();
-            window.location.reload();
+            countdownTransitionInFlight = false;
+
+            try {
+                if (typeof syncCustomerScreenWithSheet === 'function') {
+                    syncCustomerScreenWithSheet(true);
+                } else if (typeof renderOpenCountdownTick === 'function') {
+                    renderOpenCountdownTick();
+                }
+            } catch (e) { }
         }
 
         function triggerOpenTransitionNow(cardEl) {
