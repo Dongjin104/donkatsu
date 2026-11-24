@@ -6964,6 +6964,20 @@
         }
 
         function showOpenOrderScreen(sess) {
+            if (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) {
+                const orderFrm = document.getElementById('orderForm');
+                const quickBox = document.getElementById('quickReorderBox');
+                if (orderFrm && orderFrm.style.display === 'block') {
+                    if (quickBox) quickBox.style.display = 'none';
+                    document.getElementById('closedNotice').style.display = 'none';
+                    document.getElementById('alreadyOrderedNotice').style.display = 'none';
+                    document.getElementById('pickupCompletedNotice').style.display = 'none';
+                    document.getElementById('topNoticeBox').style.display = 'block';
+                    setLoadingSkeletonVisible(false);
+                    return;
+                }
+            }
+
             if (enforcePhone4GateIfNeeded(sess)) return;
             if (isReservedSessionLocked()) {
                 const cachedState = loadCustomerStateCache();
