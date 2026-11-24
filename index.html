@@ -2443,6 +2443,119 @@
             font-size: 11.5px;
             color: #292524;
         }
+
+        .pickup-inline-alert {
+            display: none;
+            margin-top: 8px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #FFFBF3 0%, #FDF4E3 100%);
+            border: 1px solid #E3C288;
+            color: #5C3D12;
+            font-size: 12.5px;
+            font-weight: 700;
+            line-height: 1.45;
+            box-shadow: 0 4px 12px rgba(166, 124, 62, 0.1);
+        }
+
+        .pickup-inline-alert.is-visible {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pickup-inline-alert-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #241F1C;
+            color: #F3D192;
+            font-size: 10px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .pickup-select-error {
+            border-color: #C88A2B !important;
+            box-shadow: 0 0 0 3px rgba(200, 138, 43, 0.18) !important;
+        }
+
+        .luxury-notice-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(24, 20, 17, 0.58);
+            backdrop-filter: blur(4px);
+        }
+
+        .luxury-notice-backdrop.is-open {
+            display: flex;
+        }
+
+        .luxury-notice-card {
+            width: 100%;
+            max-width: 360px;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #FFFFFF 0%, #FCF9F3 100%);
+            border: 1px solid #E5DAC7;
+            box-shadow: 0 22px 50px rgba(24, 20, 17, 0.28);
+            padding: 24px 20px 20px;
+            text-align: center;
+        }
+
+        .luxury-notice-icon {
+            width: 46px;
+            height: 46px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #241F1C;
+            color: #F2CE8B;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .luxury-notice-eyebrow {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            color: #9C7438;
+            margin-bottom: 4px;
+        }
+
+        .luxury-notice-title {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #241F1C;
+        }
+
+        .luxury-notice-desc {
+            margin: 0 0 20px;
+            font-size: 13.5px;
+            line-height: 1.58;
+            color: #5C5349;
+        }
+
+        .luxury-notice-btn {
+            width: 100%;
+            height: 46px;
+            border: none;
+            border-radius: 13px;
+            background: linear-gradient(180deg, #322A24 0%, #1D1815 100%);
+            color: #F6DCAA;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -3227,6 +3340,9 @@
             <div class="form-group" id="pickupFormGroup">
                 <label for="pickupTime">5. 픽업 시간 선택 *</label>
                 <select id="pickupTime" required onchange="handleTimeChange(this, 'mainBusyInfoBox')"></select>
+                <div id="pickupTimeAlert" class="pickup-inline-alert"><span
+                        class="pickup-inline-alert-badge">PICKUP</span><span id="pickupTimeAlertText">원하시는 픽업 시간을 먼저 선택해
+                        주세요.</span></div>
                 <div id="mainBusyInfoBox" class="busy-info-box"></div>
             </div>
 
@@ -5022,7 +5138,36 @@
                 if (nickInput && !isOrderFormEditingActive()) nickInput.value = "";
             }
         }
-
+        function showPickupTimeLuxuryAlert(message = '원하시는 픽업 시간을 먼저 선택해 주세요.') {
+            const selectEl = document.getElementById('pickupTime');
+            const alertEl = document.getElementById('pickupTimeAlert');
+            const alertTextEl = document.getElementById('pickupTimeAlertText');
+            if (alertTextEl) alertTextEl.textContent = message;
+            if (alertEl) alertEl.classList.add('is-visible');
+            if (selectEl) {
+                selectEl.classList.add('pickup-select-error');
+                selectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        function clearPickupTimeLuxuryAlert() {
+            const selectEl = document.getElementById('pickupTime');
+            const alertEl = document.getElementById('pickupTimeAlert');
+            if (alertEl) alertEl.classList.remove('is-visible');
+            if (selectEl) selectEl.classList.remove('pickup-select-error');
+        }
+        function showLuxuryMenuAlert() {
+            const modal = document.getElementById('luxuryMenuAlertModal');
+            if (modal) modal.classList.add('is-open');
+        }
+        function closeLuxuryMenuAlert() {
+            const modal = document.getElementById('luxuryMenuAlertModal');
+            if (modal) modal.classList.remove('is-open');
+        }
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'pickupTime' && e.target.value) {
+                clearPickupTimeLuxuryAlert();
+            }
+        });
         function isAlreadyOrderedScreenVisible() {
             const el = document.getElementById('alreadyOrderedNotice');
             return !!(el && el.style.display === 'block');
@@ -6341,7 +6486,7 @@
                 if ((orderItems[k] || 0) > 0) menuParts.push(`${k} ${orderItems[k]}개`);
             });
             if (menuParts.length === 0) {
-                showCustomAlert("알림", "최소 1개 이상의 메뉴를 선택해 주세요!");
+                showLuxuryMenuAlert();
                 return;
             }
 
@@ -6356,9 +6501,14 @@
             const pickupVal = pickupSelectEl ? pickupSelectEl.value : '';
             const selectedOpt = pickupSelectEl && pickupSelectEl.selectedOptions ? pickupSelectEl.selectedOptions[0] : null;
             if (!pickupVal || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
-                showCustomAlert("알림", "선택 가능한 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
+                showPickupTimeLuxuryAlert(
+                    selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1')
+                        ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
+                        : '원하시는 픽업 시간을 먼저 선택해 주세요.'
+                );
                 return;
             }
+            clearPickupTimeLuxuryAlert();
 
             const cookEl = document.querySelector('input[name="cookType"]:checked');
             const cookType = cookEl ? cookEl.value : '🍗 튀겨서 포장';
@@ -7195,7 +7345,7 @@
             }
         }
 
-async function runFullAppInitialization() {
+        async function runFullAppInitialization() {
             const keptY = captureScrollPos();
             const restoreScrollIfSafe = () => {
                 if (typeof __userScrolledSinceInit !== 'undefined' && __userScrolledSinceInit) {
@@ -8093,6 +8243,15 @@ async function runFullAppInitialization() {
             runFullAppInitialization();
         });
     </script>
+    <div id="luxuryMenuAlertModal" class="luxury-notice-backdrop">
+        <div class="luxury-notice-card">
+            <div class="luxury-notice-icon">!</div>
+            <div class="luxury-notice-eyebrow">MENU SELECTION</div>
+            <h3 id="luxuryMenuAlertTitle" class="luxury-notice-title">메뉴를 선택해 주세요</h3>
+            <p id="luxuryMenuAlertDesc" class="luxury-notice-desc">아직 담긴 메뉴가 없어요.<br>원하시는 돈가스나 세트를 1개 이상 선택해 주세요.</p>
+            <button type="button" class="luxury-notice-btn" onclick="closeLuxuryMenuAlert()">메뉴 고르러 가기</button>
+        </div>
+    </div>
 </body>
 
 </html>
