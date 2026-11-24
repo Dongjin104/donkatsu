@@ -2290,35 +2290,63 @@
             }
         }
 
-        /* 직전 예약 대비 변경 요약 카드 */
+        /* 직전 예약 대비 변경 요약 카드 (접기/펼치기형) */
         .diff-summary-card {
             background: linear-gradient(180deg, #FFFDF8 0%, #FAF6EE 100%);
             border: 1.5px solid #E7D8B5;
-            border-radius: 12px;
-            padding: 9px 11px;
-            margin-bottom: 7px;
-            box-shadow: 0 2px 8px rgba(42, 33, 21, 0.04);
+            border-radius: 11px;
+            padding: 7px 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 2px 6px rgba(42, 33, 21, 0.04);
         }
 
-        .diff-summary-top {
+        .diff-toggle-btn {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin-bottom: 5px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+            color: inherit;
+            font-family: inherit;
+        }
+
+        .diff-toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            flex-wrap: wrap;
         }
 
         .diff-summary-eyebrow {
-            font-size: 10.5px;
+            font-size: 11px;
             font-weight: 800;
-            letter-spacing: 0.04em;
-            color: #9A7324;
+            color: #8A641A;
+            white-space: nowrap;
+        }
+
+        .diff-summary-brief {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #3F3A34;
+        }
+
+        .diff-toggle-right {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
         }
 
         .diff-delta-badge {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 800;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: 999px;
             white-space: nowrap;
         }
@@ -2341,18 +2369,35 @@
             border: 1px solid #D1D5DB;
         }
 
+        .diff-expand-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #785512;
+            background: #F4E9CE;
+            border: 1px solid #DFC997;
+            padding: 2px 7px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
         .diff-chip-list {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
+            margin-top: 7px;
+            padding-top: 7px;
+            border-top: 1px dashed #E5D6B5;
         }
 
         .diff-chip-item {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 600;
-            line-height: 1.3;
-            padding: 3px 8px;
-            border-radius: 7px;
+            line-height: 1.25;
+            padding: 3px 7px;
+            border-radius: 6px;
             background: #FFFFFF;
             border: 1px solid #EAE2D0;
             color: #292524;
@@ -3368,11 +3413,18 @@
             <div id="searchModalActionBtns"
                 style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
                 <div id="editDiffSummaryCard" class="diff-summary-card" style="display: none;">
-                    <div class="diff-summary-top">
-                        <span class="diff-summary-eyebrow">✦ 직전 예약과 비교</span>
-                        <span id="editDiffPriceBadge" class="diff-delta-badge is-same">변동 없음</span>
-                    </div>
-                    <div id="editDiffChips" class="diff-chip-list"></div>
+                    <button type="button" id="editDiffToggleBtn" class="diff-toggle-btn" onclick="toggleEditDiffChips()"
+                        aria-expanded="false">
+                        <span class="diff-toggle-left">
+                            <span class="diff-summary-eyebrow">✦ 직전 예약과 비교</span>
+                            <span id="editDiffBriefText" class="diff-summary-brief">변경 없음</span>
+                        </span>
+                        <span class="diff-toggle-right">
+                            <span id="editDiffPriceBadge" class="diff-delta-badge is-same">변동 없음</span>
+                            <span id="editDiffExpandPill" class="diff-expand-pill">상세 ▾</span>
+                        </span>
+                    </button>
+                    <div id="editDiffChips" class="diff-chip-list" style="display: none;"></div>
                 </div>
 
                 <div class="sticky-summary-bar" style="margin-bottom: 6px;">
@@ -6082,6 +6134,7 @@
         }
 
         let originalEditSnapshot = null;
+        let isEditDiffExpanded = false;
 
         function setOriginalEditSnapshot(snapshot) {
             originalEditSnapshot = {
@@ -6091,6 +6144,23 @@
                 items: Object.assign({}, (snapshot && snapshot.items) || {}),
                 sauces: Object.assign({}, (snapshot && snapshot.sauces) || {})
             };
+            isEditDiffExpanded = false;
+        }
+
+        function toggleEditDiffChips() {
+            isEditDiffExpanded = !isEditDiffExpanded;
+            const chipsWrap = document.getElementById('editDiffChips');
+            const btn = document.getElementById('editDiffToggleBtn');
+            const pill = document.getElementById('editDiffExpandPill');
+            if (chipsWrap) {
+                chipsWrap.style.display = isEditDiffExpanded ? 'flex' : 'none';
+            }
+            if (btn) {
+                btn.setAttribute('aria-expanded', isEditDiffExpanded ? 'true' : 'false');
+            }
+            if (pill) {
+                pill.textContent = isEditDiffExpanded ? '접기 ▴' : '상세 ▾';
+            }
         }
 
         function getCurrentEditCookLabel() {
@@ -6123,7 +6193,10 @@
         function renderEditReservationDiff(currentState) {
             const card = document.getElementById('editDiffSummaryCard');
             const badge = document.getElementById('editDiffPriceBadge');
+            const briefEl = document.getElementById('editDiffBriefText');
             const chipsWrap = document.getElementById('editDiffChips');
+            const pill = document.getElementById('editDiffExpandPill');
+            const btn = document.getElementById('editDiffToggleBtn');
             if (!card || !badge || !chipsWrap || !originalEditSnapshot) return;
 
             const prev = originalEditSnapshot;
@@ -6141,9 +6214,9 @@
                 const beforeQty = Number(prev.items[name]) || 0;
                 const afterQty = Number(curr.items[name]) || 0;
                 if (beforeQty !== afterQty) {
-                    if (beforeQty === 0 && afterQty > 0) chips.push({ text: `+ ${name} ${afterQty}개 추가`, unchanged: false });
-                    else if (afterQty === 0 && beforeQty > 0) chips.push({ text: `${name} 취소 (${beforeQty}개 → 0개)`, unchanged: false });
-                    else chips.push({ text: `${name}: ${beforeQty}개 → ${afterQty}개`, unchanged: false });
+                    if (beforeQty === 0 && afterQty > 0) chips.push({ text: `+ ${name} ${afterQty}개`, unchanged: false });
+                    else if (afterQty === 0 && beforeQty > 0) chips.push({ text: `${name} 취소 (${beforeQty}→0)`, unchanged: false });
+                    else chips.push({ text: `${name} ${beforeQty}→${afterQty}개`, unchanged: false });
                 }
             });
 
@@ -6152,29 +6225,33 @@
                 const afterQty = Number(curr.sauces[name]) || 0;
                 if (beforeQty !== afterQty) {
                     if (beforeQty === 0 && afterQty > 0) chips.push({ text: `+ 소스 ${name} ${afterQty}개`, unchanged: false });
-                    else if (afterQty === 0 && beforeQty > 0) chips.push({ text: `소스 ${name} 제거 (${beforeQty}개 → 0개)`, unchanged: false });
-                    else chips.push({ text: `소스 ${name}: ${beforeQty}개 → ${afterQty}개`, unchanged: false });
+                    else if (afterQty === 0 && beforeQty > 0) chips.push({ text: `소스 ${name} 제거 (${beforeQty}→0)`, unchanged: false });
+                    else chips.push({ text: `소스 ${name} ${beforeQty}→${afterQty}개`, unchanged: false });
                 }
             });
 
             if (prev.cookType && curr.cookType && prev.cookType !== curr.cookType) {
-                chips.push({ text: `조리: ${prev.cookType} → ${curr.cookType}`, unchanged: false });
+                chips.push({ text: `조리 ${prev.cookType}→${curr.cookType}`, unchanged: false });
             }
             if (prev.pickupTime && curr.pickupTime && prev.pickupTime !== curr.pickupTime) {
-                chips.push({ text: `픽업: ${prev.pickupTime} → ${curr.pickupTime}`, unchanged: false });
+                chips.push({ text: `픽업 ${prev.pickupTime}→${curr.pickupTime}`, unchanged: false });
             }
 
             const diffPrice = curr.totalPrice - prev.totalPrice;
             badge.classList.remove('is-plus', 'is-minus', 'is-same');
             if (diffPrice > 0) {
                 badge.classList.add('is-plus');
-                badge.textContent = `+${diffPrice.toLocaleString()}원 추가`;
+                badge.textContent = `+${diffPrice.toLocaleString()}원`;
             } else if (diffPrice < 0) {
                 badge.classList.add('is-minus');
-                badge.textContent = `${diffPrice.toLocaleString()}원 감액`;
+                badge.textContent = `${diffPrice.toLocaleString()}원`;
             } else {
                 badge.classList.add('is-same');
-                badge.textContent = '금액 변동 없음';
+                badge.textContent = '변동 없음';
+            }
+
+            if (briefEl) {
+                briefEl.textContent = chips.length > 0 ? `${chips.length}건 변경됨` : '변경 없음';
             }
 
             if (chips.length === 0) {
@@ -6185,10 +6262,14 @@
                 `<span class="diff-chip-item${c.unchanged ? ' is-unchanged' : ''}">${c.text}</span>`
             ).join('');
 
+            chipsWrap.style.display = isEditDiffExpanded ? 'flex' : 'none';
+            if (btn) btn.setAttribute('aria-expanded', isEditDiffExpanded ? 'true' : 'false');
+            if (pill) pill.textContent = isEditDiffExpanded ? '접기 ▴' : '상세 ▾';
+
             card.style.display = 'block';
         }
 
-async function openSearchModal() {
+        async function openSearchModal() {
             const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
