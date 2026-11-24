@@ -6263,7 +6263,8 @@
                     return;
                 }
 
-                if (mergedSettings.isClosed) {
+                const isClosedByTimeOrFlag = Boolean(mergedSettings.isClosed) || (typeof checkClosedStatus === 'function' && checkClosedStatus());
+                if (isClosedByTimeOrFlag) {
                     showClosedNoticeScreen();
                     startHeartbeat();
                     startLiveCustomerSync();
