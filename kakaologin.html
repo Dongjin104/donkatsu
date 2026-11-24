@@ -908,7 +908,7 @@
                 }
             }
 
-            async function finishAuthAndEnterApp(syncData, fallbackId, fallbackNick, fallbackPhone4) {
+async function finishAuthAndEnterApp(syncData, fallbackId, fallbackNick, fallbackPhone4) {
                 const profile = syncData && syncData.memberProfile ? syncData.memberProfile : {};
                 const resolvedId = authImpl.normalizeId(profile.kakaoId || fallbackId || "");
                 const resolvedNick = String(profile.kakaoNickname || fallbackNick || "").trim();
@@ -938,17 +938,42 @@
                     identifier: resolvedIdent
                 });
 
-                window.hideKakaoGateOverlay();
+                try {
+                    if (resolvedIdent) {
+                        localStorage.setItem("savedNickname", resolvedIdent);
+                        if (typeof storageImpl.setCookie === "function") {
+                            storageImpl.setCookie("savedNickname", resolvedIdent);
+                        }
+                    }
+                } catch (e) { }
+
+                if (typeof window.syncNicknameUI === "function") {
+                    window.syncNicknameUI();
+                }
+
                 const statusEl = document.getElementById("kakaoGateStatus");
                 if (statusEl) statusEl.textContent = "";
 
-                if (syncData && syncData.settings && typeof window.saveSettingsCache === "function" && typeof window.applySettingsToGlobals === "function") {
-                    window.saveSettingsCache(syncData.settings);
-                    window.applySettingsToGlobals(syncData.settings);
+                if (syncData && syncData.settings) {
+                    if (typeof window.saveSettingsCache === "function") {
+                        window.saveSettingsCache(syncData.settings);
+                    }
+                    if (typeof window.applySettingsToGlobals === "function") {
+                        window.applySettingsToGlobals(syncData.settings);
+                    } else if (typeof window.applySettingsObject === "function") {
+                        window.applySettingsObject(syncData.settings);
+                    }
                 }
+
+                toggleAuthSkeleton(true, "메뉴와 매장 현황을 빠르게 불러오고 있습니다...");
+                window.hideKakaoGateOverlay();
 
                 if (typeof window.checkAndRenderState === "function") {
                     await window.checkAndRenderState(false);
+                } else if (typeof window.runFullAppInitialization === "function") {
+                    await window.runFullAppInitialization();
+                } else if (typeof window.showOpenOrderScreen === "function") {
+                    window.showOpenOrderScreen(authImpl.session);
                 }
             }
 
