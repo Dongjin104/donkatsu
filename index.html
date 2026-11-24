@@ -2347,6 +2347,9 @@
                     *</label>
                 <select id="quickPickupTime" style="padding: 11px 12px; font-size: 14px;"
                     onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
+                <div class="inline-helper-note">
+                    ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다.
+                </div>
                 <div id="quickBusyInfoBox" class="busy-info-box"></div>
             </div>
 
@@ -2412,6 +2415,9 @@
             <div class="form-group" id="pickupFormGroup">
                 <label for="pickupTime">5. 픽업 시간 선택 *</label>
                 <select id="pickupTime" required onchange="handleTimeChange(this, 'mainBusyInfoBox')"></select>
+                <div class="inline-helper-note">
+                    ⏰ <b>오후 6시 35분 이후 픽업 건은 6시 30분에 일괄 조리</b>되어 포장됩니다. (늦게 오실 경우 음식이 식을 수 있습니다)
+                </div>
                 <div id="mainBusyInfoBox" class="busy-info-box"></div>
             </div>
 
@@ -3058,14 +3064,6 @@
             return '';
         }
 
-        function parseImageUrls(rawValue) {
-            if (!rawValue) return [];
-            const parts = Array.isArray(rawValue) ? rawValue : String(rawValue).split(',');
-            return parts
-                .map(part => sanitizeImageUrl(part))
-                .filter(Boolean);
-        }
-
         function purgeLegacyAdminKeyLocalStorage() {
             try {
                 if (window.localStorage) {
@@ -3522,21 +3520,7 @@
         }
 
         function isReservedSessionLocked() {
-            try {
-                const raw =
-                    localStorage.getItem(RESERVED_LOCK_KEY) ||
-                    (typeof TripleStorage !== 'undefined' && TripleStorage && TripleStorage.getItem && TripleStorage.getItem(RESERVED_LOCK_KEY)) ||
-                    (typeof TripleStorage !== 'undefined' && TripleStorage && TripleStorage.getCookie && TripleStorage.getCookie(RESERVED_LOCK_KEY));
-                if (!raw) return false;
-                const parsed = JSON.parse(raw);
-                if (!parsed || !parsed.locked) return false;
-                if (parsed.savedAt && (Date.now() - Number(parsed.savedAt)) > 12 * 60 * 60 * 1000) {
-                    return false;
-                }
-                return true;
-            } catch (e) {
-                return false;
-            }
+            return false;
         }
 
         function isOrderFormEditingActive() {
@@ -3763,7 +3747,7 @@
             } catch (e) { }
 
             stopOpenCountdownTimer();
-            //window.location.reload();
+            window.location.reload();
         }
 
         function triggerOpenTransitionNow(cardEl) {
@@ -4352,11 +4336,7 @@
                             showModal('lockedModal');
                         }
 
-                        const orderFormEl = document.getElementById('orderForm');
-                        const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-                        const isEditingNow = (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) || isOrderFormVisible;
-
-                        if (!isEditingNow) {
+                        if (isAlreadyOrderedScreenVisible() || !isOrderFormEditingActive()) {
                             renderActiveReservationNotice(reservationData);
                         }
                         return;
@@ -4364,7 +4344,7 @@
 
                     if (reservationData.result === "not_found") {
                         clearReservedSessionLock();
-                        try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
+                        try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) {}
 
                         const alreadyEl = document.getElementById('alreadyOrderedNotice');
                         const pickupEl = document.getElementById('pickupCompletedNotice');
@@ -4457,27 +4437,6 @@
         }
 
         function renderActiveReservationNotice(resData) {
-            const orderFormEl = document.getElementById('orderForm');
-            const searchModalEl = document.getElementById('searchModal');
-            const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-            const isSearchModalVisible = !!(
-                searchModalEl &&
-                searchModalEl.style.display !== 'none' &&
-                (searchModalEl.classList.contains('show') ||
-                 searchModalEl.classList.contains('active') ||
-                 searchModalEl.style.display === 'block' ||
-                 searchModalEl.style.display === 'flex')
-            );
-            const isEditingNow =
-                (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                !!window.isEditingReservation ||
-                !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
-                isOrderFormVisible ||
-                isSearchModalVisible;
-
-            if (isEditingNow) {
-                return;
-            }
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -5001,7 +4960,6 @@
             const container = document.getElementById('modalImageContainer');
             if (!container) return;
             container.innerHTML = '';
-            container.scrollLeft = 0;
 
             let urls = String(imageUrl || '').split(',').map(u => sanitizeImageUrl(u)).filter(Boolean);
             urls.forEach(finalUrl => {
@@ -5013,16 +4971,6 @@
 
             if (urls.length === 0) return;
             showModal('imageModal');
-            container.scrollLeft = 0;
-            if (container.parentElement) {
-                container.parentElement.scrollLeft = 0;
-            }
-            requestAnimationFrame(() => {
-                container.scrollLeft = 0;
-                if (container.parentElement) {
-                    container.parentElement.scrollLeft = 0;
-                }
-            });
         }
 
         function closeImageModal() {
@@ -5106,27 +5054,6 @@
         });
 
         function renderQuickReorderBox() {
-            const orderFormEl = document.getElementById('orderForm');
-            const searchModalEl = document.getElementById('searchModal');
-            const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-            const isSearchModalVisible = !!(
-                searchModalEl &&
-                searchModalEl.style.display !== 'none' &&
-                (searchModalEl.classList.contains('show') ||
-                 searchModalEl.classList.contains('active') ||
-                 searchModalEl.style.display === 'block' ||
-                 searchModalEl.style.display === 'flex')
-            );
-            const isEditingNow =
-                (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                !!window.isEditingReservation ||
-                !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
-                isOrderFormVisible ||
-                isSearchModalVisible;
-
-            if (isEditingNow) {
-                return;
-            }
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
@@ -5249,13 +5176,6 @@
             if (enforcePhone4GateIfNeeded(sess)) return;
 
             if (isReservedSessionLocked()) {
-                const orderFormEl = document.getElementById('orderForm');
-                const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-                const isEditingNow =
-                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                    !!window.isEditingReservation ||
-                    isOrderFormVisible;
-                if (isEditingNow) return;
                 const cachedState = loadCustomerStateCache();
                 if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
                     renderActiveReservationNotice(cachedState.reservation);
@@ -5857,12 +5777,7 @@
                 const origQty = originalReservedItems[name] || 0;
                 const safeName = escapeHtml(name);
                 const safeTitle = escapeHtml(displayTitle);
-
-                const imgList = parseImageUrls(item.image || item.imageUrl || '');
-                const thumbImg = imgList[0] || '';
-                const safeThumb = escapeHtml(thumbImg);
-                const modalArg = escapeHtml(imgList.join(','));
-
+                const safeImg = sanitizeImageUrl(item.image || '');
                 const isSoldOut = Boolean(item.isSoldOut);
                 const isHot = Boolean(item.isHot);
                 const isSelected = qty > 0;
@@ -5872,7 +5787,7 @@
                     <div class="menu-item-card sold-out${isHot ? ' hot-menu' : ''}">
                         <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
                         <div class="menu-card-top">
-                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}</div>
@@ -5892,7 +5807,7 @@
                     mHtml += `
                     <div class="menu-item-card sold-out-reserved${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${modalArg}')">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}<span class="sold-out-reserved-pill">품절·예약중</span></div>
@@ -5912,7 +5827,7 @@
                     mHtml += `
                     <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${modalArg}')">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
@@ -6160,35 +6075,14 @@
                         return;
                     }
                 }
-                
-                // ▼▼▼ [여기부터] 기존 cachedState 블록을 이 덩어리로 교체 ▼▼▼
-                const cachedState = loadCustomerStateCache();
-                const orderFormEl = document.getElementById('orderForm');
-                const searchModalEl = document.getElementById('searchModal');
-                const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-                const isSearchModalVisible = !!(
-                    searchModalEl &&
-                    searchModalEl.style.display !== 'none' &&
-                    (searchModalEl.classList.contains('show') ||
-                     searchModalEl.classList.contains('active') ||
-                     searchModalEl.style.display === 'block' ||
-                     searchModalEl.style.display === 'flex')
-                );
-                const isEditingNow =
-                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                    !!window.isEditingReservation ||
-                    !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
-                    isOrderFormVisible ||
-                    isSearchModalVisible;
 
-                if (cachedState && !isEditingNow) {
-                    if (cachedSettings && cachedSettings.isBlocked) {
-                        setLoadingSkeletonVisible(false);
-                        preserveScrollPos(keptY);
-                        return;
-                    } else if (cachedSettings && cachedSettings.isClosed) {
+                const cachedState = loadCustomerStateCache();
+                if (cachedSettings && cachedState) {
+                    if (cachedSettings.isClosed) {
                         setLoadingSkeletonVisible(false);
                         showClosedNoticeScreen();
+                    } else if (cachedState.type === 'active_order' && cachedState.reservation && isReservedSessionLocked()) {
+                        renderActiveReservationNotice(cachedState.reservation);
                     } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
                         setLoadingSkeletonVisible(false);
                         document.getElementById('pickupCompletedNotice').style.display = 'block';
@@ -6197,22 +6091,26 @@
                         document.getElementById('orderForm').style.display = 'none';
                         document.getElementById('quickReorderBox').style.display = 'none';
                         document.getElementById('closedNotice').style.display = 'none';
-                    } else if (cachedState.type === 'active_order' && cachedState.reservation) {
-                        renderActiveReservationNotice(cachedState.reservation);
-                    } else if (cachedState.type === 'quick_reorder' && !isReservedSessionLocked()) {
+                    } else if (!isReservedSessionLocked()) {
                         setLoadingSkeletonVisible(false);
                         document.getElementById('closedNotice').style.display = 'none';
                         document.getElementById('alreadyOrderedNotice').style.display = 'none';
                         document.getElementById('pickupCompletedNotice').style.display = 'none';
                         document.getElementById('topNoticeBox').style.display = 'block';
-                        document.getElementById('quickReorderBox').style.display = 'block';
-                        document.getElementById('orderForm').style.display = 'none';
-                        if (typeof renderQuickReorderBox === 'function') {
+                        const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
+                        if (hasPrevOrder) {
+                            document.getElementById('quickReorderBox').style.display = 'block';
+                            document.getElementById('orderForm').style.display = 'none';
                             renderQuickReorderBox();
+                        } else {
+                            document.getElementById('quickReorderBox').style.display = 'none';
+                            document.getElementById('orderForm').style.display = 'block';
+                            renderMenuAndSauceCards();
+                            populateTimeSelect('pickupTime', '', false);
+                            handleMainCookTypeChange();
                         }
                     }
                 }
-                // ▲▲▲ [여기까지] ▲▲▲
 
                 const savedNick = sess.identifier || localStorage.getItem('savedNickname') || TripleStorage.getCookie('savedNickname') || globalUserNickname || "";
 
@@ -6296,12 +6194,7 @@
                             type: 'active_order',
                             reservation: reservationData
                         });
-                        const isEditingNow =
-                            (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                            !!window.isEditingReservation;
-                        if (!isEditingNow) {
-                            renderActiveReservationNotice(reservationData);
-                        }
+                        renderActiveReservationNotice(reservationData);
                     }
                 } else {
                     clearReservedSessionLock();
@@ -6333,27 +6226,6 @@
         }
 
         function showOpenOrderScreen(sess) {
-            const orderFormEl = document.getElementById('orderForm');
-            const searchModalEl = document.getElementById('searchModal');
-            const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-            const isSearchModalVisible = !!(
-                searchModalEl &&
-                searchModalEl.style.display !== 'none' &&
-                (searchModalEl.classList.contains('show') ||
-                 searchModalEl.classList.contains('active') ||
-                 searchModalEl.style.display === 'block' ||
-                 searchModalEl.style.display === 'flex')
-            );
-            const isEditingNow =
-                (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                !!window.isEditingReservation ||
-                !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
-                isOrderFormVisible ||
-                isSearchModalVisible;
-
-            if (isEditingNow) {
-                return;
-            }
             if (enforcePhone4GateIfNeeded(sess)) return;
             if (isReservedSessionLocked()) {
                 const cachedState = loadCustomerStateCache();
@@ -6497,12 +6369,7 @@
                 const qty = orderItems[name] || 0;
                 const safeName = escapeHtml(name);
                 const safeTitle = escapeHtml(displayTitle);
-
-                const imgList = parseImageUrls(item.image || item.imageUrl || '');
-                const thumbImg = imgList[0] || '';
-                const safeThumb = escapeHtml(thumbImg);
-                const modalArg = escapeHtml(imgList.join(','));
-
+                const safeImg = sanitizeImageUrl(item.image || '');
                 const isSoldOut = Boolean(item.isSoldOut);
                 const isHot = Boolean(item.isHot);
                 const isSelected = qty > 0;
@@ -6512,7 +6379,7 @@
                     <div class="menu-item-card sold-out${isHot ? ' hot-menu' : ''}">
                         <div class="sold-out-badge-overlay"><div class="sold-out-badge-text">SOLD OUT</div></div>
                         <div class="menu-card-top">
-                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}</div>
@@ -6532,7 +6399,7 @@
                     mHtml += `
                     <div class="menu-item-card${isHot ? ' hot-menu' : ''}${isSelected ? ' selected-item' : ''}">
                         <div class="menu-card-top">
-                            ${safeThumb ? `<img src="${safeThumb}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${modalArg}')">` : ''}
+                            ${safeImg ? `<img src="${escapeHtml(safeImg)}" class="menu-thumb" alt="${safeTitle}" onclick="openImageModal('${escapeHtml(safeImg)}')">` : ''}
                             <div class="menu-details">
                                 ${isHot ? `<div class="hot-badge-pill"><span class="hot-badge-fire">🔥</span><span>인기메뉴</span></div>` : ''}
                                 <div class="menu-title">${safeTitle}${qty > 0 ? `<span class="selected-qty-badge">${qty}개</span>` : ''}</div>
@@ -6663,8 +6530,8 @@
             return h * 60 + m;
         }
 
-        // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/몰림 판별]
-        // 25점 미만: 표시 없음 / 25~39점: 혼잡 / 40점 이상: 몰림
+        // [code.gs 연동: ±10분 교집합 점수 기준 혼잡/폭주 판별]
+        // code.gs에서 A고객 17:30(5점) -> 17:20~17:40(+5), B고객 17:50(5점) -> 17:40~18:00(+5)로 교집합 17:40이 10점이 되며,
         // 취소/완료/삭제된 예약건은 code.gs 서버 집계에서 제외되어 전달된다.
         function resolveSlotLoadInfo(timeLabel, serverEntry) {
             const mins = parseTimeToMinutes(timeLabel);
@@ -6683,17 +6550,19 @@
             let labelText = '';
             let detailMsg = '';
 
-            const hasSurgeKeyword = rawLoadStr.includes('몰림') || rawLoadStr.toLowerCase().includes('surge');
+            const hasSurgeKeyword = rawLoadStr.includes('폭주') || rawLoadStr.toLowerCase().includes('surge');
             const hasBusyKeyword = rawLoadStr.includes('혼잡') || rawLoadStr.toLowerCase().includes('busy');
 
-            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 30)) {
+            if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 10)) {
                 levelType = 'surge';
-                labelText = '몰림';
-                detailMsg = `${timeLabel} 시간대는 예약이 몰려 몰림 상태입니다. 조리 대기가 길어질 수 있으니 여유 있게 방문해 주세요.`;
-            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 15)) {
+                labelText = '폭주';
+                const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
+                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 겹쳐 매우 바쁜 폭주 시간대${scoreSuffix}입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
+            } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 5)) {
                 levelType = 'busy';
                 labelText = '혼잡';
-                detailMsg = `${timeLabel} 시간대는 예약이 많아 혼잡합니다. 조리 대기가 길어질 수 있습니다.`;
+                const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
+                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 몰리는 혼잡 시간대${scoreSuffix}입니다. 픽업 시간에 맞춰 조금만 여유를 두고 와주세요.`;
             }
 
             return {
@@ -6712,16 +6581,9 @@
 
             return globalPickupTimesList.find(p => {
                 if (!p) return false;
-                const rawT = (p.time !== undefined && p.time !== null)
-                    ? p.time
-                    : (p.pickupTime || p.label || '');
-
-                if (typeof rawT === 'number' || (typeof rawT === 'string' && /^\d+$/.test(rawT.trim()))) {
-                    return targetMins >= 0 && Number(rawT) === targetMins;
-                }
-
-                if (normTarget && normalizeKoreanTimeLabel(rawT) === normTarget) return true;
-                if (rawT && parseTimeToMinutes(rawT) === targetMins && targetMins >= 0) return true;
+                const rawT = p.time || p.pickupTime || p.label || '';
+                if (normalizeKoreanTimeLabel(rawT) === normTarget) return true;
+                if (rawT && parseTimeToMinutes(rawT) === targetMins && targetMins > 0) return true;
                 return false;
             }) || null;
         }
@@ -6862,7 +6724,7 @@
                 blocks.push({
                     cls: 'busy-level-red',
                     pillCls: 'pill-surge',
-                    pillText: loadLabel || '몰림',
+                    pillText: loadLabel || '폭주',
                     text: loadMsg
                 });
             } else if (loadLevel === 'busy') {
