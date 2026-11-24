@@ -7040,13 +7040,11 @@
             if (hasSurgeKeyword || (!isNaN(scoreVal) && scoreVal >= 30)) {
                 levelType = 'surge';
                 labelText = '몰림';
-                const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
-                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 많이 겹친 몰림 시간대${scoreSuffix}입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
+                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 많이 겹친 몰림 시간대입니다! 조리 및 포장이 지연될 수 있으니 여유 있게 방문해 주세요.`;
             } else if (hasBusyKeyword || (!isNaN(scoreVal) && scoreVal >= 15)) {
                 levelType = 'busy';
                 labelText = '혼잡';
-                const scoreSuffix = !isNaN(scoreVal) && scoreVal > 0 ? ` (중첩 부하 ${scoreVal}점)` : '';
-                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 몰리는 혼잡 시간대${scoreSuffix}입니다. 픽업 시간에 맞춰 조금만 여유를 두고 와주세요.`;
+                detailMsg = `선택하신 ${timeLabel} 시간대는 예약이 몰리는 혼잡 시간대입니다. 픽업 시간에 맞춰 조금만 여유를 두고 와주세요.`;
             }
 
             return {
