@@ -3275,6 +3275,9 @@
                     *</label>
                 <select id="quickPickupTime" style="padding: 11px 12px; font-size: 14px;"
                     onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
+                <div id="quickPickupTimeAlert" class="pickup-inline-alert"><span
+                        class="pickup-inline-alert-badge">PICKUP</span><span id="quickPickupTimeAlertText">원하시는 픽업 시간을 먼저
+                        선택해 주세요.</span></div>
                 <div id="quickBusyInfoBox" class="busy-info-box"></div>
             </div>
 
@@ -5138,6 +5141,7 @@
                 if (nickInput && !isOrderFormEditingActive()) nickInput.value = "";
             }
         }
+        
         function showPickupTimeLuxuryAlert(message = '원하시는 픽업 시간을 먼저 선택해 주세요.') {
             const selectEl = document.getElementById('pickupTime');
             const alertEl = document.getElementById('pickupTimeAlert');
@@ -5149,6 +5153,31 @@
                 selectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
+
+        function showQuickPickupTimeLuxuryAlert(message = '원하시는 픽업 시간을 먼저 선택해 주세요.') {
+            const selectEl = document.getElementById('quickPickupTime');
+            const alertEl = document.getElementById('quickPickupTimeAlert');
+            const alertTextEl = document.getElementById('quickPickupTimeAlertText');
+            if (alertTextEl) alertTextEl.textContent = message;
+            if (alertEl) alertEl.classList.add('is-visible');
+            if (selectEl) {
+                selectEl.classList.add('pickup-select-error');
+                selectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function clearQuickPickupTimeLuxuryAlert() {
+            const selectEl = document.getElementById('quickPickupTime');
+            const alertEl = document.getElementById('quickPickupTimeAlert');
+            if (alertEl) alertEl.classList.remove('is-visible');
+            if (selectEl) selectEl.classList.remove('pickup-select-error');
+        }
+
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'quickPickupTime' && e.target.value) {
+                clearQuickPickupTimeLuxuryAlert();
+            }
+        });
         function clearPickupTimeLuxuryAlert() {
             const selectEl = document.getElementById('pickupTime');
             const alertEl = document.getElementById('pickupTimeAlert');
@@ -6430,9 +6459,14 @@
             const pickupVal = pickupSelectEl ? pickupSelectEl.value : '';
             const selectedOpt = pickupSelectEl && pickupSelectEl.selectedOptions ? pickupSelectEl.selectedOptions[0] : null;
             if (!pickupVal || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
-                showCustomAlert("알림", "선택 가능한 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
+                showQuickPickupTimeLuxuryAlert(
+                    selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1')
+                        ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
+                        : '원하시는 픽업 시간을 먼저 선택해 주세요.'
+                );
                 return;
             }
+            clearQuickPickupTimeLuxuryAlert();
 
             const menuSummary = String(summaryObj.menu || '').trim();
             const sauceSummary = String(summaryObj.sauce || '없음').trim() || '없음';
@@ -8252,6 +8286,7 @@
             <button type="button" class="luxury-notice-btn" onclick="closeLuxuryMenuAlert()">메뉴 고르러 가기</button>
         </div>
     </div>
+    
 </body>
 
 </html>
