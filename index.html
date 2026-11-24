@@ -4344,7 +4344,7 @@
 
                     if (reservationData.result === "not_found") {
                         clearReservedSessionLock();
-                        try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) {}
+                        try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
 
                         const alreadyEl = document.getElementById('alreadyOrderedNotice');
                         const pickupEl = document.getElementById('pickupCompletedNotice');
@@ -4821,7 +4821,7 @@
             const isClosed = checkClosedStatus();
             if (!isClosed) {
                 document.getElementById('topNoticeBox').style.display = 'block';
-                const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
+                const hasPrevOrder = hasValidLastOrderSummary();
                 if (hasPrevOrder) {
                     document.getElementById('quickReorderBox').style.display = 'block';
                     document.getElementById('orderForm').style.display = 'none';
@@ -5053,7 +5053,30 @@
             }
         });
 
-function renderQuickReorderBox() {
+        function hasValidLastOrderSummary() {
+            let raw = '';
+            try {
+                raw = localStorage.getItem('lastOrderSummary') || '';
+                if (!raw && typeof TripleStorage !== 'undefined') {
+                    if (typeof TripleStorage.getCookie === 'function') {
+                        raw = TripleStorage.getCookie('lastOrderSummary') || '';
+                    } else if (typeof TripleStorage.getItem === 'function') {
+                        raw = TripleStorage.getItem('lastOrderSummary') || '';
+                    }
+                }
+            } catch (e) {
+                raw = '';
+            }
+            if (!raw) return false;
+            try {
+                const obj = JSON.parse(raw);
+                return !!(obj && (String(obj.menu || '').trim() || Number(obj.totalPrice || 0) > 0));
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function renderQuickReorderBox() {
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
@@ -6097,25 +6120,24 @@ function renderQuickReorderBox() {
                 const cachedState = loadCustomerStateCache();
                 if (cachedSettings && cachedState) {
                     if (cachedSettings.isClosed) {
-                        setLoadingSkeletonVisible(false);
                         showClosedNoticeScreen();
+                        setLoadingSkeletonVisible(false);
                     } else if (cachedState.type === 'active_order' && cachedState.reservation && isReservedSessionLocked()) {
                         renderActiveReservationNotice(cachedState.reservation);
                     } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
-                        setLoadingSkeletonVisible(false);
                         document.getElementById('pickupCompletedNotice').style.display = 'block';
                         document.getElementById('alreadyOrderedNotice').style.display = 'none';
                         document.getElementById('topNoticeBox').style.display = 'none';
                         document.getElementById('orderForm').style.display = 'none';
                         document.getElementById('quickReorderBox').style.display = 'none';
                         document.getElementById('closedNotice').style.display = 'none';
-                    } else if (!isReservedSessionLocked()) {
                         setLoadingSkeletonVisible(false);
+                    } else if (!isReservedSessionLocked()) {
                         document.getElementById('closedNotice').style.display = 'none';
                         document.getElementById('alreadyOrderedNotice').style.display = 'none';
                         document.getElementById('pickupCompletedNotice').style.display = 'none';
                         document.getElementById('topNoticeBox').style.display = 'block';
-                        const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getItem('lastOrderSummary'));
+                        const hasPrevOrder = hasValidLastOrderSummary();
                         if (hasPrevOrder) {
                             document.getElementById('quickReorderBox').style.display = 'block';
                             document.getElementById('orderForm').style.display = 'none';
@@ -6127,6 +6149,7 @@ function renderQuickReorderBox() {
                             populateTimeSelect('pickupTime', '', false);
                             handleMainCookTypeChange();
                         }
+                        setLoadingSkeletonVisible(false);
                     }
                 }
 
@@ -6254,13 +6277,12 @@ function renderQuickReorderBox() {
                 }
                 return;
             }
-            setLoadingSkeletonVisible(false);
             document.getElementById('closedNotice').style.display = 'none';
             document.getElementById('alreadyOrderedNotice').style.display = 'none';
             document.getElementById('pickupCompletedNotice').style.display = 'none';
             document.getElementById('topNoticeBox').style.display = 'block';
 
-            const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
+            const hasPrevOrder = hasValidLastOrderSummary();
             if (hasPrevOrder) {
                 saveCustomerStateCache({ type: 'quick_reorder' });
                 document.getElementById('quickReorderBox').style.display = 'block';
@@ -6274,6 +6296,7 @@ function renderQuickReorderBox() {
                 populateTimeSelect('pickupTime', '', false);
                 handleMainCookTypeChange();
             }
+            setLoadingSkeletonVisible(false);
         }
 
         let __lastCustomerRenderAt = 0;
