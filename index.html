@@ -4238,6 +4238,10 @@
             }
             if (isLiveSyncRequest) return;
 
+            const isAdminTest = (() => {
+                try { return sessionStorage.getItem('isAdminTestMode') === 'true'; } catch (e) { return false; }
+            })();
+
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (!sess.kakaoId) return;
@@ -4273,6 +4277,12 @@
 
                 const normalizedReservation = data.reservation ? data.reservation : (data.result ? data : null);
                 const mergedSettings = Object.assign({}, data.settings || {});
+                if (data.isClosed !== undefined && mergedSettings.isClosed === undefined) {
+                    mergedSettings.isClosed = Boolean(data.isClosed);
+                }
+                if (data.isPreOpenWait !== undefined && mergedSettings.isPreOpenWait === undefined) {
+                    mergedSettings.isPreOpenWait = Boolean(data.isPreOpenWait);
+                }
                 if (Array.isArray(data.pickupTimesList)) {
                     mergedSettings.pickupTimesList = data.pickupTimesList;
                 }
@@ -4282,14 +4292,26 @@
                     reservation: normalizedReservation || {}
                 });
                 if (!forceApply && nextSig && nextSig === lastLiveSnapshotSignature) {
+                    const closedByTimeOrFlagNow = Boolean(mergedSettings.isClosed) || (typeof checkClosedStatus === 'function' && checkClosedStatus());
+                    if (closedByTimeOrFlagNow && !isAdminTest) {
+                        if (typeof showClosedNoticeScreen === 'function') showClosedNoticeScreen();
+                    }
                     return;
                 }
                 lastLiveSnapshotSignature = nextSig;
 
-                if (data.settings || Array.isArray(data.pickupTimesList)) {
+                if (data.settings || Array.isArray(data.pickupTimesList) || data.isClosed !== undefined) {
                     saveSettingsCache(mergedSettings);
                     applySettingsObject(mergedSettings);
                     if (mergedSettings.isBlocked) return;
+                }
+
+                const isClosedNow = Boolean(mergedSettings.isClosed) || (typeof checkClosedStatus === 'function' && checkClosedStatus());
+                if (isClosedNow && !isAdminTest) {
+                    if (typeof showClosedNoticeScreen === 'function') {
+                        showClosedNoticeScreen();
+                    }
+                    return;
                 }
 
                 const reservationData = normalizedReservation;
@@ -4406,14 +4428,9 @@
                 isLiveSyncRequest = false;
                 try {
                     if (!isSubmitting && !isQuickSubmitting && !isUpdatingReservation && typeof checkClosedStatus === 'function') {
-                        const closedEl = document.getElementById('closedNotice');
-                        const isClosedScreenVisible = !!(closedEl && closedEl.style.display !== 'none');
-                        const isClosedNow = checkClosedStatus();
-
-                        if ((!isClosedScreenVisible && isClosedNow) || (isClosedScreenVisible && !isClosedNow)) {
-                            if (typeof forceReloadForOpenCheck === 'function') {
-                                forceReloadForOpenCheck(isClosedNow ? 'now_closed' : 'now_open');
-                            }
+                        const isClosedNow = Boolean(data && data.isClosed) || checkClosedStatus();
+                        if (isClosedNow && !isAdminTest && typeof showClosedNoticeScreen === 'function') {
+                            showClosedNoticeScreen();
                         }
                     }
                 } catch (err) { }
