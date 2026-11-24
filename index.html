@@ -6117,6 +6117,8 @@
             }
         }
 
+        let __forceKeepSkeletonUntilInitDone = false;
+
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (!loadingOverlay) return;
@@ -6126,45 +6128,39 @@
                 return;
             }
 
-            const screenIds = [
-                'closedNotice',
-                'pickupCompletedNotice',
-                'alreadyOrderedNotice',
-                'quickReorderBox',
-                'orderForm',
-                'kakaoGateOverlay',
-                'blockedOverlay',
-                'maintenanceOverlay'
-            ];
-
-            const isAnyScreenVisible = () => screenIds.some((id) => {
-                const el = document.getElementById(id);
-                if (!el) return false;
-                const d = el.style.display || getComputedStyle(el).display;
-                return d && d !== 'none';
-            });
-
-            if (isAnyScreenVisible()) {
-                loadingOverlay.style.display = 'none';
-                return;
+            // 초기 진입(checkSimple 완료 전) 동안에는 중간 빈 화면을 막기 위해 스켈레톤 유지
+            if (__forceKeepSkeletonUntilInitDone) {
+                const hasGateOrOverlay = [
+                    'kakaoGateOverlay',
+                    'blockedOverlay',
+                    'maintenanceOverlay'
+                ].some((id) => {
+                    const el = document.getElementById(id);
+                    if (!el) return false;
+                    const d = el.style.display || getComputedStyle(el).display;
+                    return d && d !== 'none';
+                });
+                if (!hasGateOrOverlay) {
+                    loadingOverlay.style.display = 'flex';
+                    return;
+                }
             }
 
-            // 화면이 아직 안 켜졌으면 스켈레톤을 유지하면서 화면이 켜질 때까지 감시
-            if (window.__skeletonWaitTimer) clearInterval(window.__skeletonWaitTimer);
-            let tries = 0;
-            window.__skeletonWaitTimer = setInterval(() => {
-                tries++;
-                if (isAnyScreenVisible() || tries >= 50) {
-                    clearInterval(window.__skeletonWaitTimer);
-                    window.__skeletonWaitTimer = null;
-                    loadingOverlay.style.display = 'none';
-                }
-            }, 50);
+            loadingOverlay.style.display = 'none';
         }
 
         async function runFullAppInitialization() {
             const keptY = captureScrollPos();
+            __forceKeepSkeletonUntilInitDone = true;
             setLoadingSkeletonVisible(true);
+
+            const finishWithSkeletonOff = () => {
+                __forceKeepSkeletonUntilInitDone = false;
+                const loadingOverlay = document.getElementById('pageLoadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+            };
 
             const showOnlyCompletedView = () => {
                 clearReservedSessionLock();
@@ -6175,7 +6171,6 @@
                 document.getElementById('orderForm').style.display = 'none';
                 document.getElementById('quickReorderBox').style.display = 'none';
                 document.getElementById('closedNotice').style.display = 'none';
-                setLoadingSkeletonVisible(false);
             };
 
             const showOnlyActiveOrderView = (reservationData) => {
@@ -6194,7 +6189,6 @@
                 if (!isEditingNow) {
                     renderActiveReservationNotice(reservationData);
                 }
-                setLoadingSkeletonVisible(false);
             };
 
             const showOnlyQuickReorderView = () => {
@@ -6207,7 +6201,6 @@
                 if (typeof renderQuickReorderBox === 'function') {
                     renderQuickReorderBox();
                 }
-                setLoadingSkeletonVisible(false);
             };
 
             try {
@@ -6222,13 +6215,13 @@
                 if (!sess || !sess.kakaoId) {
                     hideAllMainContentSections();
                     showKakaoGateOverlay("login", "예약을 진행하려면 카카오톡 로그인이 필요합니다.");
-                    setLoadingSkeletonVisible(false);
+                    finishWithSkeletonOff();
                     preserveScrollPos(keptY);
                     return;
                 }
 
                 if (enforcePhone4GateIfNeeded(sess)) {
-                    setLoadingSkeletonVisible(false);
+                    finishWithSkeletonOff();
                     preserveScrollPos(keptY);
                     return;
                 }
@@ -6237,47 +6230,11 @@
 
                 const cachedSettings = loadSettingsCache();
                 if (cachedSettings) {
-                    applySettingsObject(cachedSettings, { skipSkeletonHide: true });
+                    applySettingsObject(cachedSettings);
                     if (cachedSettings.isBlocked) {
-                        setLoadingSkeletonVisible(false);
+                        finishWithSkeletonOff();
                         preserveScrollPos(keptY);
                         return;
-                    }
-                }
-
-                const cachedState = loadCustomerStateCache();
-                const orderFormEl = document.getElementById('orderForm');
-                const searchModalEl = document.getElementById('searchModal');
-                const isOrderFormVisible = !!(orderFormEl && orderFormEl.style.display !== 'none');
-                const isSearchModalVisible = !!(
-                    searchModalEl &&
-                    searchModalEl.style.display !== 'none' &&
-                    (searchModalEl.classList.contains('show') ||
-                     searchModalEl.classList.contains('active') ||
-                     searchModalEl.style.display === 'block' ||
-                     searchModalEl.style.display === 'flex')
-                );
-                const isEditingNow =
-                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                    !!window.isEditingReservation ||
-                    !!(typeof editAlreadyReserved !== 'undefined' && editAlreadyReserved) ||
-                    isOrderFormVisible ||
-                    isSearchModalVisible;
-
-                let renderedFromCache = false;
-                if (cachedState && !isEditingNow) {
-                    if (cachedSettings && cachedSettings.isClosed) {
-                        showClosedNoticeScreen();
-                        renderedFromCache = true;
-                    } else if (cachedState.type === 'completed' && !isReservedSessionLocked()) {
-                        showOnlyCompletedView();
-                        renderedFromCache = true;
-                    } else if (cachedState.type === 'active_order' && cachedState.reservation) {
-                        showOnlyActiveOrderView(cachedState.reservation);
-                        renderedFromCache = true;
-                    } else if (cachedState.type === 'quick_reorder' && !isReservedSessionLocked()) {
-                        showOnlyQuickReorderView();
-                        renderedFromCache = true;
                     }
                 }
 
@@ -6306,7 +6263,7 @@
                         applySettingsObject({});
                     }
                     showOpenOrderScreen(sess);
-                    setLoadingSkeletonVisible(false);
+                    finishWithSkeletonOff();
                     startHeartbeat();
                     startLiveCustomerSync();
                     preserveScrollPos(keptY);
@@ -6321,7 +6278,7 @@
                     saveSettingsCache(mergedSettings);
                     applySettingsObject(mergedSettings);
                     if (mergedSettings.isBlocked) {
-                        setLoadingSkeletonVisible(false);
+                        finishWithSkeletonOff();
                         preserveScrollPos(keptY);
                         return;
                     }
@@ -6330,14 +6287,14 @@
                 const reservationData = data.reservation ? data.reservation : (data.result ? data : null);
                 if (reservationData && reservationData.result === "blocked") {
                     enforceBlockedOverlay(reservationData.message);
-                    setLoadingSkeletonVisible(false);
+                    finishWithSkeletonOff();
                     preserveScrollPos(keptY);
                     return;
                 }
 
                 if (mergedSettings.isClosed) {
                     showClosedNoticeScreen();
-                    setLoadingSkeletonVisible(false);
+                    finishWithSkeletonOff();
                     startHeartbeat();
                     startLiveCustomerSync();
                     preserveScrollPos(keptY);
@@ -6354,9 +6311,9 @@
                 } else {
                     clearReservedSessionLock();
                     showOpenOrderScreen(sess);
-                    setLoadingSkeletonVisible(false);
                 }
 
+                finishWithSkeletonOff();
                 startHeartbeat();
                 startLiveCustomerSync();
                 preserveScrollPos(keptY);
@@ -6365,8 +6322,10 @@
                     applySettingsObject({});
                     showOpenOrderScreen(null);
                 }
-                setLoadingSkeletonVisible(false);
+                finishWithSkeletonOff();
                 preserveScrollPos(keptY);
+            } finally {
+                __forceKeepSkeletonUntilInitDone = false;
             }
         }
 
