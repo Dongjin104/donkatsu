@@ -5053,7 +5053,7 @@
             }
         });
 
-        function renderQuickReorderBox() {
+function renderQuickReorderBox() {
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
@@ -5069,11 +5069,18 @@
             }
 
             const quickReorderBox = document.getElementById('quickReorderBox');
+            const orderFormEl = document.getElementById('orderForm');
             const summaryCard = document.getElementById('quickReorderSummaryCard');
             const soldOutNotice = document.getElementById('quickReorderSoldOutNotice');
             const quickSubmitBtn = document.getElementById('quickSubmitBtn');
 
-            const lastSummaryRaw = localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary');
+            const lastSummaryRaw = (() => {
+                try {
+                    return localStorage.getItem('lastOrderSummary') || (TripleStorage && typeof TripleStorage.getCookie === 'function' ? TripleStorage.getCookie('lastOrderSummary') : '') || '';
+                } catch (e) {
+                    return '';
+                }
+            })();
             if (!lastSummaryRaw || !summaryCard) return;
 
             let summaryObj = null;
@@ -5083,6 +5090,17 @@
                 return;
             }
             if (!summaryObj) return;
+
+            const hasValidPrevOrder = !!(String(summaryObj.menu || '').trim() || Number(summaryObj.totalPrice || 0) > 0);
+            if (!hasValidPrevOrder) {
+                if (quickReorderBox) quickReorderBox.style.display = 'none';
+                if (orderFormEl) orderFormEl.style.display = 'block';
+                saveCustomerStateCache({ type: 'new' });
+                if (typeof renderMenuAndSauceCards === 'function') renderMenuAndSauceCards();
+                if (typeof populateTimeSelect === 'function') populateTimeSelect('pickupTime', '', false);
+                if (typeof handleMainCookTypeChange === 'function') handleMainCookTypeChange();
+                return;
+            }
 
             const prevNick = summaryObj.nickname || document.getElementById('nickname')?.value.trim() || globalUserNickname || '';
             const prevCook = summaryObj.cookType || '🍗 튀겨서 포장';
@@ -5165,7 +5183,7 @@
             const qSel = document.getElementById('quickPickupTime');
             const currentSelected = qSel && qSel.value ? qSel.value : prevPickupTimeStr;
             populateTimeSelect('quickPickupTime', currentSelected, false);
-            if (quickReorderBox.style.display !== 'none' && qSel && qSel.value) {
+            if (quickReorderBox && quickReorderBox.style.display !== 'none' && qSel && qSel.value) {
                 handleTimeChange(qSel, 'quickBusyInfoBox');
             }
         }
