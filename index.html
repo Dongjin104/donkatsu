@@ -3182,45 +3182,48 @@
         </div>
     </div>
 
-    <div id="modalLoadingBox" class="menu-grid atelier-unified-card"
-        style="margin: 10px 0; padding: 16px 14px; text-align: center;">
-        <div class="atelier-eyebrow-pill" style="align-self: center; font-size: 10.5px; padding: 6px 12px;">✦ EDIT
-            RESERVATION</div>
+    <div id="searchModal" class="modal" style="z-index: 10008;">
+        <div class="modal-content"
+            style="position: relative; display: flex; flex-direction: column; max-height: 88vh; padding: 22px 16px;">
+            <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
 
-        <div class="atelier-ring-loader" style="width: 58px; height: 58px; margin: 10px auto 8px;">
-            <div class="atelier-ring-arc"></div>
-            <div class="atelier-ring-center" style="width: 40px; height: 40px; font-size: 18px;">✏️</div>
-        </div>
+            <div id="modalLoadingBox" class="menu-grid atelier-unified-card" style="margin: 10px 0; padding: 16px 14px; text-align: center;">
+                <div class="atelier-eyebrow-pill" style="align-self: center; font-size: 10.5px; padding: 6px 12px;">✦ EDIT RESERVATION</div>
 
-        <div style="font-size: 16px; font-weight: 800; color: #191815; line-height: 1.3; margin-bottom: 4px;">
-            예약 내역을 불러오고 있습니다
-        </div>
-        <div style="font-size: 12.5px; color: #5f5b52; line-height: 1.45; margin-bottom: 10px;">
-            기존 주문 내역과 변경 가능한 픽업 시간을 확인 중입니다.
-        </div>
+                <div class="atelier-ring-loader" style="width: 58px; height: 58px; margin: 10px auto 8px;">
+                    <div class="atelier-ring-arc"></div>
+                    <div class="atelier-ring-center" style="width: 40px; height: 40px; font-size: 18px;">✏️</div>
+                </div>
 
-        <div class="atelier-gold-bar-track" style="margin-bottom: 10px;">
-            <div class="atelier-gold-bar-fill"></div>
-        </div>
+                <div style="font-size: 16px; font-weight: 800; color: #191815; line-height: 1.3; margin-bottom: 4px;">
+                    예약 내역을 불러오고 있습니다
+                </div>
+                <div style="font-size: 12.5px; color: #5f5b52; line-height: 1.45; margin-bottom: 10px;">
+                    기존 주문 내역과 변경 가능한 픽업 시간을 확인 중입니다.
+                </div>
 
-        <div class="atelier-status-chip" style="align-self: center; padding: 6px 12px; font-size: 11.5px;">
-            <span class="atelier-status-dot"></span>
-            <span>잠시만 기다려 주세요 · 내역 안전 조회 중</span>
-        </div>
+                <div class="atelier-gold-bar-track" style="margin-bottom: 10px;">
+                    <div class="atelier-gold-bar-fill"></div>
+                </div>
 
-        <div class="atelier-skel-group" style="margin-top: 10px;">
-            <div class="atelier-skel-box" style="padding: 10px;">
-                <div class="atelier-skel-row">
-                    <div class="atelier-shimmer atelier-skel-thumb" style="width: 42px; height: 42px;"></div>
-                    <div class="atelier-skel-lines">
-                        <div class="atelier-shimmer atelier-skel-line-lg" style="width: 70%;"></div>
-                        <div class="atelier-shimmer atelier-skel-line-md" style="width: 40%;"></div>
+                <div class="atelier-status-chip" style="align-self: center; padding: 6px 12px; font-size: 11.5px;">
+                    <span class="atelier-status-dot"></span>
+                    <span>잠시만 기다려 주세요 · 내역 안전 조회 중</span>
+                </div>
+
+                <div class="atelier-skel-group" style="margin-top: 10px;">
+                    <div class="atelier-skel-box" style="padding: 10px;">
+                        <div class="atelier-skel-row">
+                            <div class="atelier-shimmer atelier-skel-thumb" style="width: 42px; height: 42px;"></div>
+                            <div class="atelier-skel-lines">
+                                <div class="atelier-shimmer atelier-skel-line-lg" style="width: 70%;"></div>
+                                <div class="atelier-shimmer atelier-skel-line-md" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                        <div class="atelier-shimmer atelier-skel-line-bar" style="height: 22px;"></div>
                     </div>
                 </div>
-                <div class="atelier-shimmer atelier-skel-line-bar" style="height: 22px;"></div>
             </div>
-        </div>
-    </div>
 
     <div id="searchResultArea"
         style="margin-top:10px; text-align:left; background:#FAFAF9; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 20px;">
