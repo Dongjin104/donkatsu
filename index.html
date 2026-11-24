@@ -6370,35 +6370,14 @@
             }
         }
 
-function applyScreenState(targetScreenId, options = {}) {
-            const { showTopNotice = false, hideSkeleton = true } = options;
-
-            const closedEl = document.getElementById('closedNotice');
-            const topEl = document.getElementById('topNoticeBox');
-            const orderEl = document.getElementById('orderForm');
-            const quickEl = document.getElementById('quickReorderBox');
-            const alreadyEl = document.getElementById('alreadyOrderedNotice');
-            const doneEl = document.getElementById('pickupCompletedNotice');
-
-            if (closedEl) closedEl.style.display = (targetScreenId === 'closedNotice') ? 'block' : 'none';
-            if (doneEl) doneEl.style.display = (targetScreenId === 'pickupCompletedNotice') ? 'block' : 'none';
-            if (alreadyEl) alreadyEl.style.display = (targetScreenId === 'alreadyOrderedNotice') ? 'block' : 'none';
-            if (quickEl) quickEl.style.display = (targetScreenId === 'quickReorderBox') ? 'block' : 'none';
-            if (orderEl) orderEl.style.display = (targetScreenId === 'orderForm') ? 'block' : 'none';
-
-            if (topEl) {
-                topEl.style.display = (showTopNotice && (targetScreenId === 'quickReorderBox' || targetScreenId === 'orderForm'))
-                    ? 'block'
-                    : 'none';
-            }
-
-            if (hideSkeleton && targetScreenId) {
-                setLoadingSkeletonVisible(false);
-            }
-        }
-
-        function showClosedNoticeScreen() {
-            applyScreenState('closedNotice', { showTopNotice: false, hideSkeleton: true });
+function showClosedNoticeScreen() {
+            document.getElementById('closedNotice').style.display = 'block';
+            document.getElementById('topNoticeBox').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('quickReorderBox').style.display = 'none';
+            document.getElementById('alreadyOrderedNotice').style.display = 'none';
+            document.getElementById('pickupCompletedNotice').style.display = 'none';
+            setLoadingSkeletonVisible(false);
             startOpenCountdownTimer();
         }
 
@@ -6434,31 +6413,33 @@ function applyScreenState(targetScreenId, options = {}) {
                 if (cachedState && cachedState.type === 'active_order' && cachedState.reservation) {
                     renderActiveReservationNotice(cachedState.reservation);
                 } else {
-                    applyScreenState('alreadyOrderedNotice', { showTopNotice: false, hideSkeleton: true });
+                    showAlreadyOrderedPlaceholder();
                 }
+                setLoadingSkeletonVisible(false);
                 return;
             }
+
+            document.getElementById('closedNotice').style.display = 'none';
+            document.getElementById('alreadyOrderedNotice').style.display = 'none';
+            document.getElementById('pickupCompletedNotice').style.display = 'none';
+            document.getElementById('topNoticeBox').style.display = 'block';
 
             const hasPrevOrder = !!(localStorage.getItem('lastOrderSummary') || TripleStorage.getCookie('lastOrderSummary'));
             if (hasPrevOrder) {
                 saveCustomerStateCache({ type: 'quick_reorder' });
-                if (typeof renderQuickReorderBox === 'function') {
-                    renderQuickReorderBox();
-                }
-                applyScreenState('quickReorderBox', { showTopNotice: true, hideSkeleton: true });
+                document.getElementById('quickReorderBox').style.display = 'block';
+                document.getElementById('orderForm').style.display = 'none';
+                renderQuickReorderBox();
             } else {
                 saveCustomerStateCache({ type: 'new' });
-                if (typeof renderMenuAndSauceCards === 'function') {
-                    renderMenuAndSauceCards();
-                }
-                if (typeof populateTimeSelect === 'function') {
-                    populateTimeSelect('pickupTime', '', false);
-                }
-                if (typeof handleMainCookTypeChange === 'function') {
-                    handleMainCookTypeChange();
-                }
-                applyScreenState('orderForm', { showTopNotice: true, hideSkeleton: true });
+                document.getElementById('quickReorderBox').style.display = 'none';
+                document.getElementById('orderForm').style.display = 'block';
+                renderMenuAndSauceCards();
+                populateTimeSelect('pickupTime', '', false);
+                handleMainCookTypeChange();
             }
+
+            setLoadingSkeletonVisible(false);
         }
 
         let __lastCustomerRenderAt = 0;
