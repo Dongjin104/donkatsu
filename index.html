@@ -2289,6 +2289,80 @@
                 background-position: -100% 0;
             }
         }
+
+        /* 직전 예약 대비 변경 요약 카드 */
+        .diff-summary-card {
+            background: linear-gradient(180deg, #FFFDF8 0%, #FAF6EE 100%);
+            border: 1.5px solid #E7D8B5;
+            border-radius: 12px;
+            padding: 9px 11px;
+            margin-bottom: 7px;
+            box-shadow: 0 2px 8px rgba(42, 33, 21, 0.04);
+        }
+
+        .diff-summary-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .diff-summary-eyebrow {
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            color: #9A7324;
+        }
+
+        .diff-delta-badge {
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .diff-delta-badge.is-plus {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #F59E0B;
+        }
+
+        .diff-delta-badge.is-minus {
+            background: #ECFDF5;
+            color: #065F46;
+            border: 1px solid #34D399;
+        }
+
+        .diff-delta-badge.is-same {
+            background: #F3F4F6;
+            color: #4B5563;
+            border: 1px solid #D1D5DB;
+        }
+
+        .diff-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .diff-chip-item {
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.3;
+            padding: 3px 8px;
+            border-radius: 7px;
+            background: #FFFFFF;
+            border: 1px solid #EAE2D0;
+            color: #292524;
+        }
+
+        .diff-chip-item.is-unchanged {
+            color: #6B7280;
+            background: #F9FAFB;
+            border-color: #E5E7EB;
+        }
     </style>
 </head>
 
@@ -3293,6 +3367,14 @@
 
             <div id="searchModalActionBtns"
                 style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
+                <div id="editDiffSummaryCard" class="diff-summary-card" style="display: none;">
+                    <div class="diff-summary-top">
+                        <span class="diff-summary-eyebrow">✦ 직전 예약과 비교</span>
+                        <span id="editDiffPriceBadge" class="diff-delta-badge is-same">변동 없음</span>
+                    </div>
+                    <div id="editDiffChips" class="diff-chip-list"></div>
+                </div>
+
                 <div class="sticky-summary-bar" style="margin-bottom: 6px;">
                     <div class="sticky-summary-header">
                         <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
@@ -5999,7 +6081,114 @@
             return found ? (found.shortName || found.name) : clean;
         }
 
-        async function openSearchModal() {
+        let originalEditSnapshot = null;
+
+        function setOriginalEditSnapshot(snapshot) {
+            originalEditSnapshot = {
+                cookType: snapshot && snapshot.cookType ? String(snapshot.cookType) : '',
+                pickupTime: snapshot && snapshot.pickupTime ? String(snapshot.pickupTime) : '',
+                totalPrice: Number(snapshot && snapshot.totalPrice) || 0,
+                items: Object.assign({}, (snapshot && snapshot.items) || {}),
+                sauces: Object.assign({}, (snapshot && snapshot.sauces) || {})
+            };
+        }
+
+        function getCurrentEditCookLabel() {
+            return document.getElementById('editCook2')?.checked ? '생고기/비튀김' : '튀김';
+        }
+
+        function getCurrentEditTotalPrice() {
+            const el = document.getElementById('editTotalPrice');
+            if (!el) return 0;
+            const digits = String(el.innerText || el.textContent || '0').replace(/[^0-9-]/g, '');
+            return Number(digits) || 0;
+        }
+
+        function refreshEditDiffCard() {
+            if (!originalEditSnapshot) return;
+            const selTime = document.getElementById('newPickupTime');
+            const currentPickup = selTime
+                ? normalizeKoreanTimeLabel(selTime.value || '')
+                : originalEditSnapshot.pickupTime;
+
+            renderEditReservationDiff({
+                cookType: getCurrentEditCookLabel(),
+                pickupTime: currentPickup || originalEditSnapshot.pickupTime,
+                totalPrice: getCurrentEditTotalPrice(),
+                items: editOrderItems,
+                sauces: editSauceItems
+            });
+        }
+
+        function renderEditReservationDiff(currentState) {
+            const card = document.getElementById('editDiffSummaryCard');
+            const badge = document.getElementById('editDiffPriceBadge');
+            const chipsWrap = document.getElementById('editDiffChips');
+            if (!card || !badge || !chipsWrap || !originalEditSnapshot) return;
+
+            const prev = originalEditSnapshot;
+            const curr = {
+                cookType: currentState && currentState.cookType ? String(currentState.cookType) : prev.cookType,
+                pickupTime: currentState && currentState.pickupTime ? String(currentState.pickupTime) : prev.pickupTime,
+                totalPrice: Number(currentState && currentState.totalPrice !== undefined ? currentState.totalPrice : prev.totalPrice) || 0,
+                items: Object.assign({}, (currentState && currentState.items) || {}),
+                sauces: Object.assign({}, (currentState && currentState.sauces) || {})
+            };
+
+            const chips = [];
+
+            Array.from(new Set([...Object.keys(prev.items || {}), ...Object.keys(curr.items || {})])).forEach(name => {
+                const beforeQty = Number(prev.items[name]) || 0;
+                const afterQty = Number(curr.items[name]) || 0;
+                if (beforeQty !== afterQty) {
+                    if (beforeQty === 0 && afterQty > 0) chips.push({ text: `+ ${name} ${afterQty}개 추가`, unchanged: false });
+                    else if (afterQty === 0 && beforeQty > 0) chips.push({ text: `${name} 취소 (${beforeQty}개 → 0개)`, unchanged: false });
+                    else chips.push({ text: `${name}: ${beforeQty}개 → ${afterQty}개`, unchanged: false });
+                }
+            });
+
+            Array.from(new Set([...Object.keys(prev.sauces || {}), ...Object.keys(curr.sauces || {})])).forEach(name => {
+                const beforeQty = Number(prev.sauces[name]) || 0;
+                const afterQty = Number(curr.sauces[name]) || 0;
+                if (beforeQty !== afterQty) {
+                    if (beforeQty === 0 && afterQty > 0) chips.push({ text: `+ 소스 ${name} ${afterQty}개`, unchanged: false });
+                    else if (afterQty === 0 && beforeQty > 0) chips.push({ text: `소스 ${name} 제거 (${beforeQty}개 → 0개)`, unchanged: false });
+                    else chips.push({ text: `소스 ${name}: ${beforeQty}개 → ${afterQty}개`, unchanged: false });
+                }
+            });
+
+            if (prev.cookType && curr.cookType && prev.cookType !== curr.cookType) {
+                chips.push({ text: `조리: ${prev.cookType} → ${curr.cookType}`, unchanged: false });
+            }
+            if (prev.pickupTime && curr.pickupTime && prev.pickupTime !== curr.pickupTime) {
+                chips.push({ text: `픽업: ${prev.pickupTime} → ${curr.pickupTime}`, unchanged: false });
+            }
+
+            const diffPrice = curr.totalPrice - prev.totalPrice;
+            badge.classList.remove('is-plus', 'is-minus', 'is-same');
+            if (diffPrice > 0) {
+                badge.classList.add('is-plus');
+                badge.textContent = `+${diffPrice.toLocaleString()}원 추가`;
+            } else if (diffPrice < 0) {
+                badge.classList.add('is-minus');
+                badge.textContent = `${diffPrice.toLocaleString()}원 감액`;
+            } else {
+                badge.classList.add('is-same');
+                badge.textContent = '금액 변동 없음';
+            }
+
+            if (chips.length === 0) {
+                chips.push({ text: '아직 변경된 항목이 없어요', unchanged: true });
+            }
+
+            chipsWrap.innerHTML = chips.map(c =>
+                `<span class="diff-chip-item${c.unchanged ? ' is-unchanged' : ''}">${c.text}</span>`
+            ).join('');
+
+            card.style.display = 'block';
+        }
+
+async function openSearchModal() {
             const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -6103,6 +6292,15 @@
                 document.getElementById('resTime').innerText = normalizedPrevTime;
                 populateTimeSelect('newPickupTime', normalizedPrevTime, true);
                 updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
+
+                setOriginalEditSnapshot({
+                    cookType: isRaw ? '생고기/비튀김' : '튀김',
+                    pickupTime: normalizedPrevTime,
+                    totalPrice: getCurrentEditTotalPrice(),
+                    items: editOrderItems,
+                    sauces: editSauceItems
+                });
+                refreshEditDiffCard();
 
                 document.getElementById('searchResultArea').style.display = 'block';
                 document.getElementById('searchModalActionBtns').style.display = 'block';
@@ -6301,6 +6499,7 @@
                     targetMap[name] = next;
                     renderEditMenuAndSauceCards();
                     updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
+                    if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
                 };
                 showModal('confirmReduceModal');
                 return;
@@ -6309,6 +6508,7 @@
             targetMap[name] = next;
             renderEditMenuAndSauceCards();
             updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
+            if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
         }
 
         async function updateReservation() {
