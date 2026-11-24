@@ -6763,13 +6763,35 @@
             }
         }
 
-        async function runFullAppInitialization() {
+async function runFullAppInitialization() {
             const keptY = captureScrollPos();
             const restoreScrollIfSafe = () => {
                 if (typeof __userScrolledSinceInit !== 'undefined' && __userScrolledSinceInit) {
                     return;
                 }
                 preserveScrollPos(keptY);
+            };
+
+            const keepActiveMenuEditView = () => {
+                if (typeof isOrderFormEditingActive !== 'function' || !isOrderFormEditingActive()) {
+                    return false;
+                }
+                const orderFrm = document.getElementById('orderForm');
+                if (!orderFrm || orderFrm.style.display !== 'block') {
+                    return false;
+                }
+                const quickBox = document.getElementById('quickReorderBox');
+                if (quickBox) quickBox.style.display = 'none';
+                const closedEl = document.getElementById('closedNotice');
+                const alreadyEl = document.getElementById('alreadyOrderedNotice');
+                const pickupEl = document.getElementById('pickupCompletedNotice');
+                const topEl = document.getElementById('topNoticeBox');
+                if (closedEl) closedEl.style.display = 'none';
+                if (alreadyEl) alreadyEl.style.display = 'none';
+                if (pickupEl) pickupEl.style.display = 'none';
+                if (topEl) topEl.style.display = 'block';
+                setLoadingSkeletonVisible(false);
+                return true;
             };
 
             try {
@@ -6822,7 +6844,7 @@
                         document.getElementById('quickReorderBox').style.display = 'none';
                         document.getElementById('closedNotice').style.display = 'none';
                         setLoadingSkeletonVisible(false);
-                    } else if (!isReservedSessionLocked()) {
+                    } else if (!isReservedSessionLocked() && !keepActiveMenuEditView()) {
                         document.getElementById('closedNotice').style.display = 'none';
                         document.getElementById('alreadyOrderedNotice').style.display = 'none';
                         document.getElementById('pickupCompletedNotice').style.display = 'none';
@@ -6869,7 +6891,9 @@
                     if (!cachedSettings) {
                         applySettingsObject({});
                     }
-                    showOpenOrderScreen(sess);
+                    if (!keepActiveMenuEditView()) {
+                        showOpenOrderScreen(sess);
+                    }
                     startHeartbeat();
                     startLiveCustomerSync();
                     restoreScrollIfSafe();
@@ -6930,7 +6954,9 @@
                     }
                 } else {
                     clearReservedSessionLock();
-                    showOpenOrderScreen(sess);
+                    if (!keepActiveMenuEditView()) {
+                        showOpenOrderScreen(sess);
+                    }
                 }
 
                 startHeartbeat();
@@ -6940,7 +6966,9 @@
                 setLoadingSkeletonVisible(false);
                 if (!loadSettingsCache()) {
                     applySettingsObject({});
-                    showOpenOrderScreen(null);
+                    if (!keepActiveMenuEditView()) {
+                        showOpenOrderScreen(null);
+                    }
                 }
                 restoreScrollIfSafe();
             }
