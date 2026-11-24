@@ -3546,7 +3546,6 @@
         }
 
         function showAlreadyOrderedPlaceholder() {
-            setLoadingSkeletonVisible(false);
             const closedEl = document.getElementById('closedNotice');
             const topEl = document.getElementById('topNoticeBox');
             const orderEl = document.getElementById('orderForm');
@@ -3560,6 +3559,7 @@
             if (quickEl) quickEl.style.display = 'none';
             if (doneEl) doneEl.style.display = 'none';
             if (alreadyEl) alreadyEl.style.display = 'block';
+            setLoadingSkeletonVisible(false);
         }
 
         function populateSuccessModalDetails(payload, isQuick = false) {
@@ -4479,7 +4479,6 @@
                 return;
             }
             const keptY = captureScrollPos();
-            setLoadingSkeletonVisible(false);
 
             const nickInput = document.getElementById('nickname');
             const savedNick = (resData && resData.nickname) ? resData.nickname : (nickInput ? nickInput.value : globalUserNickname);
@@ -4601,6 +4600,7 @@
             document.getElementById('orderForm').style.display = 'none';
             document.getElementById('quickReorderBox').style.display = 'none';
             document.getElementById('closedNotice').style.display = 'none';
+            setLoadingSkeletonVisible(false);
             preserveScrollPos(keptY);
         }
 
@@ -6126,35 +6126,40 @@
                 return;
             }
 
-            // 화면에 보여줄 영역이 실제로 켜졌는지 확인한 뒤 스켈레톤을 끔
-            const checkAndHide = () => {
-                const activeIds = [
-                    'closedNotice',
-                    'pickupCompletedNotice',
-                    'alreadyOrderedNotice',
-                    'quickReorderBox',
-                    'orderForm',
-                    'kakaoGateOverlay',
-                    'blockedOverlay',
-                    'maintenanceOverlay'
-                ];
-                const hasVisibleScreen = activeIds.some((id) => {
-                    const el = document.getElementById(id);
-                    if (!el) return false;
-                    const styleVal = el.style.display || getComputedStyle(el).display;
-                    return styleVal && styleVal !== 'none';
-                });
+            const screenIds = [
+                'closedNotice',
+                'pickupCompletedNotice',
+                'alreadyOrderedNotice',
+                'quickReorderBox',
+                'orderForm',
+                'kakaoGateOverlay',
+                'blockedOverlay',
+                'maintenanceOverlay'
+            ];
 
-                if (hasVisibleScreen) {
+            const isAnyScreenVisible = () => screenIds.some((id) => {
+                const el = document.getElementById(id);
+                if (!el) return false;
+                const d = el.style.display || getComputedStyle(el).display;
+                return d && d !== 'none';
+            });
+
+            if (isAnyScreenVisible()) {
+                loadingOverlay.style.display = 'none';
+                return;
+            }
+
+            // 화면이 아직 안 켜졌으면 스켈레톤을 유지하면서 화면이 켜질 때까지 감시
+            if (window.__skeletonWaitTimer) clearInterval(window.__skeletonWaitTimer);
+            let tries = 0;
+            window.__skeletonWaitTimer = setInterval(() => {
+                tries++;
+                if (isAnyScreenVisible() || tries >= 50) {
+                    clearInterval(window.__skeletonWaitTimer);
+                    window.__skeletonWaitTimer = null;
                     loadingOverlay.style.display = 'none';
-                } else {
-                    requestAnimationFrame(() => {
-                        loadingOverlay.style.display = 'none';
-                    });
                 }
-            };
-
-            checkAndHide();
+            }, 50);
         }
 
         async function runFullAppInitialization() {
