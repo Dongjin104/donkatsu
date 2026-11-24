@@ -2408,6 +2408,36 @@
             background: #F9FAFB;
             border-color: #E5E7EB;
         }
+        .compact-order-summary {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+            padding: 2px 2px 4px;
+            font-size: 11.5px;
+            line-height: 1.25;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .compact-order-summary > span,
+        .compact-order-summary > div,
+        .compact-order-summary .order-chip {
+            display: inline-flex;
+            align-items: center;
+            flex: 0 0 auto;
+            background: #F8F5EE;
+            border: 1px solid #E5DEC9;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-weight: 700;
+            font-size: 11.5px;
+            color: #292524;
+        }
     </style>
 </head>
 
@@ -3411,10 +3441,9 @@
             </div>
 
             <div id="searchModalActionBtns"
-                style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
+                style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 6px; border-top: 1px solid var(--border-color); margin-top: 4px;">
                 <div id="editDiffSummaryCard" class="diff-summary-card" style="display: none;">
-                    <button type="button" id="editDiffToggleBtn" class="diff-toggle-btn" onclick="toggleEditDiffChips()"
-                        aria-expanded="false">
+                    <button type="button" id="editDiffToggleBtn" class="diff-toggle-btn" onclick="toggleEditDiffChips()" aria-expanded="false">
                         <span class="diff-toggle-left">
                             <span class="diff-summary-eyebrow">✦ 직전 예약과 비교</span>
                             <span id="editDiffBriefText" class="diff-summary-brief">변경 없음</span>
@@ -3427,20 +3456,19 @@
                     <div id="editDiffChips" class="diff-chip-list" style="display: none;"></div>
                 </div>
 
-                <div class="sticky-summary-bar" style="margin-bottom: 6px;">
-                    <div class="sticky-summary-header">
-                        <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
-                        <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span
+                <div class="sticky-summary-bar" style="margin-bottom: 6px; padding: 8px 10px;">
+                    <div class="sticky-summary-header" style="margin-bottom: 2px;">
+                        <span style="font-weight: 700; color: var(--text-sub); font-size: 11.5px;">변경할 예약 내역 <span style="font-weight: 500; color: #8A8175;">(좌우 스크롤)</span></span>
+                        <span style="font-weight: 800; color: var(--accent-dark); font-size: 13.5px;">총 <span
                                 id="editTotalPrice" style="color: #B45309;">0</span>원</span>
                     </div>
-                    <div id="editSelectedSummary" style="color: var(--text-main); line-height: 1.35;">선택된 메뉴가 없습니다.
-                    </div>
+                    <div id="editSelectedSummary" class="compact-order-summary">선택된 메뉴가 없습니다.</div>
                 </div>
 
                 <button id="updateBtn" class="modal-btn"
-                    style="background-color:var(--accent-dark); margin-top:0; padding:12px; margin-bottom:5px;"
+                    style="background-color:var(--accent-dark); margin-top:0; padding:11px; margin-bottom:5px;"
                     onclick="updateReservation()">변경된 내용 저장하기</button>
-                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:10px;"
+                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:9px;"
                     onclick="closeSearchModal()">닫기</button>
             </div>
         </div>
