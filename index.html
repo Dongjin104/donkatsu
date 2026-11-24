@@ -2052,6 +2052,243 @@
                 transform: translateY(-8px);
             }
         }
+
+        /* ===== 1번 기준 고급 로딩 & 스켈레톤 통일 스타일 ===== */
+        .atelier-unified-card {
+            background: #fdfbf4;
+            border: 1.5px solid #d8be75;
+            border-radius: 26px;
+            box-shadow: 0 18px 42px rgba(24, 19, 10, 0.16);
+            padding: 24px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .atelier-eyebrow-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #231f18;
+            color: #f3d27a;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            padding: 7px 14px;
+            border-radius: 999px;
+            box-shadow: 0 6px 16px rgba(35, 31, 24, 0.22);
+        }
+
+        .atelier-eyebrow-pill--soft {
+            background: #f6efe0;
+            color: #9e7b2f;
+            border: 1px solid #ead8ad;
+            box-shadow: none;
+        }
+
+        .atelier-ring-loader {
+            position: relative;
+            width: 78px;
+            height: 78px;
+            margin: 16px auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .atelier-ring-arc {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 4px solid #efe7d2;
+            border-top-color: #c79c3b;
+            border-right-color: #231f18;
+            animation: atelierSpin 1.05s linear infinite;
+        }
+
+        .atelier-ring-center {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #f7ebd0;
+            border: 1px solid #e2c98d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.8);
+        }
+
+        .atelier-unified-title {
+            margin: 0 0 8px;
+            font-size: 20px;
+            line-height: 1.3;
+            font-weight: 800;
+            color: #191815;
+            letter-spacing: -0.02em;
+        }
+
+        .atelier-unified-desc {
+            margin: 0 auto 16px;
+            max-width: 300px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: #5f5b52;
+            word-break: keep-all;
+        }
+
+        /* 상단/진행 바 (1번과 통일된 골드-다크 라인) */
+        .atelier-gold-bar-track {
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: #efe9da;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .atelier-gold-bar-fill {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 46%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #c79c3b 0%, #231f18 100%);
+            animation: atelierBarSlide 1.45s ease-in-out infinite;
+        }
+
+        /* 하단 안내 배지 */
+        .atelier-status-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 999px;
+            background: #fbf7ec;
+            border: 1px solid #e3cf9b;
+            color: #7c5c19;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+
+        .atelier-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #c59632;
+            animation: atelierPulse 1.2s ease-in-out infinite;
+        }
+
+        /* 고급 스켈레톤 카드 & Shimmer */
+        .atelier-skel-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 14px;
+            text-align: left;
+        }
+
+        .atelier-skel-box {
+            background: #fffdf8;
+            border: 1px solid #ece1c6;
+            border-radius: 16px;
+            padding: 13px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .atelier-skel-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .atelier-shimmer {
+            background: linear-gradient(90deg,
+                    #f1ece0 0%,
+                    #fbf7ee 45%,
+                    #ebe3d0 100%);
+            background-size: 220% 100%;
+            animation: atelierShimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        .atelier-skel-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .atelier-skel-lines {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .atelier-skel-line-lg {
+            height: 12px;
+            width: 78%;
+        }
+
+        .atelier-skel-line-md {
+            height: 10px;
+            width: 52%;
+        }
+
+        .atelier-skel-line-bar {
+            height: 22px;
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        @keyframes atelierSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes atelierBarSlide {
+            0% {
+                left: -45%;
+            }
+
+            50% {
+                left: 65%;
+            }
+
+            100% {
+                left: -45%;
+            }
+        }
+
+        @keyframes atelierPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.45;
+                transform: scale(0.82);
+            }
+        }
+
+        @keyframes atelierShimmer {
+            0% {
+                background-position: 100% 0;
+            }
+
+            100% {
+                background-position: -100% 0;
+            }
+        }
     </style>
 </head>
 
@@ -2112,34 +2349,58 @@
             </div>
         </div>
 
-        <div id="pageLoadingOverlay" class="menu-grid" style="display: flex; flex-direction: column; gap: 10px;">
-            <div
-                style="text-align: center; font-size: 13px; color: var(--text-sub); font-weight: 600; margin-bottom: 4px;">
-                ✨ 메뉴와 매장 현황을 빠르게 불러오고 있습니다...
+        <div id="pageLoadingOverlay" class="menu-grid atelier-unified-card"
+            style="display: flex; flex-direction: column; gap: 12px; max-width: 420px; margin: 12px auto;">
+            <div class="atelier-eyebrow-pill atelier-eyebrow-pill--soft" style="align-self: center;">✦ PREMIUM TONKATSU
             </div>
-            <div class="skeleton-card">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <div class="skeleton-shimmer"
-                        style="width: 50px; height: 50px; border-radius: 8px; flex-shrink: 0;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
-                        <div class="skeleton-shimmer" style="width: 30%; height: 11px;"></div>
-                        <div class="skeleton-shimmer" style="width: 75%; height: 14px;"></div>
-                        <div class="skeleton-shimmer" style="width: 40%; height: 12px;"></div>
-                    </div>
-                </div>
-                <div class="skeleton-shimmer" style="width: 100%; height: 28px; border-radius: 6px;"></div>
+
+            <div class="atelier-ring-loader" style="width: 68px; height: 68px; margin: 4px auto 2px;">
+                <div class="atelier-ring-arc"></div>
+                <div class="atelier-ring-center" style="width: 48px; height: 48px; font-size: 20px;">🍽️</div>
             </div>
-            <div class="skeleton-card">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <div class="skeleton-shimmer"
-                        style="width: 50px; height: 50px; border-radius: 8px; flex-shrink: 0;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
-                        <div class="skeleton-shimmer" style="width: 28%; height: 11px;"></div>
-                        <div class="skeleton-shimmer" style="width: 68%; height: 14px;"></div>
-                        <div class="skeleton-shimmer" style="width: 38%; height: 12px;"></div>
-                    </div>
+
+            <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: 800; color: #191815; line-height: 1.3; margin-bottom: 4px;">
+                    메뉴와 매장 현황을 준비하고 있습니다
                 </div>
-                <div class="skeleton-shimmer" style="width: 100%; height: 28px; border-radius: 6px;"></div>
+                <div style="font-size: 13px; color: #5f5b52; line-height: 1.45;">
+                    오늘의 메뉴 수량과 픽업 가능 시간을 실시간으로 확인 중입니다.
+                </div>
+            </div>
+
+            <div class="atelier-gold-bar-track" style="margin-bottom: 2px;">
+                <div class="atelier-gold-bar-fill"></div>
+            </div>
+
+            <div class="atelier-status-chip" style="align-self: center; padding: 7px 14px; font-size: 12px;">
+                <span class="atelier-status-dot"></span>
+                <span>잠시만 기다려 주세요 · 최신 현황 반영 중</span>
+            </div>
+
+            <div class="atelier-skel-group" style="margin-top: 4px;">
+                <div class="atelier-skel-box">
+                    <div class="atelier-skel-row">
+                        <div class="atelier-shimmer atelier-skel-thumb"></div>
+                        <div class="atelier-skel-lines">
+                            <div class="atelier-shimmer atelier-skel-line-md"></div>
+                            <div class="atelier-shimmer atelier-skel-line-lg"></div>
+                            <div class="atelier-shimmer atelier-skel-line-md" style="width: 38%;"></div>
+                        </div>
+                    </div>
+                    <div class="atelier-shimmer atelier-skel-line-bar"></div>
+                </div>
+
+                <div class="atelier-skel-box">
+                    <div class="atelier-skel-row">
+                        <div class="atelier-shimmer atelier-skel-thumb"></div>
+                        <div class="atelier-skel-lines">
+                            <div class="atelier-shimmer atelier-skel-line-md" style="width: 28%;"></div>
+                            <div class="atelier-shimmer atelier-skel-line-lg" style="width: 68%;"></div>
+                            <div class="atelier-shimmer atelier-skel-line-md" style="width: 36%;"></div>
+                        </div>
+                    </div>
+                    <div class="atelier-shimmer atelier-skel-line-bar"></div>
+                </div>
             </div>
         </div>
 
@@ -2921,108 +3182,125 @@
         </div>
     </div>
 
-    <div id="searchModal" class="modal" style="z-index: 10008;">
-        <div class="modal-content"
-            style="position: relative; display: flex; flex-direction: column; max-height: 88vh; padding: 22px 16px;">
-            <h3 style="color:var(--text-main); flex-shrink: 0; margin-top: 0;">내 예약 내용 수정하기</h3>
+    <div id="modalLoadingBox" class="menu-grid atelier-unified-card"
+        style="margin: 10px 0; padding: 16px 14px; text-align: center;">
+        <div class="atelier-eyebrow-pill" style="align-self: center; font-size: 10.5px; padding: 6px 12px;">✦ EDIT
+            RESERVATION</div>
 
-            <div id="modalLoadingBox" class="menu-grid" style="margin: 10px 0; text-align: left;">
-                <div class="skeleton-card" style="padding: 10px;">
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <div class="skeleton-shimmer"
-                            style="width: 50px; height: 50px; border-radius: 8px; flex-shrink: 0;"></div>
-                        <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
-                            <div class="skeleton-shimmer" style="width: 70%; height: 12px;"></div>
-                            <div class="skeleton-shimmer" style="width: 40%; height: 12px;"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-shimmer" style="width: 100%; height: 28px; border-radius: 6px;"></div>
-                </div>
-            </div>
+        <div class="atelier-ring-loader" style="width: 58px; height: 58px; margin: 10px auto 8px;">
+            <div class="atelier-ring-arc"></div>
+            <div class="atelier-ring-center" style="width: 40px; height: 40px; font-size: 18px;">✏️</div>
+        </div>
 
-            <div id="searchResultArea"
-                style="margin-top:10px; text-align:left; background:#FAFAF9; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 20px;">
-                <div
-                    style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; color: #8C6D1F; text-align: center; margin-bottom: 12px; line-height: 1.4; font-weight: 500;">
-                    💡 <b>돈까스 소스는 기본 1개만 제공 됩니다.</b><br>(추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
-                </div>
+        <div style="font-size: 16px; font-weight: 800; color: #191815; line-height: 1.3; margin-bottom: 4px;">
+            예약 내역을 불러오고 있습니다
+        </div>
+        <div style="font-size: 12.5px; color: #5f5b52; line-height: 1.45; margin-bottom: 10px;">
+            기존 주문 내역과 변경 가능한 픽업 시간을 확인 중입니다.
+        </div>
 
-                <div class="form-group" style="margin-bottom:12px;">
-                    <span
-                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">조리
-                        방식 변경</span>
-                    <div class="radio-group">
-                        <div class="radio-btn">
-                            <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장"
-                                onchange="handleEditCookTypeChange()">
-                            <label for="editCook1" style="font-size:13.5px; min-height:42px;">튀겨서 포장</label>
-                        </div>
-                        <div class="radio-btn">
-                            <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)"
-                                onchange="handleEditCookTypeChange()">
-                            <label for="editCook2" style="font-size:13.5px; min-height:42px;">생고기(반죽+빵가루)</label>
-                        </div>
-                    </div>
-                    <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
-                        <div class="cook-guide-copy">
-                            <span id="editCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
-                            <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해
-                                주세요.</span>
-                        </div>
-                        <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn"
-                            onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
+        <div class="atelier-gold-bar-track" style="margin-bottom: 10px;">
+            <div class="atelier-gold-bar-fill"></div>
+        </div>
+
+        <div class="atelier-status-chip" style="align-self: center; padding: 6px 12px; font-size: 11.5px;">
+            <span class="atelier-status-dot"></span>
+            <span>잠시만 기다려 주세요 · 내역 안전 조회 중</span>
+        </div>
+
+        <div class="atelier-skel-group" style="margin-top: 10px;">
+            <div class="atelier-skel-box" style="padding: 10px;">
+                <div class="atelier-skel-row">
+                    <div class="atelier-shimmer atelier-skel-thumb" style="width: 42px; height: 42px;"></div>
+                    <div class="atelier-skel-lines">
+                        <div class="atelier-shimmer atelier-skel-line-lg" style="width: 70%;"></div>
+                        <div class="atelier-shimmer atelier-skel-line-md" style="width: 40%;"></div>
                     </div>
                 </div>
-
-                <div class="form-group" style="margin-top:6px; margin-bottom:10px;">
-                    <span
-                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">메뉴별
-                        수량 변경</span>
-                    <div id="editMenuCardContainer" class="menu-grid"></div>
-                </div>
-
-                <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
-                    <span
-                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">추가
-                        소스 변경</span>
-                    <div class="inline-helper-note" style="margin-top: 0; margin-bottom: 6px;">
-                        💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가분만 선택해 주세요.
-                    </div>
-                    <div id="editSauceCardContainer" class="sauce-grid"></div>
-                </div>
-
-                <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
-                        style="color:var(--text-main); font-weight:700;"></span></p>
-
-                <div class="form-group" style="margin-top:6px; margin-bottom:4px;" id="editPickupFormGroup">
-                    <span
-                        style="font-size:14px; display:block; margin-bottom:5px; font-weight:700; color:var(--text-main);">변경할
-                        픽업 시간 선택</span>
-                    <select id="newPickupTime" style="padding:11px; font-size:14px;"
-                        onchange="handleEditTimeSelectChange(this)"></select>
-                    <div id="editBusyInfoBox" class="busy-info-box"></div>
-                </div>
-            </div>
-
-            <div id="searchModalActionBtns"
-                style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
-                <div class="sticky-summary-bar" style="margin-bottom: 6px;">
-                    <div class="sticky-summary-header">
-                        <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
-                        <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span
-                                id="editTotalPrice" style="color: #B45309;">0</span>원</span>
-                    </div>
-                    <div id="editSelectedSummary" style="color: var(--text-main); line-height: 1.35;">선택된 메뉴가 없습니다.
-                    </div>
-                </div>
-
-                <button id="updateBtn" class="modal-btn"
-                    style="background-color:var(--accent-dark); margin-top:0; padding:12px; margin-bottom:5px;"
-                    onclick="updateReservation()">변경된 내용 저장하기</button>
-                <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:10px;"
-                    onclick="closeSearchModal()">닫기</button>
+                <div class="atelier-shimmer atelier-skel-line-bar" style="height: 22px;"></div>
             </div>
         </div>
+    </div>
+
+    <div id="searchResultArea"
+        style="margin-top:10px; text-align:left; background:#FAFAF9; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-color); display: none; overflow-y: auto; flex-grow: 1; padding-bottom: 20px;">
+        <div
+            style="background: var(--accent-gold-bg); border: 1.5px solid #F3E6C8; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; color: #8C6D1F; text-align: center; margin-bottom: 12px; line-height: 1.4; font-weight: 500;">
+            💡 <b>돈까스 소스는 기본 1개만 제공 됩니다.</b><br>(추가 소스가 필요하신 경우 아래에서 선택 가능합니다)
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+            <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">조리
+                방식 변경</span>
+            <div class="radio-group">
+                <div class="radio-btn">
+                    <input type="radio" id="editCook1" name="editCookType" value="🍗 튀겨서 포장"
+                        onchange="handleEditCookTypeChange()">
+                    <label for="editCook1" style="font-size:13.5px; min-height:42px;">튀겨서 포장</label>
+                </div>
+                <div class="radio-btn">
+                    <input type="radio" id="editCook2" name="editCookType" value="🥩 생고기(반죽+빵가루)"
+                        onchange="handleEditCookTypeChange()">
+                    <label for="editCook2" style="font-size:13.5px; min-height:42px;">생고기(반죽+빵가루)</label>
+                </div>
+            </div>
+            <div id="editCookGuideStrip" class="cook-guide-strip fried-mode">
+                <div class="cook-guide-copy">
+                    <span id="editCookGuideEyebrow" class="cook-guide-eyebrow">조리 · 보관 안내</span>
+                    <span id="editCookGuideText" class="cook-guide-strip-text">식었을 때도 바삭하게 데우는 방법을 확인해
+                        주세요.</span>
+                </div>
+                <button type="button" id="editCookGuideBtn" class="cook-guide-trigger-btn"
+                    onclick="openCookingGuideModal('reheat')">데우는 법 보기 →</button>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top:6px; margin-bottom:10px;">
+            <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">메뉴별
+                수량 변경</span>
+            <div id="editMenuCardContainer" class="menu-grid"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
+            <span style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">추가
+                소스 변경</span>
+            <div class="inline-helper-note" style="margin-top: 0; margin-bottom: 6px;">
+                💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가분만 선택해 주세요.
+            </div>
+            <div id="editSauceCardContainer" class="sauce-grid"></div>
+        </div>
+
+        <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
+                style="color:var(--text-main); font-weight:700;"></span></p>
+
+        <div class="form-group" style="margin-top:6px; margin-bottom:4px;" id="editPickupFormGroup">
+            <span style="font-size:14px; display:block; margin-bottom:5px; font-weight:700; color:var(--text-main);">변경할
+                픽업 시간 선택</span>
+            <select id="newPickupTime" style="padding:11px; font-size:14px;"
+                onchange="handleEditTimeSelectChange(this)"></select>
+            <div id="editBusyInfoBox" class="busy-info-box"></div>
+        </div>
+    </div>
+
+    <div id="searchModalActionBtns"
+        style="display: none; flex-shrink: 0; background: #ffffff; padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 6px;">
+        <div class="sticky-summary-bar" style="margin-bottom: 6px;">
+            <div class="sticky-summary-header">
+                <span style="font-weight: 700; color: var(--text-sub); font-size: 12px;">변경할 예약 내역</span>
+                <span style="font-weight: 800; color: var(--accent-dark); font-size: 14px;">총 <span id="editTotalPrice"
+                        style="color: #B45309;">0</span>원</span>
+            </div>
+            <div id="editSelectedSummary" style="color: var(--text-main); line-height: 1.35;">선택된 메뉴가 없습니다.
+            </div>
+        </div>
+
+        <button id="updateBtn" class="modal-btn"
+            style="background-color:var(--accent-dark); margin-top:0; padding:12px; margin-bottom:5px;"
+            onclick="updateReservation()">변경된 내용 저장하기</button>
+        <button id="searchCloseBtn" class="modal-btn close-btn" style="margin-top:0; padding:10px;"
+            onclick="closeSearchModal()">닫기</button>
+    </div>
+    </div>
     </div>
 
     <script>
