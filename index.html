@@ -2582,6 +2582,58 @@
             font-weight: 800;
             cursor: pointer;
         }
+        .luxury-notice-box {
+            text-align: left;
+            background: linear-gradient(180deg, #FDFBF7 0%, #F7F2E7 100%);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin: 14px 0 18px 0;
+        }
+        .luxury-notice-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed rgba(197, 160, 89, 0.35);
+            font-size: 13px;
+        }
+        .luxury-time-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #1C1B18;
+            color: #F6DFA4;
+            font-weight: 700;
+            font-size: 12.5px;
+            letter-spacing: 0.02em;
+        }
+        .luxury-notice-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #4A463F;
+        }
+        .luxury-notice-list li {
+            position: relative;
+            padding-left: 14px;
+            margin-bottom: 6px;
+        }
+        .luxury-notice-list li:last-child {
+            margin-bottom: 0;
+        }
+        .luxury-notice-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #B68D40;
+            font-weight: 900;
+        }
     </style>
 </head>
 
@@ -7142,10 +7194,22 @@
 
             if (isOrigInDelayWindow && selectEl.value && selectEl.value !== editOriginalPickupTime && !editGraceWarnedOnce) {
                 editGraceWarnedOnce = true;
-                showCustomAlert(
-                    "시간 변경 안내",
-                    `다른 시간을 선택하면 <b>이전 시간(${editOriginalPickupTime})</b>은 선택 불가능합니다.<br><br>현재 예약하신 시간 <b>[${editOriginalPickupTime}]</b>은 매장 준비중(지연 ${effectivePrepMins}분) 시간대에 포함되었으나 기존 예약 시간으로는 선택 가능하며, 다른 시간으로 변경 후 저장하시면 이전 시간은 다시 선택할 수 없습니다.`
-                );
+                const safeOrigTime = escapeHtml(editOriginalPickupTime);
+                const safePrepMins = escapeHtml(String(effectivePrepMins));
+                const noticeHtml = `
+                    <div class="luxury-notice-box">
+                        <div class="luxury-notice-row">
+                            <span>기존 예약 시간</span>
+                            <span class="luxury-time-pill">${safeOrigTime}</span>
+                        </div>
+                        <ul class="luxury-notice-list">
+                            <li>다른 시간을 선택하면 <b>이전 시간(${safeOrigTime})</b>은 선택할 수 없습니다.</li>
+                            <li>현재 예약하신 <b>[${safeOrigTime}]</b> 시간대는 매장 준비중(지연 ${safePrepMins}분) 시간대에 포함되었으나 기존 예약 시간으로는 선택 가능합니다.</li>
+                            <li>다른 시간으로 변경 후 저장하시면 이전 시간은 다시 선택할 수 없습니다.</li>
+                        </ul>
+                    </div>
+                `;
+                showCustomAlert("시간 변경 안내", noticeHtml);
             }
         }
 
