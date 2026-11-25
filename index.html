@@ -6098,6 +6098,8 @@
 
         let __lastRenderedCouponText = '';
 
+        let __lockedCouponText = '';
+
         function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
@@ -6200,20 +6202,35 @@
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
-            const existingCouponText = noticeCouponVal ? String(noticeCouponVal.innerText || '').trim() : '';
-            const backupText = existingCouponText || __lastRenderedCouponText;
-
             if (labelPart) {
-                __lastRenderedCouponText = couponSummaryText;
-            } else if (backupText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
-                couponSummaryText = backupText;
-                __lastRenderedCouponText = backupText;
+                __lockedCouponText = couponSummaryText;
+            } else if (__lockedCouponText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
+                couponSummaryText = __lockedCouponText;
             }
 
             if (noticeCouponRow && noticeCouponVal) {
                 if (couponSummaryText) {
                     noticeCouponVal.innerText = couponSummaryText;
                     noticeCouponRow.style.setProperty('display', 'flex', 'important');
+
+                    if (!noticeCouponRow.dataset.guardAttached && typeof MutationObserver !== 'undefined') {
+                        noticeCouponRow.dataset.guardAttached = '1';
+                        const guardObserver = new MutationObserver(() => {
+                            if (!__lockedCouponText) return;
+                            if (String(noticeCouponVal.innerText || '').trim() !== __lockedCouponText) {
+                                noticeCouponVal.innerText = __lockedCouponText;
+                            }
+                            if (noticeCouponRow.style.display !== 'flex') {
+                                noticeCouponRow.style.setProperty('display', 'flex', 'important');
+                            }
+                        });
+                        guardObserver.observe(noticeCouponRow, {
+                            attributes: true,
+                            childList: true,
+                            subtree: true,
+                            characterData: true
+                        });
+                    }
                 } else {
                     noticeCouponVal.innerText = '';
                     noticeCouponRow.style.setProperty('display', 'none', 'important');
@@ -6302,6 +6319,23 @@
                     }, 180);
                 }
             }
+
+            if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
+                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
+                if (!__shownAppliedCouponKeys.has(appliedKey)) {
+                    __shownAppliedCouponKeys.add(appliedKey);
+                    const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
+                    const origAmt = finalAmt + appliedDiscount;
+                    const couponObj = {
+                        code: rawCode,
+                        name: resData.couponName || rawCode
+                    };
+                    setTimeout(() => {
+                        showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
+                    }, 180);
+                }
+            }
+        }
 
             if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
                 const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
