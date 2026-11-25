@@ -6096,10 +6096,10 @@
         const __shownRewardCouponIds = new Set();
         const __shownAppliedCouponKeys = new Set();
 
-let __lastRenderedCouponOwner = '';
+        let __lastRenderedCouponOwner = '';
         let __lastRenderedCouponText = '';
 
-function renderActiveReservationNotice(resData) {
+        function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6199,6 +6199,15 @@ function renderActiveReservationNotice(resData) {
             const noticeBox = document.getElementById('alreadyOrderedNotice');
             const isNoticeVisible = noticeBox && window.getComputedStyle(noticeBox).display !== 'none';
             const existingCouponText = noticeCouponVal ? String(noticeCouponVal.innerText || '').trim() : '';
+
+            console.log('[COUPON RENDER]', {
+                nick: savedNick,
+                rowIndex: resData && resData.rowIndex,
+                couponSummaryText,
+                existingCouponText,
+                isNoticeVisible,
+                resDataKeys: resData ? Object.keys(resData) : []
+            });
 
             if (!couponSummaryText && isNoticeVisible && existingCouponText) {
                 couponSummaryText = existingCouponText;
