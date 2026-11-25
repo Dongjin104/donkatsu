@@ -6103,7 +6103,7 @@
 
         let __lockedCouponText = '';
 
-function renderActiveReservationNotice(resData) {
+        function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6169,11 +6169,35 @@ function renderActiveReservationNotice(resData) {
                 }
             }
 
-            const rawName = String((resData && resData.couponName) || '').trim();
-            const rawCode = String((resData && (resData.couponCode || resData.appliedCouponCode || resData.couponId)) || '').trim();
-            const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            let rawName = String((resData && (resData.couponName || resData.coupon_name || resData.title)) || '').trim();
+            const rawCode = String((resData && (resData.couponCode || resData.coupon_code || resData.appliedCouponCode || resData.couponId || resData.coupon_id)) || '').trim();
+            const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.coupon_discount || resData.discountAmount || resData.discount_amount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+
+            if (!rawName && (rawCode || appliedDiscount > 0)) {
+                const pools = [
+                    Array.isArray(window.globalMyCoupons) ? window.globalMyCoupons : [],
+                    Array.isArray(window.globalCouponList) ? window.globalCouponList : []
+                ];
+                for (let p = 0; p < pools.length; p++) {
+                    const arr = pools[p];
+                    const matched = arr.find(item => {
+                        if (!item) return false;
+                        const itemCode = String(item.code || item.couponId || item.coupon_id || '').trim();
+                        const itemAmt = parseInt(String(item.discountAmount ?? item.value ?? item.discount ?? '0').replace(/[^0-9]/g, ''), 10) || 0;
+                        if (rawCode && itemCode && itemCode.toUpperCase() === rawCode.toUpperCase()) return true;
+                        if (!rawCode && appliedDiscount > 0 && itemAmt === appliedDiscount) return true;
+                        return false;
+                    });
+                    if (matched) {
+                        rawName = String(matched.name || matched.couponName || matched.coupon_name || matched.title || '').trim();
+                        if (rawName) break;
+                    }
+                }
+            }
+
             const hasRealCoupon = Boolean(rawCode || appliedDiscount > 0 || (rawName && rawName !== '없음' && rawName !== '미사용'));
-            const labelPart = hasRealCoupon ? (rawName || rawCode) : '';
+            const fallbackName = appliedDiscount > 0 ? `${appliedDiscount.toLocaleString()}원 할인쿠폰` : '할인쿠폰';
+            const labelPart = hasRealCoupon ? (rawName || rawCode || fallbackName) : '';
 
             let couponSummaryText = '';
             if (hasRealCoupon) {
@@ -6182,7 +6206,7 @@ function renderActiveReservationNotice(resData) {
                 } else if (labelPart) {
                     couponSummaryText = labelPart;
                 } else if (appliedDiscount > 0) {
-                    couponSummaryText = `(-${appliedDiscount.toLocaleString()}원)`;
+                    couponSummaryText = `${fallbackName} (-${appliedDiscount.toLocaleString()}원)`;
                 }
             }
 
@@ -6327,7 +6351,7 @@ function renderActiveReservationNotice(resData) {
                     const origAmt = finalAmt + appliedDiscount;
                     const couponObj = {
                         code: rawCode,
-                        name: resData.couponName || rawCode
+                        name: labelPart || resData.couponName || rawCode
                     };
                     setTimeout(() => {
                         showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
