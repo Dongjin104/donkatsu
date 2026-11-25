@@ -7645,7 +7645,7 @@
             card.style.display = 'block';
         }
 
-        async function openSearchModal() {
+async function openSearchModal() {
             const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -7748,10 +7748,6 @@
                     isRaw
                 );
 
-                renderEditMenuAndSauceCards();
-                document.getElementById('resTime').innerText = normalizedPrevTime;
-                populateTimeSelect('newPickupTime', normalizedPrevTime, true);
-                updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
                 renderEditMenuAndSauceCards();
                 document.getElementById('resTime').innerText = normalizedPrevTime;
                 populateTimeSelect('newPickupTime', normalizedPrevTime, true);
