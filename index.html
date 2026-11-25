@@ -6639,6 +6639,9 @@
                 return [];
             }
 
+            window.isLoadingCoupons = false;
+            window.couponLoading = false;
+
             return fromServer
                 .filter(c => {
                     const st = String(c && c.status ? c.status : '사용가능').trim();
