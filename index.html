@@ -6096,7 +6096,10 @@
         const __shownRewardCouponIds = new Set();
         const __shownAppliedCouponKeys = new Set();
 
-function renderActiveReservationNotice(resData) {
+let __lastRenderedCouponOwner = '';
+        let __lastRenderedCouponText = '';
+
+        function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6165,11 +6168,27 @@ function renderActiveReservationNotice(resData) {
             const appliedCode = String((resData && (resData.couponCode || resData.appliedCouponCode || resData.couponId)) || '').trim();
             const appliedName = String((resData && (resData.couponName || resData.name)) || appliedCode).trim();
             const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
-            const couponSummaryText = (appliedCode || appliedName || appliedDiscount > 0)
+            let couponSummaryText = (appliedCode || appliedName || appliedDiscount > 0)
                 ? (appliedDiscount > 0
                     ? `${appliedName || appliedCode} (-${appliedDiscount.toLocaleString()}원)`
                     : (appliedName || appliedCode))
                 : '';
+
+            const cleanNick = String(savedNick || '').trim();
+            const cleanRow = String(resData.rowIndex || '').trim();
+            const ownerKey = `${cleanRow}|${cleanNick}`;
+
+            if (couponSummaryText) {
+                __lastRenderedCouponOwner = ownerKey;
+                __lastRenderedCouponText = couponSummaryText;
+            } else if (__lastRenderedCouponText && __lastRenderedCouponOwner) {
+                const [prevRow, prevNick] = __lastRenderedCouponOwner.split('|');
+                const sameRow = cleanRow && prevRow && cleanRow === prevRow;
+                const sameNick = cleanNick && prevNick && cleanNick === prevNick;
+                if (sameRow || sameNick || (!cleanRow && !cleanNick)) {
+                    couponSummaryText = __lastRenderedCouponText;
+                }
+            }
 
             let noticeCouponRow = document.getElementById('noticeCouponRowItem');
             let noticeCouponVal = document.getElementById('displayUsedCoupon');
@@ -6177,38 +6196,27 @@ function renderActiveReservationNotice(resData) {
                 const priceRow = dispPrice.closest('div, tr, li') || dispPrice.parentElement;
                 noticeCouponRow = document.createElement('div');
                 noticeCouponRow.id = 'noticeCouponRowItem';
-                noticeCouponRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;';
+                noticeCouponRow.className = 'order-info-row';
 
                 const labelSpan = document.createElement('span');
+                labelSpan.className = 'order-info-label';
                 labelSpan.textContent = '사용 쿠폰';
-                labelSpan.style.cssText = 'color:#6B7280;font-weight:500;';
 
                 noticeCouponVal = document.createElement('span');
                 noticeCouponVal.id = 'displayUsedCoupon';
-                noticeCouponVal.style.cssText = 'color:#B45309;font-weight:700;text-align:right;';
+                noticeCouponVal.className = 'order-info-value';
+                noticeCouponVal.style.cssText = 'color:#B45309;font-size:14px;font-weight:800;text-align:right;';
 
                 noticeCouponRow.appendChild(labelSpan);
                 noticeCouponRow.appendChild(noticeCouponVal);
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
-            let finalCouponText = couponSummaryText;
-            const prevCouponEl = document.getElementById('displayUsedCoupon');
-            const prevCouponText = prevCouponEl ? String(prevCouponEl.innerText || '').trim() : '';
-            const prevCouponRowOwner = noticeCouponRow ? String(noticeCouponRow.dataset.ownerKey || '').trim() : '';
-            const currentOwnerKey = `${String(resData.rowIndex || '').trim()}_${String(savedNick || '').trim()}`;
-
-            if (!finalCouponText && prevCouponText && prevCouponRowOwner && prevCouponRowOwner === currentOwnerKey) {
-                finalCouponText = prevCouponText;
-            }
-
             if (noticeCouponRow && noticeCouponVal) {
-                if (finalCouponText) {
-                    noticeCouponRow.dataset.ownerKey = currentOwnerKey;
-                    noticeCouponVal.innerText = finalCouponText;
+                if (couponSummaryText) {
+                    noticeCouponVal.innerText = couponSummaryText;
                     noticeCouponRow.style.display = 'flex';
                 } else {
-                    noticeCouponRow.dataset.ownerKey = '';
                     noticeCouponVal.innerText = '';
                     noticeCouponRow.style.display = 'none';
                 }
