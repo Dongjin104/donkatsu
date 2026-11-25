@@ -7677,7 +7677,7 @@ const __shownRewardCouponIds = new Set();
             }
         }
 
-        async function submitOrderToServer(payload, isQuick = false) {
+async function submitOrderToServer(payload, isQuick = false) {
             const keptY = captureScrollPos();
             if (isQuick) isQuickSubmitting = true;
             else isSubmitting = true;
@@ -7735,8 +7735,6 @@ const __shownRewardCouponIds = new Set();
                 }
 
                 if (data.result === 'success') {
-                    console.log('서버응답:', data);
-
                     const lastSummaryData = {
                         nickname: payload.nickname,
                         cookType: payload.cookType,
@@ -7756,7 +7754,12 @@ const __shownRewardCouponIds = new Set();
                         menu: payload.menuSummary
                     });
 
-                    const issuedCouponObj = data.issuedCoupon || data.newCoupon || data.rewardCoupon || null;
+                    const issuedCouponObj =
+                        data.issuedCoupon ||
+                        data.newCoupon ||
+                        data.rewardCoupon ||
+                        (Array.isArray(data.awardedCoupons) && data.awardedCoupons.length > 0 ? data.awardedCoupons[0] : null) ||
+                        null;
                     const couponCodeVal = data.couponCode || data.appliedCouponCode || payload.couponCode || '';
                     const couponDiscountVal = data.couponDiscount || data.discountAmount || payload.couponDiscount || 0;
                     const couponNameVal = data.couponName || payload.couponName || couponCodeVal;
@@ -7812,14 +7815,18 @@ const __shownRewardCouponIds = new Set();
 
                     const openCouponFlow = () => {
                         if (issuedCouponObj && typeof showCouponRewardPopup === 'function') {
+                            const normalizedReward = Object.assign({}, issuedCouponObj, {
+                                couponId: issuedCouponObj.couponId || issuedCouponObj.id || issuedCouponObj.code || '',
+                                couponName: issuedCouponObj.couponName || issuedCouponObj.name || issuedCouponObj.title || '신규 쿠폰',
+                                discountAmount: issuedCouponObj.discountAmount || issuedCouponObj.amount || issuedCouponObj.discount || issuedCouponObj.value || 0
+                            });
                             const rewardKey = String(
-                                issuedCouponObj.couponId ||
-                                issuedCouponObj.code ||
-                                `${issuedCouponObj.couponName || issuedCouponObj.name || ''}_${issuedCouponObj.discountAmount || issuedCouponObj.value || ''}`
+                                normalizedReward.couponId ||
+                                `${normalizedReward.couponName}_${normalizedReward.discountAmount}`
                             ).trim();
                             if (!rewardKey || !__shownRewardCouponIds.has(rewardKey)) {
                                 if (rewardKey) __shownRewardCouponIds.add(rewardKey);
-                                showCouponRewardPopup(issuedCouponObj);
+                                showCouponRewardPopup(normalizedReward);
                                 return;
                             }
                         }
