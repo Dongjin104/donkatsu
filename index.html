@@ -6047,7 +6047,7 @@
             }
         }
 
-const __shownRewardCouponIds = new Set();
+        const __shownRewardCouponIds = new Set();
         const __shownAppliedCouponKeys = new Set();
 
         function renderActiveReservationNotice(resData) {
@@ -7430,6 +7430,12 @@ const __shownRewardCouponIds = new Set();
                 : 0;
             const quickFinalTotalNum = Math.max(0, quickSubtotalNum - quickCouponDiscountNum);
             const totalPriceStr = quickFinalTotalNum.toLocaleString() + '원';
+            const activeCouponId = (activeQuickCoupon && quickCouponDiscountNum > 0)
+                ? String(activeQuickCoupon.couponId || activeQuickCoupon.id || activeQuickCoupon.code || '').trim()
+                : '';
+            const activeCouponLabel = (activeQuickCoupon && quickCouponDiscountNum > 0)
+                ? String(activeQuickCoupon.couponName || activeQuickCoupon.name || activeQuickCoupon.code || activeCouponId).trim()
+                : '';
 
             const payload = {
                 action: 'create',
@@ -7444,8 +7450,10 @@ const __shownRewardCouponIds = new Set();
                 pickupTime: pickupVal,
                 totalPrice: totalPriceStr,
                 originalPrice: quickSubtotalNum.toLocaleString() + '원',
-                couponCode: activeQuickCoupon && quickCouponDiscountNum > 0 ? activeQuickCoupon.code : '',
-                couponName: activeQuickCoupon && quickCouponDiscountNum > 0 ? (activeQuickCoupon.name || activeQuickCoupon.code) : '',
+                selectedCouponId: activeCouponId,
+                couponId: activeCouponId,
+                couponCode: activeCouponId,
+                couponName: activeCouponLabel,
                 couponDiscount: quickCouponDiscountNum.toLocaleString() + '원',
                 secretCode: '',
                 secretCodeValid: false
@@ -7633,9 +7641,15 @@ const __shownRewardCouponIds = new Set();
             const cookEl = document.querySelector('input[name="cookType"]:checked');
             const cookType = cookEl ? cookEl.value : '🍗 튀겨서 포장';
             const subtotalNum = calculateCurrentTotalPrice(orderItems, sauceItems);
-            const couponDiscountNum = computeCouponDiscountAmount(appliedMainCoupon, subtotalNum);
+            const couponDiscountNum = appliedMainCoupon ? computeCouponDiscountAmount(appliedMainCoupon, subtotalNum) : 0;
             const totalPriceNum = Math.max(0, subtotalNum - couponDiscountNum);
             const totalPriceStr = totalPriceNum.toLocaleString() + '원';
+            const activeMainId = (appliedMainCoupon && couponDiscountNum > 0)
+                ? String(appliedMainCoupon.couponId || appliedMainCoupon.id || appliedMainCoupon.code || '').trim()
+                : '';
+            const activeMainLabel = (appliedMainCoupon && couponDiscountNum > 0)
+                ? String(appliedMainCoupon.couponName || appliedMainCoupon.name || appliedMainCoupon.code || activeMainId).trim()
+                : '';
 
             const payload = {
                 action: 'create',
@@ -7650,8 +7664,10 @@ const __shownRewardCouponIds = new Set();
                 pickupTime: pickupVal,
                 totalPrice: totalPriceStr,
                 originalPrice: subtotalNum.toLocaleString() + '원',
-                couponCode: appliedMainCoupon ? appliedMainCoupon.code : '',
-                couponName: appliedMainCoupon ? (appliedMainCoupon.name || appliedMainCoupon.code) : '',
+                selectedCouponId: activeMainId,
+                couponId: activeMainId,
+                couponCode: activeMainId,
+                couponName: activeMainLabel,
                 couponDiscount: couponDiscountNum.toLocaleString() + '원',
                 secretCode: '',
                 secretCodeValid: false
@@ -7677,7 +7693,7 @@ const __shownRewardCouponIds = new Set();
             }
         }
 
-async function submitOrderToServer(payload, isQuick = false) {
+        async function submitOrderToServer(payload, isQuick = false) {
             const keptY = captureScrollPos();
             if (isQuick) isQuickSubmitting = true;
             else isSubmitting = true;
