@@ -1584,6 +1584,7 @@
             border: 1px solid rgba(197, 160, 89, 0.28);
             box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
         }
+
         .gallery-counter-pill {
             display: none;
             align-items: center;
@@ -2582,6 +2583,7 @@
             font-weight: 800;
             cursor: pointer;
         }
+
         .luxury-notice-box {
             text-align: left;
             background: linear-gradient(180deg, #FDFBF7 0%, #F7F2E7 100%);
@@ -2590,6 +2592,7 @@
             padding: 14px 16px;
             margin: 14px 0 18px 0;
         }
+
         .luxury-notice-row {
             display: flex;
             align-items: center;
@@ -2599,6 +2602,7 @@
             border-bottom: 1px dashed rgba(197, 160, 89, 0.35);
             font-size: 13px;
         }
+
         .luxury-time-pill {
             display: inline-flex;
             align-items: center;
@@ -2611,6 +2615,7 @@
             font-size: 12.5px;
             letter-spacing: 0.02em;
         }
+
         .luxury-notice-list {
             margin: 0;
             padding: 0;
@@ -2619,20 +2624,130 @@
             line-height: 1.55;
             color: #4A463F;
         }
+
         .luxury-notice-list li {
             position: relative;
             padding-left: 14px;
             margin-bottom: 6px;
         }
+
         .luxury-notice-list li:last-child {
             margin-bottom: 0;
         }
+
         .luxury-notice-list li::before {
             content: "•";
             position: absolute;
             left: 0;
             color: #B68D40;
             font-weight: 900;
+        }
+
+        /* ===== 프리미엄 쿠폰 박스 & 수정 모달 쿠폰 스타일 ===== */
+        .coupon-atelier-card {
+            background: linear-gradient(180deg, #FFFDF8 0%, #FAF6EC 100%);
+            border: 1.5px solid #DFC793;
+            border-radius: var(--radius-md);
+            padding: 13px 14px;
+            box-shadow: 0 6px 18px -6px rgba(197, 160, 89, 0.22);
+        }
+
+        .coupon-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .coupon-pill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1C1B18;
+            color: #F6DFA4;
+            border: 1px solid #C5A059;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+
+        .coupon-input-row {
+            display: flex;
+            gap: 7px;
+            align-items: stretch;
+        }
+
+        .coupon-input-row input[type="text"] {
+            flex: 1;
+            background: #FFFFFF;
+            border: 1.5px solid #DFC793;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .coupon-apply-btn {
+            flex-shrink: 0;
+            padding: 0 14px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid #C5A059;
+            background: linear-gradient(135deg, #1C1B18 0%, #2F2C26 100%);
+            color: #F6DFA4;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: all 0.18s ease;
+        }
+
+        .coupon-apply-btn:hover {
+            background: linear-gradient(135deg, #2B2822 0%, #3E3930 100%);
+            color: #FFFFFF;
+        }
+
+        .coupon-clear-btn {
+            flex-shrink: 0;
+            padding: 0 11px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            background: #F4F2EC;
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .coupon-status-banner {
+            margin-top: 8px;
+            padding: 8px 11px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.42;
+            word-break: keep-all;
+        }
+
+        .coupon-status-banner.is-applied {
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            color: #065F46;
+        }
+
+        .coupon-status-banner.is-error {
+            background: #FFF1F2;
+            border: 1px solid #FECDD3;
+            color: #9F1239;
+        }
+
+        .coupon-status-banner.is-info {
+            background: #FBF8F0;
+            border: 1px solid #E9D9B5;
+            color: #7A5C18;
         }
     </style>
 </head>
@@ -3354,9 +3469,46 @@
                 <select id="quickPickupTime" style="padding: 11px 12px; font-size: 14px;"
                     onchange="handleTimeChange(this, 'quickBusyInfoBox')"></select>
                 <div id="quickPickupTimeAlert" class="pickup-inline-alert"><span
-                        class="pickup-inline-alert-badge">PICKUP</span><span id="quickPickupTimeAlertText">원하시는 픽업 시간을 먼저
+                        class="pickup-inline-alert-badge">PICKUP</span><span id="quickPickupTimeAlertText">원하시는 픽업 시간을
+                        먼저
                         선택해 주세요.</span></div>
                 <div id="quickBusyInfoBox" class="busy-info-box"></div>
+            </div>
+
+            <!-- ▼ 바로 여기(재주문 버튼 묶음 바로 위)에 쿠폰 박스 추가 -->
+            <div class="form-group" id="quickCouponBox"
+                style="margin-top: 10px; margin-bottom: 12px; text-align: left;">
+                <div class="coupon-atelier-card">
+                    <div class="coupon-top-row">
+                        <label
+                            style="display: inline-flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; font-weight: 800; color: var(--text-main);">
+                            <input type="checkbox" id="quickUseCouponCheckbox" onchange="toggleQuickCouponUsage()">
+                            <span>빠른 재주문에도 쿠폰 사용하기</span>
+                        </label>
+                        <span id="quickCouponDiscountPreview"
+                            style="font-size: 12px; font-weight: 800; color: #9A6B16;">쿠폰 미사용</span>
+                    </div>
+
+                    <div id="quickCouponControls" style="display: none; margin-top: 8px;">
+                        <div class="coupon-input-row">
+                            <input type="text" id="quickCouponCodeInput" placeholder="쿠폰 코드 입력 (예: DONGCHEON1000)"
+                                autocomplete="off"
+                                onkeydown="if(event.key==='Enter'){ event.preventDefault(); applyQuickCouponCode(); }">
+                            <button type="button" class="coupon-apply-btn" onclick="applyQuickCouponCode()">적용</button>
+                            <button type="button" id="quickCouponClearBtn" class="coupon-clear-btn"
+                                style="display: none;" onclick="clearQuickCouponCode()">해제</button>
+                        </div>
+                        <div id="quickCouponStatus" class="coupon-status-banner is-info">
+                            체크 시 적용할 쿠폰 코드를 입력해 주세요. (기본값은 미사용)
+                        </div>
+                    </div>
+
+                    <div id="quickPriceSummaryLine"
+                        style="margin-top: 8px; font-size: 13px; font-weight: 700; color: var(--text-main); display: flex; justify-content: space-between;">
+                        <span>재주문 결제 예정 금액</span>
+                        <span id="quickFinalPriceText">0원</span>
+                    </div>
+                </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -3416,6 +3568,28 @@
                     💡 <b>돈까스 소스는 기본 1개 제공</b>됩니다. 추가로 더 필요하신 경우에만 수량을 선택해 주세요!
                 </div>
                 <div id="sauceCardContainer" class="sauce-grid"></div>
+            </div>
+
+            <div class="form-group" id="couponFormGroup">
+                <label for="couponCodeInput">쿠폰 적용 (선택)</label>
+                <div class="coupon-atelier-card">
+                    <div class="coupon-top-row">
+                        <span class="coupon-pill-tag">✦ VIP COUPON</span>
+                        <span id="couponDiscountPreview" style="font-size: 12px; font-weight: 800; color: #9A6B16;">적용된
+                            할인 없음</span>
+                    </div>
+                    <div class="coupon-input-row">
+                        <input type="text" id="couponCodeInput" placeholder="쿠폰 코드 입력 (예: DONGCHEON1000)"
+                            autocomplete="off"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); applyMainCouponCode(); }">
+                        <button type="button" class="coupon-apply-btn" onclick="applyMainCouponCode()">적용</button>
+                        <button type="button" id="mainCouponClearBtn" class="coupon-clear-btn" style="display: none;"
+                            onclick="clearMainCouponCode()">해제</button>
+                    </div>
+                    <div id="mainCouponStatus" class="coupon-status-banner is-info">
+                        보유하신 쿠폰 코드를 입력하시면 결제 예정 금액에 즉시 반영됩니다.
+                    </div>
+                </div>
             </div>
 
             <div class="form-group" id="pickupFormGroup">
@@ -4032,7 +4206,29 @@
                     </div>
                     <div id="editSauceCardContainer" class="sauce-grid"></div>
                 </div>
-
+                <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
+                    <span
+                        style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">쿠폰
+                        적용 상태</span>
+                    <div class="coupon-atelier-card">
+                        <div class="coupon-top-row">
+                            <span class="coupon-pill-tag">✦ APPLIED COUPON</span>
+                            <span id="editCouponDiscountPreview"
+                                style="font-size: 12px; font-weight: 800; color: #9A6B16;">0원 할인</span>
+                        </div>
+                        <div class="coupon-input-row">
+                            <input type="text" id="editCouponCodeInput" placeholder="쿠폰 코드 입력 또는 기존 쿠폰 유지"
+                                autocomplete="off"
+                                onkeydown="if(event.key==='Enter'){ event.preventDefault(); applyEditCouponCode(); }">
+                            <button type="button" class="coupon-apply-btn" onclick="applyEditCouponCode()">적용</button>
+                            <button type="button" id="editCouponClearBtn" class="coupon-clear-btn"
+                                onclick="clearEditCouponCode()">해제</button>
+                        </div>
+                        <div id="editCouponStatus" class="coupon-status-banner is-info">
+                            예약 수정 시 변경된 주문 금액 기준으로 쿠폰 할인이 자동 재계산됩니다.
+                        </div>
+                    </div>
+                </div>
                 <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
                         style="color:var(--text-main); font-weight:700;"></span></p>
 
@@ -5222,7 +5418,7 @@
                 if (nickInput && !isOrderFormEditingActive()) nickInput.value = "";
             }
         }
-        
+
         function showPickupTimeLuxuryAlert(message = '원하시는 픽업 시간을 먼저 선택해 주세요.') {
             const selectEl = document.getElementById('pickupTime');
             const alertEl = document.getElementById('pickupTimeAlert');
@@ -5899,6 +6095,166 @@
                 });
             }
             priceEl.innerText = calculateCurrentTotalPrice(mMap, sMap).toLocaleString();
+            if (listElId === 'mainSelectedSummaryList') syncCouponToOrderSummary(false);
+            if (listElId === 'editSelectedSummary') syncCouponToOrderSummary(true);
+        }
+
+        let appliedMainCoupon = null; // { code, name, discountType: 'amount'|'percent', value, minOrder }
+        let appliedEditCoupon = null;
+
+        function getAvailableCouponsList() {
+            const fromGlobal = (window.globalCouponList && Array.isArray(window.globalCouponList))
+                ? window.globalCouponList
+                : [];
+            if (fromGlobal.length > 0) return fromGlobal;
+            return [
+                { code: 'DONGCHEON1000', name: '장날동천 1,000원 할인쿠폰', discountType: 'amount', value: 1000, minOrder: 10000 },
+                { code: 'DONGCHEON2000', name: '장날동천 2,000원 할인쿠폰', discountType: 'amount', value: 2000, minOrder: 20000 },
+                { code: 'VIP10', name: '단골 10% 감사쿠폰', discountType: 'percent', value: 10, minOrder: 15000 }
+            ];
+        }
+
+        function findCouponByCode(rawCode) {
+            const clean = String(rawCode || '').trim().toUpperCase();
+            if (!clean) return null;
+            const list = getAvailableCouponsList();
+            return list.find(c => String(c.code || '').trim().toUpperCase() === clean) || null;
+        }
+
+        function computeCouponDiscountAmount(coupon, subtotalPrice) {
+            const sub = Math.max(0, Number(subtotalPrice) || 0);
+            if (!coupon || sub <= 0) return 0;
+            const minOrder = Number(coupon.minOrder) || 0;
+            if (minOrder > 0 && sub < minOrder) return 0;
+
+            let disc = 0;
+            if (coupon.discountType === 'percent') {
+                disc = Math.floor((sub * (Number(coupon.value) || 0)) / 100);
+            } else {
+                disc = Number(coupon.value) || 0;
+            }
+            return Math.min(sub, Math.max(0, disc));
+        }
+
+        function syncCouponToOrderSummary(isEditMode) {
+            const subtotal = isEditMode
+                ? calculateCurrentTotalPrice(editOrderItems, editSauceItems)
+                : calculateCurrentTotalPrice(orderItems, sauceItems);
+            const coupon = isEditMode ? appliedEditCoupon : appliedMainCoupon;
+            const previewEl = document.getElementById(isEditMode ? 'editCouponDiscountPreview' : 'couponDiscountPreview');
+            const statusEl = document.getElementById(isEditMode ? 'editCouponStatus' : 'mainCouponStatus');
+            const clearBtn = document.getElementById(isEditMode ? 'editCouponClearBtn' : 'mainCouponClearBtn');
+            const priceElId = isEditMode ? 'editTotalPrice' : 'mainTotalPrice';
+            const priceEl = document.getElementById(priceElId);
+
+            if (!coupon) {
+                if (previewEl) previewEl.textContent = '적용된 할인 없음';
+                if (clearBtn && !isEditMode) clearBtn.style.display = 'none';
+                if (priceEl) priceEl.innerText = subtotal.toLocaleString();
+                if (statusEl && statusEl.classList.contains('is-applied')) {
+                    statusEl.className = 'coupon-status-banner is-info';
+                    statusEl.textContent = '쿠폰이 적용되지 않은 상태입니다.';
+                }
+                return;
+            }
+
+            const minOrder = Number(coupon.minOrder) || 0;
+            if (minOrder > 0 && subtotal < minOrder) {
+                if (previewEl) previewEl.textContent = '최소 주문금액 미달';
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = `[${escapeHtml(coupon.code)}] 쿠폰은 ${minOrder.toLocaleString()}원 이상 주문 시 적용됩니다. (현재 ${subtotal.toLocaleString()}원)`;
+                }
+                if (priceEl) priceEl.innerText = subtotal.toLocaleString();
+                return;
+            }
+
+            const discount = computeCouponDiscountAmount(coupon, subtotal);
+            const finalPrice = Math.max(0, subtotal - discount);
+
+            if (clearBtn) clearBtn.style.display = 'inline-block';
+            if (previewEl) previewEl.textContent = `-${discount.toLocaleString()}원 할인`;
+            if (priceEl) priceEl.innerText = finalPrice.toLocaleString();
+            if (statusEl) {
+                statusEl.className = 'coupon-status-banner is-applied';
+                statusEl.textContent = `✓ ${escapeHtml(coupon.name || coupon.code)} 적용 완료 (-${discount.toLocaleString()}원 → 최종 ${finalPrice.toLocaleString()}원)`;
+            }
+        }
+
+        function applyMainCouponCode() {
+            const input = document.getElementById('couponCodeInput');
+            const statusEl = document.getElementById('mainCouponStatus');
+            const code = input ? input.value.trim() : '';
+            if (!code) {
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = '쿠폰 코드를 먼저 입력해 주세요.';
+                }
+                return;
+            }
+            const found = findCouponByCode(code);
+            if (!found) {
+                appliedMainCoupon = null;
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = '유효하지 않거나 만료된 쿠폰 코드입니다. 코드를 다시 확인해 주세요.';
+                }
+                syncCouponToOrderSummary(false);
+                return;
+            }
+            appliedMainCoupon = Object.assign({}, found);
+            if (input) input.value = found.code;
+            syncCouponToOrderSummary(false);
+        }
+
+        function clearMainCouponCode() {
+            appliedMainCoupon = null;
+            const input = document.getElementById('couponCodeInput');
+            const statusEl = document.getElementById('mainCouponStatus');
+            if (input) input.value = '';
+            if (statusEl) {
+                statusEl.className = 'coupon-status-banner is-info';
+                statusEl.textContent = '쿠폰 적용이 해제되었습니다.';
+            }
+            syncCouponToOrderSummary(false);
+        }
+
+        function applyEditCouponCode() {
+            const input = document.getElementById('editCouponCodeInput');
+            const statusEl = document.getElementById('editCouponStatus');
+            const code = input ? input.value.trim() : '';
+            if (!code) {
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = '적용할 쿠폰 코드를 입력해 주세요.';
+                }
+                return;
+            }
+            const found = findCouponByCode(code);
+            if (!found) {
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = '확인되지 않는 쿠폰 코드입니다.';
+                }
+                return;
+            }
+            appliedEditCoupon = Object.assign({}, found);
+            if (input) input.value = found.code;
+            syncCouponToOrderSummary(true);
+            if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
+        }
+
+        function clearEditCouponCode() {
+            appliedEditCoupon = null;
+            const input = document.getElementById('editCouponCodeInput');
+            const statusEl = document.getElementById('editCouponStatus');
+            if (input) input.value = '';
+            if (statusEl) {
+                statusEl.className = 'coupon-status-banner is-info';
+                statusEl.textContent = '수정 예약에서 쿠폰이 해제되었습니다. 저장 시 반영됩니다.';
+            }
+            syncCouponToOrderSummary(true);
+            if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
         }
 
         function applyUnifiedCookGuideStrip(stripId, eyebrowId, textId, btnId, isRaw) {
@@ -6448,6 +6804,7 @@
             if (quickReorderBox && quickReorderBox.style.display !== 'none' && qSel && qSel.value) {
                 handleTimeChange(qSel, 'quickBusyInfoBox');
             }
+            refreshQuickCouponSummary(summaryObj);
         }
 
         let isManualFormEditing = false;
@@ -6572,10 +6929,16 @@
             const sauceSummary = String(summaryObj.sauce || '없음').trim() || '없음';
             const cookType = String(summaryObj.cookType || '🍗 튀겨서 포장').trim();
 
-            const mMap = parseSummaryToMap(menuSummary);
-            const sMap = parseSummaryToMap(sauceSummary);
-            const computedTotal = calculateCurrentTotalPrice(mMap, sMap);
-            const totalPriceStr = (computedTotal > 0 ? computedTotal : (parseInt(String(summaryObj.totalPrice || '').replace(/[^0-9]/g, ''), 10) || 0)).toLocaleString() + '원';
+            const quickSubtotalNum = getQuickReorderSubtotal(summaryObj);
+            const quickCheckbox = document.getElementById('quickUseCouponCheckbox');
+            const isQuickCouponChecked = !!(quickCheckbox && quickCheckbox.checked);
+
+            const activeQuickCoupon = isQuickCouponChecked ? appliedQuickCoupon : null;
+            const quickCouponDiscountNum = activeQuickCoupon
+                ? computeCouponDiscountAmount(activeQuickCoupon, quickSubtotalNum)
+                : 0;
+            const quickFinalTotalNum = Math.max(0, quickSubtotalNum - quickCouponDiscountNum);
+            const totalPriceStr = quickFinalTotalNum.toLocaleString() + '원';
 
             const payload = {
                 action: 'create',
@@ -6589,11 +6952,139 @@
                 sauce: sauceSummary,
                 pickupTime: pickupVal,
                 totalPrice: totalPriceStr,
+                originalPrice: quickSubtotalNum.toLocaleString() + '원',
+                couponCode: activeQuickCoupon && quickCouponDiscountNum > 0 ? activeQuickCoupon.code : '',
+                couponName: activeQuickCoupon && quickCouponDiscountNum > 0 ? (activeQuickCoupon.name || activeQuickCoupon.code) : '',
+                couponDiscount: quickCouponDiscountNum.toLocaleString() + '원',
                 secretCode: '',
                 secretCodeValid: false
             };
 
             openSecretCodeGateModal(payload, true);
+        }
+
+        let appliedQuickCoupon = null;
+        let currentQuickSubtotal = 0;
+
+        function getQuickReorderSubtotal(summaryObj) {
+            if (!summaryObj) return 0;
+            const menuSummary = String(summaryObj.menu || '').trim();
+            const sauceSummary = String(summaryObj.sauce || '없음').trim() || '없음';
+            const mMap = parseSummaryToMap(menuSummary);
+            const sMap = parseSummaryToMap(sauceSummary);
+            const computedTotal = calculateCurrentTotalPrice(mMap, sMap);
+            return computedTotal > 0
+                ? computedTotal
+                : (parseInt(String(summaryObj.totalPrice || '').replace(/[^0-9]/g, ''), 10) || 0);
+        }
+
+        function refreshQuickCouponSummary(summaryObj) {
+            if (summaryObj) {
+                currentQuickSubtotal = getQuickReorderSubtotal(summaryObj);
+            }
+            const checkbox = document.getElementById('quickUseCouponCheckbox');
+            const controls = document.getElementById('quickCouponControls');
+            const previewEl = document.getElementById('quickCouponDiscountPreview');
+            const statusEl = document.getElementById('quickCouponStatus');
+            const clearBtn = document.getElementById('quickCouponClearBtn');
+            const finalPriceEl = document.getElementById('quickFinalPriceText');
+
+            const useCoupon = !!(checkbox && checkbox.checked);
+            if (controls) controls.style.display = useCoupon ? 'block' : 'none';
+
+            if (!useCoupon) {
+                if (previewEl) previewEl.textContent = '쿠폰 미사용';
+                if (finalPriceEl) finalPriceEl.textContent = currentQuickSubtotal.toLocaleString() + '원';
+                return;
+            }
+
+            if (!appliedQuickCoupon) {
+                if (previewEl) previewEl.textContent = '0원 할인';
+                if (clearBtn) clearBtn.style.display = 'none';
+                if (finalPriceEl) finalPriceEl.textContent = currentQuickSubtotal.toLocaleString() + '원';
+                return;
+            }
+
+            const minOrder = Number(appliedQuickCoupon.minOrder) || 0;
+            if (minOrder > 0 && currentQuickSubtotal < minOrder) {
+                if (previewEl) previewEl.textContent = '최소 주문금액 미달';
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = `[${escapeHtml(appliedQuickCoupon.code)}] 쿠폰은 ${minOrder.toLocaleString()}원 이상 주문 시 적용됩니다. (현재 ${currentQuickSubtotal.toLocaleString()}원)`;
+                }
+                if (finalPriceEl) finalPriceEl.textContent = currentQuickSubtotal.toLocaleString() + '원';
+                return;
+            }
+
+            const disc = computeCouponDiscountAmount(appliedQuickCoupon, currentQuickSubtotal);
+            const finalPrice = Math.max(0, currentQuickSubtotal - disc);
+
+            if (clearBtn) clearBtn.style.display = 'inline-block';
+            if (previewEl) previewEl.textContent = `-${disc.toLocaleString()}원 할인`;
+            if (finalPriceEl) finalPriceEl.textContent = finalPrice.toLocaleString() + '원';
+            if (statusEl) {
+                statusEl.className = 'coupon-status-banner is-applied';
+                statusEl.textContent = `✓ ${escapeHtml(appliedQuickCoupon.name || appliedQuickCoupon.code)} 적용 (-${disc.toLocaleString()}원 → ${finalPrice.toLocaleString()}원)`;
+            }
+        }
+
+        function toggleQuickCouponUsage() {
+            const checkbox = document.getElementById('quickUseCouponCheckbox');
+            const useCoupon = !!(checkbox && checkbox.checked);
+            if (!useCoupon) {
+                appliedQuickCoupon = null;
+                const input = document.getElementById('quickCouponCodeInput');
+                if (input) input.value = '';
+            } else if (!appliedQuickCoupon && appliedMainCoupon) {
+                const input = document.getElementById('quickCouponCodeInput');
+                if (input && !input.value.trim()) input.value = appliedMainCoupon.code;
+            }
+            refreshQuickCouponSummary();
+        }
+
+        function applyQuickCouponCode() {
+            const checkbox = document.getElementById('quickUseCouponCheckbox');
+            if (checkbox && !checkbox.checked) {
+                checkbox.checked = true;
+            }
+            const input = document.getElementById('quickCouponCodeInput');
+            const statusEl = document.getElementById('quickCouponStatus');
+            const code = input ? input.value.trim() : '';
+
+            if (!code) {
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = '쿠폰 코드를 먼저 입력해 주세요.';
+                }
+                return;
+            }
+
+            const found = findCouponByCode(code);
+            if (!found) {
+                appliedQuickCoupon = null;
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-error';
+                    statusEl.textContent = '유효하지 않은 쿠폰 코드입니다.';
+                }
+                refreshQuickCouponSummary();
+                return;
+            }
+
+            appliedQuickCoupon = Object.assign({}, found);
+            if (input) input.value = found.code;
+            refreshQuickCouponSummary();
+        }
+
+        function clearQuickCouponCode() {
+            appliedQuickCoupon = null;
+            const input = document.getElementById('quickCouponCodeInput');
+            const statusEl = document.getElementById('quickCouponStatus');
+            if (input) input.value = '';
+            if (statusEl) {
+                statusEl.className = 'coupon-status-banner is-info';
+                statusEl.textContent = '빠른 재주문 쿠폰이 해제되었습니다.';
+            }
+            refreshQuickCouponSummary();
         }
 
         document.getElementById('orderForm').addEventListener('submit', function (e) {
@@ -6646,7 +7137,9 @@
 
             const cookEl = document.querySelector('input[name="cookType"]:checked');
             const cookType = cookEl ? cookEl.value : '🍗 튀겨서 포장';
-            const totalPriceNum = calculateCurrentTotalPrice(orderItems, sauceItems);
+            const subtotalNum = calculateCurrentTotalPrice(orderItems, sauceItems);
+            const couponDiscountNum = computeCouponDiscountAmount(appliedMainCoupon, subtotalNum);
+            const totalPriceNum = Math.max(0, subtotalNum - couponDiscountNum);
             const totalPriceStr = totalPriceNum.toLocaleString() + '원';
 
             const payload = {
@@ -6661,6 +7154,10 @@
                 sauce: sauceSummary,
                 pickupTime: pickupVal,
                 totalPrice: totalPriceStr,
+                originalPrice: subtotalNum.toLocaleString() + '원',
+                couponCode: appliedMainCoupon ? appliedMainCoupon.code : '',
+                couponName: appliedMainCoupon ? (appliedMainCoupon.name || appliedMainCoupon.code) : '',
+                couponDiscount: couponDiscountNum.toLocaleString() + '원',
                 secretCode: '',
                 secretCodeValid: false
             };
@@ -8403,7 +8900,7 @@
             <button type="button" class="luxury-notice-btn" onclick="closeLuxuryMenuAlert()">메뉴 고르러 가기</button>
         </div>
     </div>
-    
+
 </body>
 
 </html>

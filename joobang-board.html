@@ -275,6 +275,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 6px;
         }
 
         .time-group {
@@ -302,6 +303,22 @@
             white-space: nowrap;
         }
 
+        .coupon-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, rgba(197, 160, 89, 0.22) 0%, rgba(197, 160, 89, 0.08) 100%);
+            color: #f3d79b;
+            border: 1px solid rgba(197, 160, 89, 0.48);
+            box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.12);
+            font-size: 0.66rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+
         .cooking-badge {
             display: inline-block;
             background: var(--surface-sub);
@@ -312,6 +329,7 @@
             padding: 2px 7px;
             border-radius: 4px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .cooking-badge.special {
@@ -333,6 +351,7 @@
             align-items: center;
             justify-content: space-between;
             margin-top: 2px;
+            gap: 6px;
         }
 
         .sub-info-group {
@@ -354,6 +373,13 @@
             font-weight: 600;
         }
 
+        .price-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
         .price-tag {
             font-size: 0.85rem;
             font-weight: 800;
@@ -363,6 +389,23 @@
             padding: 2px 7px;
             border-radius: 5px;
             white-space: nowrap;
+            letter-spacing: -0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .price-tag.discounted {
+            color: #f6dfa4;
+            background: linear-gradient(135deg, rgba(197, 160, 89, 0.22) 0%, rgba(74, 222, 128, 0.14) 100%);
+            border: 1px solid rgba(197, 160, 89, 0.55);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .price-discount-sub {
+            font-size: 0.64rem;
+            font-weight: 700;
+            color: #4ade80;
             letter-spacing: -0.02em;
         }
 
@@ -694,6 +737,8 @@
                 n: o.nickname,
                 p: o.totalPrice,
                 ep: o.eventPrize || o.eventWinner || '',
+                uc: o.usedCoupon || '',
+                cd: Number(o.couponDiscount) || 0,
                 k: normalizeKakaoId(o.kakaoId)
             })));
 
@@ -729,16 +774,29 @@
                 const cookingVal = String(item.cooking || '').trim();
                 const isSpecialCooking = cookingVal.includes('비튀김') || cookingVal.includes('생고기') || cookingVal.includes('안튀김');
 
+                const usedCouponText = String(item.usedCoupon || '').trim();
+                const couponDiscountNum = Math.max(0, Number(String(item.couponDiscount || 0).replace(/[^0-9]/g, '')) || 0);
+                const hasCoupon = Boolean(usedCouponText || couponDiscountNum > 0);
+
                 let priceDisplay = '';
+                let hasNumericPrice = false;
                 if (item.totalPrice !== undefined && item.totalPrice !== '') {
                     let num = Number(String(item.totalPrice).replace(/[^0-9]/g, ''));
-                    priceDisplay = !isNaN(num) && num > 0 ? num.toLocaleString() + '원' : String(item.totalPrice);
+                    if (!isNaN(num) && (num > 0 || hasCoupon)) {
+                        priceDisplay = num.toLocaleString() + '원';
+                        hasNumericPrice = true;
+                    } else {
+                        priceDisplay = String(item.totalPrice);
+                    }
+                } else if (hasCoupon) {
+                    priceDisplay = '0원';
+                    hasNumericPrice = true;
                 }
 
                 let eventText = item.eventWinner || item.eventPrize || item.event || '';
                 if (!eventText) {
                     for (let key in item) {
-                        if (key === 'kakaoId' || key === 'rowIndex' || key === 'totalPrice') continue;
+                        if (key === 'kakaoId' || key === 'rowIndex' || key === 'totalPrice' || key === 'usedCoupon' || key === 'couponDiscount') continue;
                         let val = String(item[key] || '');
                         if (val.includes('당첨') || val.includes('서비스')) {
                             eventText = val;
@@ -752,6 +810,26 @@
                     eventDetailHtml = `<span class="winner-badge">🎁 ${escapeHtml(eventText)}</span>`;
                 }
 
+                let couponBadgeHtml = '';
+                if (hasCoupon) {
+                    const couponLabel = usedCouponText
+                        ? usedCouponText
+                        : `쿠폰 할인 (-${couponDiscountNum.toLocaleString()}원)`;
+                    couponBadgeHtml = `<span class="coupon-badge">🎫 ${escapeHtml(couponLabel)}</span>`;
+                }
+
+                let priceHtml = '';
+                if (priceDisplay) {
+                    if (hasCoupon) {
+                        const subText = (couponDiscountNum > 0 && usedCouponText && !usedCouponText.includes('원'))
+                            ? `<span class="price-discount-sub">(-${couponDiscountNum.toLocaleString()}원)</span>`
+                            : `<span class="price-discount-sub">할인적용</span>`;
+                        priceHtml = `<div class="price-tag discounted">💰 ${escapeHtml(priceDisplay)} ${subText}</div>`;
+                    } else {
+                        priceHtml = `<div class="price-tag">💰 ${escapeHtml(priceDisplay)}</div>`;
+                    }
+                }
+
                 const safeRowIndex = Number(item.rowIndex) || 0;
                 const safeStatusJs = escapeJsSingleQuote(statusVal);
 
@@ -762,6 +840,7 @@
                                 <div class="time-group">
                                     <span class="time-tag">⏰ ${escapeHtml(item.pickupTime || '')}</span>
                                     ${eventDetailHtml}
+                                    ${couponBadgeHtml}
                                 </div>
                                 <span class="cooking-badge ${isSpecialCooking ? 'special' : ''}">조리: ${escapeHtml(cookingVal || '튀김')}</span>
                             </div>
@@ -771,7 +850,9 @@
                                     ${item.extraSauce && item.extraSauce !== '없음' ? '<span class="sauce-text">소스: ' + escapeHtml(item.extraSauce) + '</span>' : ''}
                                     <span class="nickname-text">👤 ${escapeHtml(item.nickname || '')}</span>
                                 </div>
-                                ${priceDisplay ? '<div class="price-tag">💰 ' + escapeHtml(priceDisplay) + '</div>' : ''}
+                                <div class="price-group">
+                                    ${priceHtml}
+                                </div>
                             </div>
                         </div>
                         <div class="btn-group">
