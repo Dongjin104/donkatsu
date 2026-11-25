@@ -6202,11 +6202,26 @@
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
-            const lockedPrev = String(window.__lockedCouponText || '').trim();
+            const cleanNick = String(savedNick || '').trim();
+            const cleanRow = String(resData.rowIndex || '').trim();
+            const storageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
+
+            let savedCouponText = '';
+            try {
+                savedCouponText = String(localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || window.__lockedCouponText || '').trim();
+            } catch (e) {
+                savedCouponText = String(window.__lockedCouponText || '').trim();
+            }
+
             if (labelPart) {
                 window.__lockedCouponText = couponSummaryText;
-            } else if (lockedPrev && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
-                couponSummaryText = lockedPrev;
+                try {
+                    localStorage.setItem(storageKey, couponSummaryText);
+                    sessionStorage.setItem(storageKey, couponSummaryText);
+                } catch (e) {}
+            } else if (savedCouponText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
+                couponSummaryText = savedCouponText;
+                window.__lockedCouponText = savedCouponText;
             }
 
             if (noticeCouponRow && noticeCouponVal) {
@@ -6217,7 +6232,7 @@
                     if (!noticeCouponRow.dataset.guardAttached && typeof MutationObserver !== 'undefined') {
                         noticeCouponRow.dataset.guardAttached = '1';
                         const guardObserver = new MutationObserver(() => {
-                            const targetText = String(window.__lockedCouponText || '').trim();
+                            const targetText = String(window.__lockedCouponText || couponSummaryText || '').trim();
                             if (!targetText) return;
                             if (String(noticeCouponVal.innerText || '').trim() !== targetText) {
                                 noticeCouponVal.innerText = targetText;
