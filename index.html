@@ -6103,7 +6103,7 @@
 
         let __lockedCouponText = '';
 
-        function renderActiveReservationNotice(resData) {
+function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6169,18 +6169,21 @@
                 }
             }
 
-            const rawName = String((resData && (resData.couponName || resData.name)) || '').trim();
+            const rawName = String((resData && resData.couponName) || '').trim();
             const rawCode = String((resData && (resData.couponCode || resData.appliedCouponCode || resData.couponId)) || '').trim();
             const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
-            const labelPart = rawName || rawCode;
+            const hasRealCoupon = Boolean(rawCode || appliedDiscount > 0 || (rawName && rawName !== '없음' && rawName !== '미사용'));
+            const labelPart = hasRealCoupon ? (rawName || rawCode) : '';
 
             let couponSummaryText = '';
-            if (labelPart && appliedDiscount > 0) {
-                couponSummaryText = `${labelPart} (-${appliedDiscount.toLocaleString()}원)`;
-            } else if (labelPart) {
-                couponSummaryText = labelPart;
-            } else if (appliedDiscount > 0) {
-                couponSummaryText = `(-${appliedDiscount.toLocaleString()}원)`;
+            if (hasRealCoupon) {
+                if (labelPart && appliedDiscount > 0) {
+                    couponSummaryText = `${labelPart} (-${appliedDiscount.toLocaleString()}원)`;
+                } else if (labelPart) {
+                    couponSummaryText = labelPart;
+                } else if (appliedDiscount > 0) {
+                    couponSummaryText = `(-${appliedDiscount.toLocaleString()}원)`;
+                }
             }
 
             let noticeCouponRow = document.getElementById('noticeCouponRowItem');
@@ -6209,48 +6212,24 @@
             const cleanRow = String(resData.rowIndex || '').trim();
             const storageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
 
-            let savedCouponText = '';
-            try {
-                savedCouponText = String(localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || window.__lockedCouponText || '').trim();
-            } catch (e) {
-                savedCouponText = String(window.__lockedCouponText || '').trim();
-            }
-
-            if (labelPart) {
+            if (couponSummaryText) {
                 window.__lockedCouponText = couponSummaryText;
                 try {
                     localStorage.setItem(storageKey, couponSummaryText);
                     sessionStorage.setItem(storageKey, couponSummaryText);
                 } catch (e) { }
-            } else if (savedCouponText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
-                couponSummaryText = savedCouponText;
-                window.__lockedCouponText = savedCouponText;
+            } else {
+                window.__lockedCouponText = '';
+                try {
+                    localStorage.removeItem(storageKey);
+                    sessionStorage.removeItem(storageKey);
+                } catch (e) { }
             }
 
             if (noticeCouponRow && noticeCouponVal) {
                 if (couponSummaryText) {
                     noticeCouponVal.innerText = couponSummaryText;
                     noticeCouponRow.style.setProperty('display', 'flex', 'important');
-
-                    if (!noticeCouponRow.dataset.guardAttached && typeof MutationObserver !== 'undefined') {
-                        noticeCouponRow.dataset.guardAttached = '1';
-                        const guardObserver = new MutationObserver(() => {
-                            const targetText = String(window.__lockedCouponText || couponSummaryText || '').trim();
-                            if (!targetText) return;
-                            if (String(noticeCouponVal.innerText || '').trim() !== targetText) {
-                                noticeCouponVal.innerText = targetText;
-                            }
-                            if (noticeCouponRow.style.display !== 'flex') {
-                                noticeCouponRow.style.setProperty('display', 'flex', 'important');
-                            }
-                        });
-                        guardObserver.observe(noticeCouponRow, {
-                            attributes: true,
-                            childList: true,
-                            subtree: true,
-                            characterData: true
-                        });
-                    }
                 } else {
                     noticeCouponVal.innerText = '';
                     noticeCouponRow.style.setProperty('display', 'none', 'important');
