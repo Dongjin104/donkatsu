@@ -6096,7 +6096,6 @@
         const __shownRewardCouponIds = new Set();
         const __shownAppliedCouponKeys = new Set();
 
-        let __lastRenderedCouponOwner = '';
         let __lastRenderedCouponText = '';
 
         function renderActiveReservationNotice(resData) {
@@ -6165,14 +6164,19 @@
                 }
             }
 
-            const appliedCode = String((resData && (resData.couponCode || resData.appliedCouponCode || resData.couponId)) || '').trim();
-            const appliedName = String((resData && (resData.couponName || resData.name)) || appliedCode).trim();
+            const rawName = String((resData && (resData.couponName || resData.name)) || '').trim();
+            const rawCode = String((resData && (resData.couponCode || resData.appliedCouponCode || resData.couponId)) || '').trim();
             const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
-            let couponSummaryText = (appliedCode || appliedName || appliedDiscount > 0)
-                ? (appliedDiscount > 0
-                    ? `${appliedName || appliedCode} (-${appliedDiscount.toLocaleString()}원)`
-                    : (appliedName || appliedCode))
-                : '';
+            const labelPart = rawName || rawCode;
+
+            let couponSummaryText = '';
+            if (labelPart && appliedDiscount > 0) {
+                couponSummaryText = `${labelPart} (-${appliedDiscount.toLocaleString()}원)`;
+            } else if (labelPart) {
+                couponSummaryText = labelPart;
+            } else if (appliedDiscount > 0) {
+                couponSummaryText = `(-${appliedDiscount.toLocaleString()}원)`;
+            }
 
             let noticeCouponRow = document.getElementById('noticeCouponRowItem');
             let noticeCouponVal = document.getElementById('displayUsedCoupon');
@@ -6196,21 +6200,14 @@
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
-            const noticeBox = document.getElementById('alreadyOrderedNotice');
-            const isNoticeVisible = noticeBox && window.getComputedStyle(noticeBox).display !== 'none';
             const existingCouponText = noticeCouponVal ? String(noticeCouponVal.innerText || '').trim() : '';
+            const backupText = existingCouponText || __lastRenderedCouponText;
 
-            console.log('[COUPON RENDER]', {
-                nick: savedNick,
-                rowIndex: resData && resData.rowIndex,
-                couponSummaryText,
-                existingCouponText,
-                isNoticeVisible,
-                resDataKeys: resData ? Object.keys(resData) : []
-            });
-
-            if (!couponSummaryText && isNoticeVisible && existingCouponText) {
-                couponSummaryText = existingCouponText;
+            if (labelPart) {
+                __lastRenderedCouponText = couponSummaryText;
+            } else if (backupText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
+                couponSummaryText = backupText;
+                __lastRenderedCouponText = backupText;
             }
 
             if (noticeCouponRow && noticeCouponVal) {
@@ -6306,15 +6303,15 @@
                 }
             }
 
-            if (!rewardShown && appliedCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
-                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${appliedCode}_${appliedDiscount}_${parsedFinalPrice}`;
+            if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
+                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
                 if (!__shownAppliedCouponKeys.has(appliedKey)) {
                     __shownAppliedCouponKeys.add(appliedKey);
                     const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
                     const origAmt = finalAmt + appliedDiscount;
                     const couponObj = {
-                        code: appliedCode,
-                        name: resData.couponName || appliedCode
+                        code: rawCode,
+                        name: resData.couponName || rawCode
                     };
                     setTimeout(() => {
                         showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
