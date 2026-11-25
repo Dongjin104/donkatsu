@@ -6218,7 +6218,7 @@
                 try {
                     localStorage.setItem(storageKey, couponSummaryText);
                     sessionStorage.setItem(storageKey, couponSummaryText);
-                } catch (e) {}
+                } catch (e) { }
             } else if (savedCouponText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
                 couponSummaryText = savedCouponText;
                 window.__lockedCouponText = savedCouponText;
@@ -6703,12 +6703,31 @@
             return `${name} — ${benefit}${cond}`;
         }
 
+        function setCouponSelectLoading(selectId, isLoading) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+
+            if (isLoading) {
+                sel.dataset.couponLoading = '1';
+                sel.disabled = true;
+                sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
+            } else {
+                sel.dataset.couponLoading = '0';
+                sel.disabled = false;
+            }
+        }
+
         function populateCouponSelectBox(selectId, selectedCode) {
             const sel = document.getElementById(selectId);
             if (!sel) return;
 
             const list = getAvailableCouponsList();
             const currentCode = String(selectedCode || '').trim().toUpperCase();
+            const isCouponLoading = Boolean(
+                window.isLoadingCoupons ||
+                window.couponLoading ||
+                sel.dataset.couponLoading === '1'
+            );
 
             const mergedList = list.slice();
             if (currentCode && !mergedList.some(c => String(c.code || '').trim().toUpperCase() === currentCode)) {
@@ -6719,6 +6738,13 @@
                     value: 0,
                     minOrder: 0
                 });
+            }
+
+            if (mergedList.length === 0 && isCouponLoading) {
+                sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
+                sel.value = '';
+                sel.disabled = true;
+                return;
             }
 
             let html = `<option value="">쿠폰 선택 안 함 (미사용)</option>`;
@@ -6734,6 +6760,7 @@
 
             sel.innerHTML = html;
             sel.value = currentCode;
+            sel.disabled = false;
         }
 
         function onSelectMainCouponDrop(code) {
