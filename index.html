@@ -7678,6 +7678,7 @@ const __shownRewardCouponIds = new Set();
         }
 
         async function submitOrderToServer(payload, isQuick = false) {
+            console.log('서버응답:', data);
             const keptY = captureScrollPos();
             if (isQuick) isQuickSubmitting = true;
             else isSubmitting = true;
