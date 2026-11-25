@@ -5060,6 +5060,46 @@
             }
             if (timeEl) timeEl.textContent = (payload && payload.pickupTime) ? normalizeKoreanTimeLabel(payload.pickupTime) : '-';
             if (priceEl) priceEl.textContent = (payload && payload.totalPrice) ? String(payload.totalPrice) : '0원';
+
+            const couponCode = String((payload && (payload.couponCode || payload.appliedCouponCode || payload.couponId)) || '').trim();
+            const couponName = String((payload && (payload.couponName || payload.name)) || couponCode).trim();
+            const discountNum = parseInt(String((payload && (payload.couponDiscount || payload.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            const couponDisplayText = (couponCode || couponName || discountNum > 0)
+                ? (discountNum > 0
+                    ? `${couponName || couponCode} (-${discountNum.toLocaleString()}원)`
+                    : (couponName || couponCode))
+                : '';
+
+            let couponRowEl = document.getElementById('successCouponRowItem');
+            let couponValEl = document.getElementById('successCouponVal');
+            if (!couponRowEl && priceEl && priceEl.parentElement) {
+                const priceRow = priceEl.closest('div, tr, li') || priceEl.parentElement;
+                couponRowEl = document.createElement('div');
+                couponRowEl.id = 'successCouponRowItem';
+                couponRowEl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = '사용 쿠폰';
+                labelSpan.style.cssText = 'color:#8B6F47;font-weight:600;';
+
+                couponValEl = document.createElement('span');
+                couponValEl.id = 'successCouponVal';
+                couponValEl.style.cssText = 'color:#B45309;font-weight:700;text-align:right;';
+
+                couponRowEl.appendChild(labelSpan);
+                couponRowEl.appendChild(couponValEl);
+                priceRow.parentElement.insertBefore(couponRowEl, priceRow);
+            }
+
+            if (couponRowEl && couponValEl) {
+                if (couponDisplayText) {
+                    couponValEl.textContent = couponDisplayText;
+                    couponRowEl.style.display = 'flex';
+                } else {
+                    couponValEl.textContent = '';
+                    couponRowEl.style.display = 'none';
+                }
+            }
         }
 
         function populateUpdateSuccessModalDetails(updatedObj) {
@@ -6116,6 +6156,46 @@
                 }
             }
 
+            const appliedCode = String((resData && (resData.couponCode || resData.appliedCouponCode || resData.couponId)) || '').trim();
+            const appliedName = String((resData && (resData.couponName || resData.name)) || appliedCode).trim();
+            const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            const couponSummaryText = (appliedCode || appliedName || appliedDiscount > 0)
+                ? (appliedDiscount > 0
+                    ? `${appliedName || appliedCode} (-${appliedDiscount.toLocaleString()}원)`
+                    : (appliedName || appliedCode))
+                : '';
+
+            let noticeCouponRow = document.getElementById('noticeCouponRowItem');
+            let noticeCouponVal = document.getElementById('displayUsedCoupon');
+            if (!noticeCouponRow && dispPrice && dispPrice.parentElement) {
+                const priceRow = dispPrice.closest('div, tr, li') || dispPrice.parentElement;
+                noticeCouponRow = document.createElement('div');
+                noticeCouponRow.id = 'noticeCouponRowItem';
+                noticeCouponRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = '사용 쿠폰';
+                labelSpan.style.cssText = 'color:#6B7280;font-weight:500;';
+
+                noticeCouponVal = document.createElement('span');
+                noticeCouponVal.id = 'displayUsedCoupon';
+                noticeCouponVal.style.cssText = 'color:#B45309;font-weight:700;text-align:right;';
+
+                noticeCouponRow.appendChild(labelSpan);
+                noticeCouponRow.appendChild(noticeCouponVal);
+                priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
+            }
+
+            if (noticeCouponRow && noticeCouponVal) {
+                if (couponSummaryText) {
+                    noticeCouponVal.innerText = couponSummaryText;
+                    noticeCouponRow.style.display = 'flex';
+                } else {
+                    noticeCouponVal.innerText = '';
+                    noticeCouponRow.style.display = 'none';
+                }
+            }
+
             const eventRow = document.getElementById('eventRowContainer');
             const eventPrizeEl = document.getElementById('displayEventPrize');
             const eventBanner = document.getElementById('eventSelectionBanner');
@@ -6162,6 +6242,59 @@
                     editMainBtn.innerHTML = '✏️ 내 예약 내용 수정하기';
                 }
             }
+
+            const fortuneSec = document.getElementById('fortuneSection');
+            if (fortuneSec) {
+                fortuneSec.style.display = globalFortuneEnabled ? 'block' : 'none';
+            }
+
+            setReservedSessionLock({
+                nickname: savedNick,
+                pickupTime: resData.pickupTime || '',
+                menu: resData.menu || ''
+            });
+
+            document.getElementById('alreadyOrderedNotice').style.display = 'block';
+            document.getElementById('pickupCompletedNotice').style.display = 'none';
+            document.getElementById('topNoticeBox').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('quickReorderBox').style.display = 'none';
+            document.getElementById('closedNotice').style.display = 'none';
+            preserveScrollPos(keptY);
+
+            const newlyIssued = (resData && (resData.issuedCoupon || resData.newCoupon || resData.rewardCoupon)) || null;
+            let rewardShown = false;
+            if (newlyIssued && typeof showCouponRewardPopup === 'function') {
+                const couponKey = String(
+                    newlyIssued.couponId ||
+                    newlyIssued.code ||
+                    `${newlyIssued.couponName || newlyIssued.name || ''}_${newlyIssued.discountAmount || newlyIssued.value || ''}`
+                ).trim();
+                if (couponKey && !__shownRewardCouponIds.has(couponKey)) {
+                    __shownRewardCouponIds.add(couponKey);
+                    rewardShown = true;
+                    setTimeout(() => {
+                        showCouponRewardPopup(newlyIssued);
+                    }, 180);
+                }
+            }
+
+            if (!rewardShown && appliedCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
+                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${appliedCode}_${appliedDiscount}_${parsedFinalPrice}`;
+                if (!__shownAppliedCouponKeys.has(appliedKey)) {
+                    __shownAppliedCouponKeys.add(appliedKey);
+                    const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
+                    const origAmt = finalAmt + appliedDiscount;
+                    const couponObj = {
+                        code: appliedCode,
+                        name: resData.couponName || appliedCode
+                    };
+                    setTimeout(() => {
+                        showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
+                    }, 180);
+                }
+            }
+        }
 
             const fortuneSec = document.getElementById('fortuneSection');
             if (fortuneSec) {
