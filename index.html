@@ -7684,6 +7684,9 @@
                     })
                 });
                 const rawData = await res.json();
+                if (Array.isArray(rawData.myCoupons)) {
+                    window.globalMyCoupons = rawData.myCoupons;
+                }
                 const data = rawData && rawData.reservation ? rawData.reservation : rawData;
 
                 if (rawData && (rawData.settings || Array.isArray(rawData.pickupTimesList))) {
