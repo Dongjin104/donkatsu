@@ -6202,10 +6202,11 @@
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
+            const lockedPrev = String(window.__lockedCouponText || '').trim();
             if (labelPart) {
-                __lockedCouponText = couponSummaryText;
-            } else if (__lockedCouponText && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
-                couponSummaryText = __lockedCouponText;
+                window.__lockedCouponText = couponSummaryText;
+            } else if (lockedPrev && (!couponSummaryText || couponSummaryText.startsWith('(-'))) {
+                couponSummaryText = lockedPrev;
             }
 
             if (noticeCouponRow && noticeCouponVal) {
@@ -6216,9 +6217,10 @@
                     if (!noticeCouponRow.dataset.guardAttached && typeof MutationObserver !== 'undefined') {
                         noticeCouponRow.dataset.guardAttached = '1';
                         const guardObserver = new MutationObserver(() => {
-                            if (!__lockedCouponText) return;
-                            if (String(noticeCouponVal.innerText || '').trim() !== __lockedCouponText) {
-                                noticeCouponVal.innerText = __lockedCouponText;
+                            const targetText = String(window.__lockedCouponText || '').trim();
+                            if (!targetText) return;
+                            if (String(noticeCouponVal.innerText || '').trim() !== targetText) {
+                                noticeCouponVal.innerText = targetText;
                             }
                             if (noticeCouponRow.style.display !== 'flex') {
                                 noticeCouponRow.style.setProperty('display', 'flex', 'important');
@@ -6319,23 +6321,6 @@
                     }, 180);
                 }
             }
-
-            if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
-                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
-                if (!__shownAppliedCouponKeys.has(appliedKey)) {
-                    __shownAppliedCouponKeys.add(appliedKey);
-                    const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
-                    const origAmt = finalAmt + appliedDiscount;
-                    const couponObj = {
-                        code: rawCode,
-                        name: resData.couponName || rawCode
-                    };
-                    setTimeout(() => {
-                        showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
-                    }, 180);
-                }
-            }
-        }
 
             if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
                 const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
