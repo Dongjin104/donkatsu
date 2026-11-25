@@ -6090,7 +6090,7 @@
         const __shownRewardCouponIds = new Set();
         const __shownAppliedCouponKeys = new Set();
 
-        function renderActiveReservationNotice(resData) {
+function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6279,61 +6279,6 @@
                 }
             }
 
-            if (!rewardShown && appliedCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
-                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${appliedCode}_${appliedDiscount}_${parsedFinalPrice}`;
-                if (!__shownAppliedCouponKeys.has(appliedKey)) {
-                    __shownAppliedCouponKeys.add(appliedKey);
-                    const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
-                    const origAmt = finalAmt + appliedDiscount;
-                    const couponObj = {
-                        code: appliedCode,
-                        name: resData.couponName || appliedCode
-                    };
-                    setTimeout(() => {
-                        showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
-                    }, 180);
-                }
-            }
-        }
-
-            const fortuneSec = document.getElementById('fortuneSection');
-            if (fortuneSec) {
-                fortuneSec.style.display = globalFortuneEnabled ? 'block' : 'none';
-            }
-
-            setReservedSessionLock({
-                nickname: savedNick,
-                pickupTime: resData.pickupTime || '',
-                menu: resData.menu || ''
-            });
-
-            document.getElementById('alreadyOrderedNotice').style.display = 'block';
-            document.getElementById('pickupCompletedNotice').style.display = 'none';
-            document.getElementById('topNoticeBox').style.display = 'none';
-            document.getElementById('orderForm').style.display = 'none';
-            document.getElementById('quickReorderBox').style.display = 'none';
-            document.getElementById('closedNotice').style.display = 'none';
-            preserveScrollPos(keptY);
-
-            const newlyIssued = (resData && (resData.issuedCoupon || resData.newCoupon || resData.rewardCoupon)) || null;
-            let rewardShown = false;
-            if (newlyIssued && typeof showCouponRewardPopup === 'function') {
-                const couponKey = String(
-                    newlyIssued.couponId ||
-                    newlyIssued.code ||
-                    `${newlyIssued.couponName || newlyIssued.name || ''}_${newlyIssued.discountAmount || newlyIssued.value || ''}`
-                ).trim();
-                if (couponKey && !__shownRewardCouponIds.has(couponKey)) {
-                    __shownRewardCouponIds.add(couponKey);
-                    rewardShown = true;
-                    setTimeout(() => {
-                        showCouponRewardPopup(newlyIssued);
-                    }, 180);
-                }
-            }
-
-            const appliedCode = String((resData && (resData.couponCode || resData.appliedCouponCode)) || '').trim();
-            const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
             if (!rewardShown && appliedCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
                 const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${appliedCode}_${appliedDiscount}_${parsedFinalPrice}`;
                 if (!__shownAppliedCouponKeys.has(appliedKey)) {
