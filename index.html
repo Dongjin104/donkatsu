@@ -6601,11 +6601,37 @@
         }
 
         function onSelectMainCouponDrop(code) {
-            const clean = String(code || '').trim().toUpperCase();
-            appliedMainCoupon = clean
-                ? Object.assign({}, findCouponByCode(clean) || { code: clean, name: clean, discountType: 'amount', value: 0, minOrder: 0 })
-                : null;
-            populateCouponSelectBox('mainCouponSelect', clean);
+            const rawCode = String(code || '').trim();
+            if (!rawCode) {
+                appliedMainCoupon = null;
+                populateCouponSelectBox('mainCouponSelect', '');
+                syncCouponToOrderSummary(false);
+                return;
+            }
+
+            const matched =
+                (typeof findCouponByCode === 'function' && (findCouponByCode(rawCode) || findCouponByCode(rawCode.toUpperCase()))) ||
+                getAvailableCouponsList().find(c =>
+                    String(c.couponId || '').trim() === rawCode ||
+                    String(c.code || '').trim() === rawCode ||
+                    String(c.code || '').trim().toUpperCase() === rawCode.toUpperCase()
+                ) ||
+                null;
+
+            appliedMainCoupon = matched
+                ? Object.assign({}, matched)
+                : {
+                    code: rawCode,
+                    couponId: rawCode,
+                    name: rawCode,
+                    couponName: rawCode,
+                    discountType: 'amount',
+                    value: 0,
+                    discountAmount: 0,
+                    minOrder: 0
+                };
+
+            populateCouponSelectBox('mainCouponSelect', matched ? (matched.couponId || matched.code || rawCode) : rawCode);
             syncCouponToOrderSummary(false);
         }
 
