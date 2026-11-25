@@ -6152,44 +6152,41 @@
                 ? window.globalMyCoupons
                 : ((window.globalCouponList && Array.isArray(window.globalCouponList)) ? window.globalCouponList : []);
 
-            if (fromServer.length > 0) {
-                return fromServer
-                    .filter(c => {
-                        const st = String(c && c.status ? c.status : '사용가능').trim();
-                        return st === '' || st === '사용가능' || st === 'AVAILABLE';
-                    })
-                    .map(c => {
-                        const rawCode = String(c.code || c.couponId || '').trim();
-                        const rawName = String(c.name || c.couponName || rawCode || '할인쿠폰').trim();
-                        const rawAmount = Number(
-                            c.value !== undefined ? c.value :
-                            (c.discountAmount !== undefined ? c.discountAmount :
-                            (c.discount !== undefined ? c.discount : 0))
-                        ) || 0;
-                        const rawMinOrder = Number(c.minOrder !== undefined ? c.minOrder : 0) || 0;
-                        const rawType = String(c.discountType || 'amount').trim();
-                        const rawExp = String(c.expiresText || c.expiresAt || '').trim();
-
-                        return Object.assign({}, c, {
-                            code: rawCode,
-                            couponId: rawCode,
-                            name: rawName,
-                            couponName: rawName,
-                            discountType: rawType,
-                            value: rawAmount,
-                            discountAmount: rawAmount,
-                            minOrder: rawMinOrder,
-                            expiresText: rawExp ? `${rawExp}까지` : '상시 사용가능',
-                            status: '사용가능'
-                        });
-                    })
-                    .filter(c => c.code !== '');
+            if (!fromServer || fromServer.length === 0) {
+                return [];
             }
 
-            return [
-                { code: 'DONGCHEON1000', name: '장날동천 1,000원 할인쿠폰', discountType: 'amount', value: 1000, discountAmount: 1000, minOrder: 10000, expiresText: '상시 사용가능', status: '사용가능' },
-                { code: 'DONGCHEON2000', name: '장날동천 2,000원 할인쿠폰', discountType: 'amount', value: 2000, discountAmount: 2000, minOrder: 20000, expiresText: '상시 사용가능', status: '사용가능' }
-            ];
+            return fromServer
+                .filter(c => {
+                    const st = String(c && c.status ? c.status : '사용가능').trim();
+                    return st === '' || st === '사용가능' || st === 'AVAILABLE';
+                })
+                .map(c => {
+                    const rawCode = String(c.code || c.couponId || '').trim();
+                    const rawName = String(c.name || c.couponName || rawCode || '할인쿠폰').trim();
+                    const rawAmount = Number(
+                        c.value !== undefined ? c.value :
+                        (c.discountAmount !== undefined ? c.discountAmount :
+                        (c.discount !== undefined ? c.discount : 0))
+                    ) || 0;
+                    const rawMinOrder = Number(c.minOrder !== undefined ? c.minOrder : 0) || 0;
+                    const rawType = String(c.discountType || 'amount').trim();
+                    const rawExp = String(c.expiresText || c.expiresAt || '').trim();
+
+                    return Object.assign({}, c, {
+                        code: rawCode,
+                        couponId: rawCode,
+                        name: rawName,
+                        couponName: rawName,
+                        discountType: rawType,
+                        value: rawAmount,
+                        discountAmount: rawAmount,
+                        minOrder: rawMinOrder,
+                        expiresText: rawExp ? `${rawExp}까지` : '상시 사용가능',
+                        status: '사용가능'
+                    });
+                })
+                .filter(c => c.code !== '');
         }
 
         function findCouponByCode(rawCode) {
