@@ -6169,9 +6169,82 @@
                 }
             }
 
-            let rawName = String((resData && (resData.couponName || resData.coupon_name || resData.title)) || '').trim();
-            const rawCode = String((resData && (resData.couponCode || resData.coupon_code || resData.appliedCouponCode || resData.couponId || resData.coupon_id)) || '').trim();
-            const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.coupon_discount || resData.discountAmount || resData.discount_amount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            const nestedCoupon = (resData && (resData.usedCoupon || resData.appliedCoupon || resData.couponInfo || resData.coupon)) || null;
+            let rawName = String(
+                (resData && (
+                    resData.couponName ||
+                    resData.coupon_name ||
+                    resData.usedCouponName ||
+                    resData.appliedCouponName ||
+                    resData.couponTitle ||
+                    resData.title
+                )) ||
+                (nestedCoupon && (
+                    nestedCoupon.name ||
+                    nestedCoupon.couponName ||
+                    nestedCoupon.coupon_name ||
+                    nestedCoupon.title
+                )) ||
+                ''
+            ).trim();
+
+            const rawCode = String(
+                (resData && (
+                    resData.couponCode ||
+                    resData.coupon_code ||
+                    resData.appliedCouponCode ||
+                    resData.usedCouponCode ||
+                    resData.couponId ||
+                    resData.coupon_id
+                )) ||
+                (nestedCoupon && (
+                    nestedCoupon.code ||
+                    nestedCoupon.couponId ||
+                    nestedCoupon.coupon_id
+                )) ||
+                ''
+            ).trim();
+
+            const appliedDiscount = parseInt(String(
+                (resData && (
+                    resData.couponDiscount ||
+                    resData.coupon_discount ||
+                    resData.discountAmount ||
+                    resData.discount_amount ||
+                    resData.discount
+                )) ||
+                (nestedCoupon && (
+                    nestedCoupon.discountAmount ||
+                    nestedCoupon.value ||
+                    nestedCoupon.discount
+                )) ||
+                '0'
+            ).replace(/[^0-9]/g, ''), 10) || 0;
+
+            const localCouponCandidates = [
+                typeof appliedQuickCoupon !== 'undefined' ? appliedQuickCoupon : null,
+                typeof appliedMainCoupon !== 'undefined' ? appliedMainCoupon : null,
+                typeof selectedCoupon !== 'undefined' ? selectedCoupon : null,
+                window.__lastAppliedCoupon || null
+            ].filter(Boolean);
+
+            if (!rawName) {
+                for (let i = 0; i < localCouponCandidates.length; i++) {
+                    const lc = localCouponCandidates[i];
+                    const lcCode = String(lc.code || lc.couponId || '').trim();
+                    const lcAmt = parseInt(String(lc.value ?? lc.discountAmount ?? lc.discount ?? '0').replace(/[^0-9]/g, ''), 10) || 0;
+                    const lcName = String(lc.name || lc.couponName || '').trim();
+                    if (!lcName) continue;
+                    if (rawCode && lcCode && lcCode.toUpperCase() === rawCode.toUpperCase()) {
+                        rawName = lcName;
+                        break;
+                    }
+                    if (!rawCode && appliedDiscount > 0 && lcAmt === appliedDiscount) {
+                        rawName = lcName;
+                        break;
+                    }
+                }
+            }
 
             if (!rawName && (rawCode || appliedDiscount > 0)) {
                 const pools = [
@@ -6359,7 +6432,6 @@
                 }
             }
         }
-
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
