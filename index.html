@@ -6727,13 +6727,12 @@
             const sel = document.getElementById(selectId);
             if (!sel) return;
 
+            const hasCouponArray =
+                (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
+                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0);
+
             const list = getAvailableCouponsList();
             const currentCode = String(selectedCode || '').trim().toUpperCase();
-            const isCouponLoading = Boolean(
-                window.isLoadingCoupons ||
-                window.couponLoading ||
-                sel.dataset.couponLoading === '1'
-            );
 
             const mergedList = list.slice();
             if (currentCode && !mergedList.some(c => String(c.code || '').trim().toUpperCase() === currentCode)) {
@@ -6746,7 +6745,7 @@
                 });
             }
 
-            if (mergedList.length === 0 && isCouponLoading) {
+            if (!hasCouponArray && !currentCode && window.isLoadingCoupons !== false) {
                 sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
                 sel.value = '';
                 sel.disabled = true;
