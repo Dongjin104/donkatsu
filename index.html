@@ -7150,10 +7150,17 @@
                 return;
             }
 
-            if (!appliedQuickCoupon) {
+            const hasSelectedCoupon = !!(appliedQuickCoupon && String(appliedQuickCoupon.code || '').trim());
+
+            if (!hasSelectedCoupon) {
+                appliedQuickCoupon = null;
                 if (previewEl) previewEl.textContent = '0원 할인';
                 if (clearBtn) clearBtn.style.display = 'none';
                 if (finalPriceEl) finalPriceEl.textContent = currentQuickSubtotal.toLocaleString() + '원';
+                if (statusEl) {
+                    statusEl.className = 'coupon-status-banner is-info';
+                    statusEl.textContent = '사용하실 쿠폰을 고르거나 "쿠폰 선택 안 함"을 유지해 주세요.';
+                }
                 return;
             }
 
