@@ -5022,7 +5022,11 @@
             if (alreadyEl) alreadyEl.style.display = 'block';
         }
 
+        let __pendingSuccessRewardCoupon = null;
+
         function populateSuccessModalDetails(payload, isQuick = false) {
+            __pendingSuccessRewardCoupon = (payload && (payload.issuedCoupon || payload.newCoupon || payload.rewardCoupon)) || null;
+
             const badgeEl = document.getElementById('successModalBadge');
             const titleEl = document.getElementById('successModalTitle');
             const subEl = document.getElementById('successModalSubtitle');
@@ -7750,6 +7754,11 @@ const __shownRewardCouponIds = new Set();
                         menu: payload.menuSummary
                     });
 
+                    const issuedCouponObj = data.issuedCoupon || data.newCoupon || data.rewardCoupon || null;
+                    const couponCodeVal = data.couponCode || data.appliedCouponCode || payload.couponCode || '';
+                    const couponDiscountVal = data.couponDiscount || data.discountAmount || payload.couponDiscount || 0;
+                    const couponNameVal = data.couponName || payload.couponName || couponCodeVal;
+
                     const createdReservationObj = {
                         result: 'found',
                         rowIndex: data.rowIndex || null,
@@ -7760,7 +7769,11 @@ const __shownRewardCouponIds = new Set();
                         pickupTime: payload.pickupTime,
                         totalPrice: payload.totalPrice,
                         status: '미확인',
-                        eventPrize: data.eventPrize || ''
+                        eventPrize: data.eventPrize || '',
+                        issuedCoupon: issuedCouponObj,
+                        couponCode: couponCodeVal,
+                        couponDiscount: couponDiscountVal,
+                        couponName: couponNameVal
                     };
                     saveCustomerStateCache({
                         type: 'active_order',
@@ -7773,7 +7786,13 @@ const __shownRewardCouponIds = new Set();
                         cachedEventMenuList = data.eventMenuList;
                     }
 
-                    populateSuccessModalDetails(payload, isQuick);
+                    const modalPayload = Object.assign({}, payload, {
+                        issuedCoupon: issuedCouponObj,
+                        couponCode: couponCodeVal,
+                        couponDiscount: couponDiscountVal,
+                        couponName: couponNameVal
+                    });
+                    populateSuccessModalDetails(modalPayload, isQuick);
 
                     if (showRoulette) {
                         if (data.isWinner) {
@@ -7784,6 +7803,45 @@ const __shownRewardCouponIds = new Set();
                     } else {
                         showModal('successModal');
                     }
+
+                    const numericDisc = parseInt(String(couponDiscountVal || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                    const numericFinal = parseInt(String(payload.totalPrice || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                    const numericOrig = numericFinal + numericDisc;
+
+                    const openCouponFlow = () => {
+                        if (issuedCouponObj && typeof showCouponRewardPopup === 'function') {
+                            const rewardKey = String(
+                                issuedCouponObj.couponId ||
+                                issuedCouponObj.code ||
+                                `${issuedCouponObj.couponName || issuedCouponObj.name || ''}_${issuedCouponObj.discountAmount || issuedCouponObj.value || ''}`
+                            ).trim();
+                            if (!rewardKey || !__shownRewardCouponIds.has(rewardKey)) {
+                                if (rewardKey) __shownRewardCouponIds.add(rewardKey);
+                                showCouponRewardPopup(issuedCouponObj);
+                                return;
+                            }
+                        }
+
+                        if (couponCodeVal && numericDisc > 0 && typeof showCouponAppliedPopup === 'function') {
+                            const appliedKey = `${String(data.rowIndex || payload.nickname || '')}_${couponCodeVal}_${numericDisc}_${numericFinal}`;
+                            if (!__shownAppliedCouponKeys.has(appliedKey)) {
+                                __shownAppliedCouponKeys.add(appliedKey);
+                                showCouponAppliedPopup(
+                                    { code: couponCodeVal, name: couponNameVal },
+                                    numericOrig,
+                                    numericDisc,
+                                    numericFinal
+                                );
+                            }
+                        }
+                    };
+
+                    if (!showRoulette && document.getElementById('successModal')) {
+                        setTimeout(openCouponFlow, 260);
+                    } else {
+                        setTimeout(openCouponFlow, 220);
+                    }
+
                     preserveScrollPos(keptY);
                 } else {
                     showCustomAlert("예약 안내", data.message || "예약 처리 중 문제가 발생했습니다. 다시 시도해 주세요.");
