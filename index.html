@@ -5859,6 +5859,7 @@
 
                 if (Array.isArray(data.myCoupons)) {
                     window.globalMyCoupons = data.myCoupons;
+                    window.isLoadingCoupons = false;
                     if (typeof populateCouponSelectBox === 'function') {
                         populateCouponSelectBox('quickCouponSelect', appliedQuickCoupon ? appliedQuickCoupon.code : '');
                         populateCouponSelectBox('mainCouponSelect', appliedMainCoupon ? appliedMainCoupon.code : '');
@@ -5866,6 +5867,8 @@
                     if (typeof refreshQuickCouponSummary === 'function') {
                         refreshQuickCouponSummary();
                     }
+                } else if (data) {
+                    window.isLoadingCoupons = false;
                 }
 
                 if (!forceApply && isPageSkeletonLoadingActive()) return;
@@ -8335,6 +8338,7 @@
                 if (Array.isArray(rawData.myCoupons)) {
                     window.globalMyCoupons = rawData.myCoupons;
                 }
+                window.isLoadingCoupons = false;
                 const data = rawData && rawData.reservation ? rawData.reservation : rawData;
 
                 if (rawData && (rawData.settings || Array.isArray(rawData.pickupTimesList))) {
@@ -8923,6 +8927,7 @@
                 if (data && Array.isArray(data.myCoupons)) {
                     window.globalMyCoupons = data.myCoupons;
                 }
+                window.isLoadingCoupons = false;
 
                 setLoadingSkeletonVisible(false);
 
