@@ -2804,11 +2804,186 @@
             color: #9A6B16;
             font-variant-numeric: tabular-nums;
         }
+
+        .vip-coupon-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(24, 16, 11, 0.68);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 99999;
+            opacity: 0;
+            transition: opacity 0.24s ease;
+        }
+
+        .vip-coupon-backdrop.is-open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .vip-coupon-card {
+            position: relative;
+            width: 100%;
+            max-width: 390px;
+            background: linear-gradient(165deg, #fffdf9 0%, #fbf5ea 100%);
+            border: 1px solid rgba(196, 154, 92, 0.45);
+            border-radius: 24px;
+            padding: 28px 22px 22px;
+            box-shadow: 0 24px 60px rgba(20, 12, 6, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            color: #24170f;
+            transform: translateY(14px) scale(0.97);
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+            overflow: hidden;
+        }
+
+        .vip-coupon-backdrop.is-open .vip-coupon-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .vip-coupon-card::before {
+            content: "";
+            position: absolute;
+            top: -70px;
+            right: -70px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(212, 163, 89, 0.24) 0%, rgba(212, 163, 89, 0) 70%);
+            pointer-events: none;
+        }
+
+        .vip-coupon-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            background: rgba(180, 126, 49, 0.13);
+            border: 1px solid rgba(180, 126, 49, 0.28);
+            color: #8c5a14;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 12px;
+        }
+
+        .vip-coupon-title {
+            margin: 0 0 8px;
+            font-size: 21px;
+            line-height: 1.32;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #1f140d;
+        }
+
+        .vip-coupon-sub {
+            margin: 0 0 18px;
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: #655245;
+        }
+
+        .vip-ticket-box {
+            position: relative;
+            background: #ffffff;
+            border: 1.5px dashed rgba(168, 120, 52, 0.45);
+            border-radius: 18px;
+            padding: 18px 16px;
+            margin-bottom: 18px;
+            text-align: center;
+            box-shadow: 0 8px 22px rgba(45, 29, 14, 0.06);
+        }
+
+        .vip-ticket-badge {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #9b671b;
+            margin-bottom: 6px;
+        }
+
+        .vip-ticket-amount {
+            font-size: 30px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            color: #b45309;
+            line-height: 1.15;
+            margin-bottom: 6px;
+        }
+
+        .vip-ticket-name {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #2b1d14;
+            margin-bottom: 8px;
+        }
+
+        .vip-ticket-meta {
+            font-size: 12px;
+            color: #7d6a5c;
+        }
+
+        .vip-coupon-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 2px;
+            font-size: 13.5px;
+            color: #5a483c;
+        }
+
+        .vip-coupon-summary-row.is-total {
+            margin-top: 6px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(120, 92, 65, 0.16);
+            font-size: 15px;
+            font-weight: 800;
+            color: #1f140d;
+        }
+
+        .vip-coupon-summary-val.is-discount {
+            font-weight: 800;
+            color: #b45309;
+        }
+
+        .vip-coupon-btn {
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #2b1b12 0%, #462c1d 100%);
+            color: #fff8eb;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(43, 27, 18, 0.25);
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .vip-coupon-btn:active {
+            transform: scale(0.98);
+            opacity: 0.94;
+        }
     </style>
 </head>
 
 <body>
     <div id="kakaoAuthMountPoint"></div>
+    <div id="vipCouponModalBackdrop" class="vip-coupon-backdrop"
+        onclick="if(event.target===this) closeVipCouponPopup();">
+        <div class="vip-coupon-card" role="dialog" aria-modal="true" aria-labelledby="vipCouponTitle">
+            <div id="vipCouponTag" class="vip-coupon-tag">✨ SPECIAL GIFT FOR YOU</div>
+            <h3 id="vipCouponTitle" class="vip-coupon-title"></h3>
+            <p id="vipCouponSub" class="vip-coupon-sub"></p>
+            <div id="vipCouponBody"></div>
+            <button type="button" id="vipCouponConfirmBtn" class="vip-coupon-btn"
+                onclick="closeVipCouponPopup();">확인했어요</button>
+        </div>
+    </div>
     <div id="blockedOverlay"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(28, 27, 24, 0.85); backdrop-filter: blur(6px); z-index: 99998; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; text-align: center;">
         <div
@@ -5868,6 +6043,9 @@
             }
         }
 
+const __shownRewardCouponIds = new Set();
+        const __shownAppliedCouponKeys = new Set();
+
         function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
@@ -5922,10 +6100,16 @@
             if (dispTime) dispTime.innerText = normalizeKoreanTimeLabel(resData.pickupTime || '');
 
             const dispPrice = document.getElementById('displayTotalPrice');
+            let parsedFinalPrice = 0;
             if (dispPrice) {
                 const rawPrice = resData.totalPrice || '';
                 const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10);
-                dispPrice.innerText = (!isNaN(numPrice) && numPrice > 0) ? (numPrice.toLocaleString() + '원') : String(rawPrice || '0원');
+                if (!isNaN(numPrice) && numPrice > 0) {
+                    parsedFinalPrice = numPrice;
+                    dispPrice.innerText = numPrice.toLocaleString() + '원';
+                } else {
+                    dispPrice.innerText = String(rawPrice || '0원');
+                }
             }
 
             const eventRow = document.getElementById('eventRowContainer');
@@ -5993,6 +6177,41 @@
             document.getElementById('quickReorderBox').style.display = 'none';
             document.getElementById('closedNotice').style.display = 'none';
             preserveScrollPos(keptY);
+
+            const newlyIssued = (resData && (resData.issuedCoupon || resData.newCoupon || resData.rewardCoupon)) || null;
+            let rewardShown = false;
+            if (newlyIssued && typeof showCouponRewardPopup === 'function') {
+                const couponKey = String(
+                    newlyIssued.couponId ||
+                    newlyIssued.code ||
+                    `${newlyIssued.couponName || newlyIssued.name || ''}_${newlyIssued.discountAmount || newlyIssued.value || ''}`
+                ).trim();
+                if (couponKey && !__shownRewardCouponIds.has(couponKey)) {
+                    __shownRewardCouponIds.add(couponKey);
+                    rewardShown = true;
+                    setTimeout(() => {
+                        showCouponRewardPopup(newlyIssued);
+                    }, 180);
+                }
+            }
+
+            const appliedCode = String((resData && (resData.couponCode || resData.appliedCouponCode)) || '').trim();
+            const appliedDiscount = parseInt(String((resData && (resData.couponDiscount || resData.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            if (!rewardShown && appliedCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
+                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${appliedCode}_${appliedDiscount}_${parsedFinalPrice}`;
+                if (!__shownAppliedCouponKeys.has(appliedKey)) {
+                    __shownAppliedCouponKeys.add(appliedKey);
+                    const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
+                    const origAmt = finalAmt + appliedDiscount;
+                    const couponObj = {
+                        code: appliedCode,
+                        name: resData.couponName || appliedCode
+                    };
+                    setTimeout(() => {
+                        showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
+                    }, 180);
+                }
+            }
         }
 
         const STORAGE_CACHE_KEYS = {
@@ -6153,6 +6372,119 @@
             if (listElId === 'editSelectedSummary') syncCouponToOrderSummary(true);
         }
 
+        let __vipCouponPopupCallback = null;
+
+        function openVipCouponPopup(options, onClose) {
+            const backdrop = document.getElementById('vipCouponModalBackdrop');
+            if (!backdrop) {
+                if (typeof onClose === 'function') onClose();
+                return;
+            }
+
+            const tagEl = document.getElementById('vipCouponTag');
+            const titleEl = document.getElementById('vipCouponTitle');
+            const subEl = document.getElementById('vipCouponSub');
+            const bodyEl = document.getElementById('vipCouponBody');
+            const btnEl = document.getElementById('vipCouponConfirmBtn');
+
+            if (tagEl) tagEl.textContent = options.tag || '✨ SPECIAL GIFT FOR YOU';
+            if (titleEl) titleEl.textContent = options.title || '';
+            if (subEl) subEl.textContent = options.subtitle || '';
+            if (bodyEl) bodyEl.innerHTML = options.bodyHtml || '';
+            if (btnEl) btnEl.textContent = options.buttonText || '감사히 받을게요';
+
+            __vipCouponPopupCallback = typeof onClose === 'function' ? onClose : null;
+            backdrop.classList.add('is-open');
+        }
+
+        function closeVipCouponPopup() {
+            const backdrop = document.getElementById('vipCouponModalBackdrop');
+            if (backdrop) {
+                backdrop.classList.remove('is-open');
+            }
+            const cb = __vipCouponPopupCallback;
+            __vipCouponPopupCallback = null;
+            if (typeof cb === 'function') {
+                cb();
+            }
+        }
+
+        function showCouponRewardPopup(coupon, onClose) {
+            if (!coupon) {
+                if (typeof onClose === 'function') onClose();
+                return;
+            }
+            const amount = Number(coupon.discountAmount !== undefined ? coupon.discountAmount : (coupon.value || 0)) || 0;
+            const name = String(coupon.couponName || coupon.name || '특별 할인쿠폰').trim();
+            const expText = coupon.expiresAt ? `${escapeHtml(String(coupon.expiresAt))}까지 사용 가능` : '다음 예약 시 바로 사용 가능';
+            const issueType = String(coupon.issueType || '').toUpperCase();
+
+            const isFirstOrder = issueType.includes('FIRST') || name.includes('첫예약');
+            const headline = isFirstOrder
+                ? '첫 예약 진심으로 감사드립니다'
+                : '특별 할인 쿠폰이 도착했어요';
+            const subline = isFirstOrder
+                ? '정성껏 준비한 첫 주문에 감사하는 마음을 담아 다음 예약에 바로 쓰실 수 있는 선물을 준비했어요.'
+                : '단골 고객님을 위한 감사 쿠폰이 발급되었습니다. 다음 주문 시 바로 혜택을 누려보세요.';
+
+            const bodyHtml = `
+                <div class="vip-ticket-box">
+                    <div class="vip-ticket-badge">${isFirstOrder ? 'FIRST ORDER REWARD' : 'VIP COUPON ISSUED'}</div>
+                    <div class="vip-ticket-amount">${amount.toLocaleString()}원 할인</div>
+                    <div class="vip-ticket-name">${escapeHtml(name)}</div>
+                    <div class="vip-ticket-meta">${expText}</div>
+                </div>
+            `;
+
+            openVipCouponPopup({
+                tag: isFirstOrder ? '🎁 FIRST RESERVATION GIFT' : '🎟️ NEW COUPON ARRIVED',
+                title: headline,
+                subtitle: subline,
+                bodyHtml: bodyHtml,
+                buttonText: '선물 쿠폰 받기'
+            }, onClose);
+        }
+
+        function showCouponAppliedPopup(couponInfo, originalPrice, discountAmount, finalPrice, onClose) {
+            const disc = Math.max(0, Number(discountAmount || 0));
+            if (!couponInfo || disc <= 0) {
+                if (typeof onClose === 'function') onClose();
+                return;
+            }
+            const orig = Math.max(0, Number(originalPrice || 0));
+            const fin = Math.max(0, Number(finalPrice !== undefined ? finalPrice : (orig - disc)));
+            const name = String(couponInfo.name || couponInfo.couponName || couponInfo.code || '할인쿠폰').trim();
+
+            const bodyHtml = `
+                <div class="vip-ticket-box">
+                    <div class="vip-ticket-badge">BENEFIT APPLIED</div>
+                    <div class="vip-ticket-amount">-${disc.toLocaleString()}원 절약</div>
+                    <div class="vip-ticket-name">${escapeHtml(name)}</div>
+                    <div class="vip-ticket-meta">현장 결제 금액이 알차게 줄어들었어요</div>
+                </div>
+                <div class="vip-coupon-summary-row">
+                    <span>기존 주문 금액</span>
+                    <span>${orig.toLocaleString()}원</span>
+                </div>
+                <div class="vip-coupon-summary-row">
+                    <span>쿠폰 할인</span>
+                    <span class="vip-coupon-summary-val is-discount">-${disc.toLocaleString()}원</span>
+                </div>
+                <div class="vip-coupon-summary-row is-total">
+                    <span>최종 결제 예정 금액</span>
+                    <span>${fin.toLocaleString()}원</span>
+                </div>
+            `;
+
+            openVipCouponPopup({
+                tag: '✨ COUPON APPLIED',
+                title: `${disc.toLocaleString()}원 할인 혜택이 적용됐어요`,
+                subtitle: '선택하신 쿠폰이 깔끔하게 반영되었습니다. 맛있는 시간 준비해 둘게요!',
+                bodyHtml: bodyHtml,
+                buttonText: '예약 내역 확인하기'
+            }, onClose);
+        }
+
         let appliedMainCoupon = null;
         let appliedEditCoupon = null;
         let appliedQuickCoupon = null;
@@ -6177,8 +6509,8 @@
                     const rawName = String(c.name || c.couponName || rawCode || '할인쿠폰').trim();
                     const rawAmount = Number(
                         c.value !== undefined ? c.value :
-                        (c.discountAmount !== undefined ? c.discountAmount :
-                        (c.discount !== undefined ? c.discount : 0))
+                            (c.discountAmount !== undefined ? c.discountAmount :
+                                (c.discount !== undefined ? c.discount : 0))
                     ) || 0;
                     const rawMinOrder = Number(c.minOrder !== undefined ? c.minOrder : 0) || 0;
                     const rawType = String(c.discountType || 'amount').trim();
@@ -7689,7 +8021,7 @@
             card.style.display = 'block';
         }
 
-async function openSearchModal() {
+        async function openSearchModal() {
             const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
