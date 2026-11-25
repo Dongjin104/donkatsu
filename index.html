@@ -6099,7 +6099,7 @@
 let __lastRenderedCouponOwner = '';
         let __lastRenderedCouponText = '';
 
-        function renderActiveReservationNotice(resData) {
+function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6174,22 +6174,6 @@ let __lastRenderedCouponOwner = '';
                     : (appliedName || appliedCode))
                 : '';
 
-            const cleanNick = String(savedNick || '').trim();
-            const cleanRow = String(resData.rowIndex || '').trim();
-            const ownerKey = `${cleanRow}|${cleanNick}`;
-
-            if (couponSummaryText) {
-                __lastRenderedCouponOwner = ownerKey;
-                __lastRenderedCouponText = couponSummaryText;
-            } else if (__lastRenderedCouponText && __lastRenderedCouponOwner) {
-                const [prevRow, prevNick] = __lastRenderedCouponOwner.split('|');
-                const sameRow = cleanRow && prevRow && cleanRow === prevRow;
-                const sameNick = cleanNick && prevNick && cleanNick === prevNick;
-                if (sameRow || sameNick || (!cleanRow && !cleanNick)) {
-                    couponSummaryText = __lastRenderedCouponText;
-                }
-            }
-
             let noticeCouponRow = document.getElementById('noticeCouponRowItem');
             let noticeCouponVal = document.getElementById('displayUsedCoupon');
             if (!noticeCouponRow && dispPrice && dispPrice.parentElement) {
@@ -6212,13 +6196,21 @@ let __lastRenderedCouponOwner = '';
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
+            const noticeBox = document.getElementById('alreadyOrderedNotice');
+            const isNoticeVisible = noticeBox && window.getComputedStyle(noticeBox).display !== 'none';
+            const existingCouponText = noticeCouponVal ? String(noticeCouponVal.innerText || '').trim() : '';
+
+            if (!couponSummaryText && isNoticeVisible && existingCouponText) {
+                couponSummaryText = existingCouponText;
+            }
+
             if (noticeCouponRow && noticeCouponVal) {
                 if (couponSummaryText) {
                     noticeCouponVal.innerText = couponSummaryText;
-                    noticeCouponRow.style.display = 'flex';
+                    noticeCouponRow.style.setProperty('display', 'flex', 'important');
                 } else {
                     noticeCouponVal.innerText = '';
-                    noticeCouponRow.style.display = 'none';
+                    noticeCouponRow.style.setProperty('display', 'none', 'important');
                 }
             }
 
