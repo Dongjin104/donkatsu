@@ -5632,6 +5632,17 @@
                 try { data = JSON.parse(text); } catch (e) { return; }
                 if (!data) return;
 
+                if (Array.isArray(data.myCoupons)) {
+                    window.globalMyCoupons = data.myCoupons;
+                    if (typeof populateCouponSelectBox === 'function') {
+                        populateCouponSelectBox('quickCouponSelect', appliedQuickCoupon ? appliedQuickCoupon.code : '');
+                        populateCouponSelectBox('mainCouponSelect', appliedMainCoupon ? appliedMainCoupon.code : '');
+                    }
+                    if (typeof refreshQuickCouponSummary === 'function') {
+                        refreshQuickCouponSummary();
+                    }
+                }
+
                 if (!forceApply && isPageSkeletonLoadingActive()) return;
                 if (!forceApply && Date.now() < localOptimisticLockUntil) {
                     return;
@@ -8260,7 +8271,6 @@ async function openSearchModal() {
                         showClosedNoticeScreen();
                         setLoadingSkeletonVisible(false);
                     } else if (cachedState.type === 'active_order' && cachedState.reservation) {
-                        // 직전 내역(quickReorderBox)으로 새지 않고 예약완료 화면을 먼저 즉시 표시
                         renderActiveReservationNotice(cachedState.reservation);
                     } else if (cachedState.type === 'completed' && !isReservedSessionLocked() && !isDismissedCompletedForReorder()) {
                         document.getElementById('pickupCompletedNotice').style.display = 'block';
@@ -8295,6 +8305,10 @@ async function openSearchModal() {
                 const text = await res.text();
                 let data = null;
                 try { data = JSON.parse(text); } catch (e) { }
+
+                if (data && Array.isArray(data.myCoupons)) {
+                    window.globalMyCoupons = data.myCoupons;
+                }
 
                 setLoadingSkeletonVisible(false);
 
@@ -8374,6 +8388,14 @@ async function openSearchModal() {
                     if (!keepActiveMenuEditView()) {
                         showOpenOrderScreen(sess);
                     }
+                }
+
+                if (typeof populateCouponSelectBox === 'function') {
+                    populateCouponSelectBox('quickCouponSelect', appliedQuickCoupon ? appliedQuickCoupon.code : '');
+                    populateCouponSelectBox('mainCouponSelect', appliedMainCoupon ? appliedMainCoupon.code : '');
+                }
+                if (typeof refreshQuickCouponSummary === 'function') {
+                    refreshQuickCouponSummary();
                 }
 
                 startHeartbeat();
