@@ -7678,7 +7678,6 @@ const __shownRewardCouponIds = new Set();
         }
 
         async function submitOrderToServer(payload, isQuick = false) {
-            console.log('서버응답:', data);
             const keptY = captureScrollPos();
             if (isQuick) isQuickSubmitting = true;
             else isSubmitting = true;
@@ -7736,6 +7735,8 @@ const __shownRewardCouponIds = new Set();
                 }
 
                 if (data.result === 'success') {
+                    console.log('서버응답:', data);
+
                     const lastSummaryData = {
                         nickname: payload.nickname,
                         cookType: payload.cookType,
