@@ -8872,11 +8872,13 @@
                 }
 
                 hideKakaoGateOverlay();
+                window.isLoadingCoupons = true;
 
                 const cachedSettings = loadSettingsCache();
                 if (cachedSettings) {
                     applySettingsObject(cachedSettings);
                     if (cachedSettings.isBlocked) {
+                        window.isLoadingCoupons = false;
                         setLoadingSkeletonVisible(false);
                         restoreScrollIfSafe();
                         return;
@@ -8902,6 +8904,11 @@
                         applyReorderOrNewOrderScreen();
                         setLoadingSkeletonVisible(false);
                     }
+                }
+
+                if (typeof populateCouponSelectBox === 'function') {
+                    populateCouponSelectBox('quickCouponSelect', typeof appliedQuickCoupon !== 'undefined' && appliedQuickCoupon ? appliedQuickCoupon.code : '');
+                    populateCouponSelectBox('mainCouponSelect', typeof appliedMainCoupon !== 'undefined' && appliedMainCoupon ? appliedMainCoupon.code : '');
                 }
 
                 const savedNick = sess.identifier || localStorage.getItem('savedNickname') || (typeof TripleStorage !== 'undefined' && typeof TripleStorage.getCookie === 'function' ? TripleStorage.getCookie('savedNickname') : '') || globalUserNickname || "";
@@ -8937,6 +8944,10 @@
                     }
                     if (!keepActiveMenuEditView()) {
                         showOpenOrderScreen(sess);
+                    }
+                    if (typeof populateCouponSelectBox === 'function') {
+                        populateCouponSelectBox('quickCouponSelect', typeof appliedQuickCoupon !== 'undefined' && appliedQuickCoupon ? appliedQuickCoupon.code : '');
+                        populateCouponSelectBox('mainCouponSelect', typeof appliedMainCoupon !== 'undefined' && appliedMainCoupon ? appliedMainCoupon.code : '');
                     }
                     startHeartbeat();
                     startLiveCustomerSync();
@@ -9010,8 +9021,8 @@
                 }
 
                 if (typeof populateCouponSelectBox === 'function') {
-                    populateCouponSelectBox('quickCouponSelect', appliedQuickCoupon ? appliedQuickCoupon.code : '');
-                    populateCouponSelectBox('mainCouponSelect', appliedMainCoupon ? appliedMainCoupon.code : '');
+                    populateCouponSelectBox('quickCouponSelect', typeof appliedQuickCoupon !== 'undefined' && appliedQuickCoupon ? appliedQuickCoupon.code : '');
+                    populateCouponSelectBox('mainCouponSelect', typeof appliedMainCoupon !== 'undefined' && appliedMainCoupon ? appliedMainCoupon.code : '');
                 }
                 if (typeof refreshQuickCouponSummary === 'function') {
                     refreshQuickCouponSummary();
@@ -9021,12 +9032,17 @@
                 startLiveCustomerSync();
                 restoreScrollIfSafe();
             } catch (err) {
+                window.isLoadingCoupons = false;
                 setLoadingSkeletonVisible(false);
                 if (!loadSettingsCache()) {
                     applySettingsObject({});
                     if (!keepActiveMenuEditView()) {
                         showOpenOrderScreen(null);
                     }
+                }
+                if (typeof populateCouponSelectBox === 'function') {
+                    populateCouponSelectBox('quickCouponSelect', typeof appliedQuickCoupon !== 'undefined' && appliedQuickCoupon ? appliedQuickCoupon.code : '');
+                    populateCouponSelectBox('mainCouponSelect', typeof appliedMainCoupon !== 'undefined' && appliedMainCoupon ? appliedMainCoupon.code : '');
                 }
                 restoreScrollIfSafe();
             }
