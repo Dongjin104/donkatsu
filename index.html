@@ -9630,30 +9630,47 @@ function renderActiveReservationNotice(resData) {
             const sel = document.getElementById(selectId);
             if (!sel) return;
 
-            const nowMins = getCurrentKoreanMinutes();
+            const rawNowMins = getCurrentKoreanMinutes();
             const isRawCook = isEditModal
                 ? !!(document.getElementById('editCook2') && document.getElementById('editCook2').checked)
                 : !!(document.getElementById('cook2') && document.getElementById('cook2').checked);
 
-            // 설정 시트 지연시간(예: 20분): 현재시간 이전 시간대는 제외하고, 현재시간 ~ 현재시간+지연시간 구간은 (준비중) 표시
             const effectivePrepMins = isRawCook ? 0 : (globalPrepMinutes || 0);
-            const minAllowedMins = nowMins + effectivePrepMins;
 
             const startMins = globalPickupStartHour * 60 + globalPickupStartMin;
-            const endMins = globalPickupCloseHour * 60 + globalPickupCloseMin;
+            const rawEndMins = globalPickupCloseHour * 60 + globalPickupCloseMin;
+            const isOvernight = rawEndMins < startMins;
+            const endMins = isOvernight ? (rawEndMins + 1440) : rawEndMins;
+
+            function toDayCycleMins(mVal) {
+                if (mVal < 0) return mVal;
+                if (isOvernight && mVal < startMins) {
+                    return mVal + 1440;
+                }
+                return mVal;
+            }
+
+            const nowMins = toDayCycleMins(rawNowMins);
+            const minAllowedMins = nowMins + effectivePrepMins;
 
             const timeSlots = [];
             for (let m = startMins; m <= endMins; m += 5) {
-                const h = Math.floor(m / 60);
-                const min = m % 60;
+                const normDayMins = m % 1440;
+                const h = Math.floor(normDayMins / 60);
+                const min = normDayMins % 60;
                 const ampm = h >= 12 ? '오후' : '오전';
                 const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
-                timeSlots.push(`${ampm} ${h12}:${String(min).padStart(2, '0')}`);
+                timeSlots.push({
+                    label: `${ampm} ${h12}:${String(min).padStart(2, '0')}`,
+                    cycleMins: m
+                });
             }
 
             const normalizedSelected = normalizeKoreanTimeLabel(selectedValue || '');
+            const selectedCycleMins = normalizedSelected ? toDayCycleMins(parseTimeToMinutes(normalizedSelected)) : -1;
+
             const origNormTime = isEditModal ? normalizeKoreanTimeLabel(editOriginalPickupTime || '') : '';
-            const origMins = origNormTime ? parseTimeToMinutes(origNormTime) : -1;
+            const origCycleMins = origNormTime ? toDayCycleMins(parseTimeToMinutes(origNormTime)) : -1;
 
             sel.innerHTML = '';
             const placeholderOpt = document.createElement('option');
@@ -9663,13 +9680,13 @@ function renderActiveReservationNotice(resData) {
 
             let matchedValueToSelect = '';
 
-            timeSlots.forEach(tLabel => {
-                const slotMins = parseTimeToMinutes(tLabel);
+            timeSlots.forEach(slotObj => {
+                const tLabel = slotObj.label;
+                const slotMins = slotObj.cycleMins;
                 const isPastNow = slotMins < nowMins;
                 const isInDelayWindow = !isPastNow && (effectivePrepMins > 0) && (slotMins < minAllowedMins);
-                const isMyOriginalReservedSlot = Boolean(isEditModal && editAlreadyReserved && origNormTime && (tLabel === origNormTime || slotMins === origMins));
+                const isMyOriginalReservedSlot = Boolean(isEditModal && editAlreadyReserved && origNormTime && (tLabel === origNormTime || slotMins === origCycleMins));
 
-                // 현재시간 이전 시간대는 픽업시간 드롭박스에 나오지 않도록 제외(단, 기존 예약 시간은 예외 허용)
                 if (isPastNow && !isMyOriginalReservedSlot) {
                     return;
                 }
@@ -9686,7 +9703,6 @@ function renderActiveReservationNotice(resData) {
                 opt.dataset.totalLoad = String(loadInfo.totalLoad);
 
                 if (isInDelayWindow && isMyOriginalReservedSlot) {
-                    // 시간이 흘러 (준비중) 시간에 포함된 경우: 본인이 기존에 예약했던 시간은 선택 가능
                     opt.disabled = false;
                     opt.dataset.isPrep = '0';
                     opt.dataset.isGraceOriginal = '1';
@@ -9695,7 +9711,6 @@ function renderActiveReservationNotice(resData) {
                     if (loadInfo.labelText) text += ` [${loadInfo.labelText}]`;
                     opt.textContent = text;
                 } else if (isInDelayWindow) {
-                    // 현재시간 ~ 현재시간 + 지연시간(예: 20분) 구간은 (준비중) 표시 및 선택 불가
                     opt.disabled = true;
                     opt.dataset.isPrep = '1';
                     opt.className = 'slot-prep';
@@ -9713,7 +9728,7 @@ function renderActiveReservationNotice(resData) {
                     opt.textContent = text;
                 }
 
-                if (normalizedSelected && (tLabel === normalizedSelected || slotMins === parseTimeToMinutes(normalizedSelected)) && !opt.disabled) {
+                if (normalizedSelected && (tLabel === normalizedSelected || (selectedCycleMins !== -1 && slotMins === selectedCycleMins)) && !opt.disabled) {
                     matchedValueToSelect = tLabel;
                 }
 
