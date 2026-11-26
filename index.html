@@ -6501,10 +6501,21 @@ function renderActiveReservationNotice(resData) {
             const cleanRow = String(resData.rowIndex || '').trim();
             const storageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
             const nickStorageKey = `donkatsu_used_coupon_nick_${cleanNick || 'nick'}`;
+            const updatedOverrideKey = `donkatsu_updated_coupon_${cleanNick || 'nick'}`;
+
+            let updatedCouponOverride = '';
+            try {
+                updatedCouponOverride = String(
+                    sessionStorage.getItem(updatedOverrideKey) ||
+                    localStorage.getItem(updatedOverrideKey) ||
+                    ''
+                ).trim();
+            } catch (e) { }
 
             let cachedSavedText = '';
             try {
                 cachedSavedText = String(
+                    updatedCouponOverride ||
                     sessionStorage.getItem(storageKey) ||
                     localStorage.getItem(storageKey) ||
                     sessionStorage.getItem(nickStorageKey) ||
@@ -6513,7 +6524,7 @@ function renderActiveReservationNotice(resData) {
                     ''
                 ).trim();
             } catch (e) {
-                cachedSavedText = String(window.__lockedCouponText || '').trim();
+                cachedSavedText = String(updatedCouponOverride || window.__lockedCouponText || '').trim();
             }
 
             const nestedCoupon = (resData && (resData.usedCoupon || resData.appliedCoupon || resData.couponInfo || resData.coupon)) || null;
@@ -6638,7 +6649,9 @@ function renderActiveReservationNotice(resData) {
             const labelPart = hasRealCoupon ? (cleanedName || fallbackName) : '';
 
             let couponSummaryText = '';
-            if (hasRealCoupon) {
+            if (updatedCouponOverride) {
+                couponSummaryText = updatedCouponOverride;
+            } else if (hasRealCoupon) {
                 if (labelPart && appliedDiscount > 0) {
                     couponSummaryText = `${labelPart} (-${appliedDiscount.toLocaleString()}원)`;
                 } else if (labelPart) {
@@ -6650,10 +6663,6 @@ function renderActiveReservationNotice(resData) {
 
             if (!couponSummaryText && cachedSavedText) {
                 couponSummaryText = cachedSavedText;
-                const cachedMinus = cachedSavedText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
-                if (!appliedDiscount && cachedMinus) {
-                    appliedDiscount = parseWonVal(cachedMinus[1]);
-                }
             }
 
             if (!appliedDiscount && couponSummaryText) {
@@ -9410,6 +9419,7 @@ async function openSearchModal() {
                     const cleanRow = String(currentFoundRowIndex || '').trim();
                     const rowStorageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
                     const nickStorageKey = `donkatsu_used_coupon_nick_${cleanNick || 'nick'}`;
+                    const updatedOverrideKey = `donkatsu_updated_coupon_${cleanNick || 'nick'}`;
 
                     if (finalCouponCode || finalCouponName || finalCouponDiscount > 0) {
                         const summaryText = finalCouponDiscount > 0
@@ -9427,6 +9437,8 @@ async function openSearchModal() {
                             localStorage.setItem(rowStorageKey, summaryText);
                             sessionStorage.setItem(nickStorageKey, summaryText);
                             localStorage.setItem(nickStorageKey, summaryText);
+                            sessionStorage.setItem(updatedOverrideKey, summaryText);
+                            localStorage.setItem(updatedOverrideKey, summaryText);
                         } catch (e) { }
                     } else {
                         window.__lockedCouponText = '';
@@ -9436,6 +9448,8 @@ async function openSearchModal() {
                             localStorage.removeItem(rowStorageKey);
                             sessionStorage.removeItem(nickStorageKey);
                             localStorage.removeItem(nickStorageKey);
+                            sessionStorage.removeItem(updatedOverrideKey);
+                            localStorage.removeItem(updatedOverrideKey);
                         } catch (e) { }
                     }
 
