@@ -7093,30 +7093,49 @@
                 if (typeof onClose === 'function') onClose();
                 return;
             }
-            const orig = Math.max(0, Number(originalPrice || 0));
-            const fin = Math.max(0, Number(finalPrice !== undefined ? finalPrice : (orig - disc)));
+
+            let orig = Math.max(0, Number(originalPrice || 0));
+            let fin = (finalPrice !== undefined && finalPrice !== null && finalPrice !== '')
+                ? Math.max(0, Number(finalPrice || 0))
+                : NaN;
+
+            if (isNaN(fin) && orig > 0) {
+                fin = Math.max(0, orig - disc);
+            } else if (!isNaN(fin) && orig <= 0 && fin > 0) {
+                orig = fin + disc;
+            } else if (!isNaN(fin) && orig > 0 && fin >= orig) {
+                // 기존 주문 금액보다 최종 결제 금액이 크거나 같게 잘못 들어온 경우
+                // orig가 이미 할인 후 금액으로 넘어왔다고 보고 원가를 역산
+                orig = fin + disc;
+            } else if (!isNaN(fin) && orig > 0 && (orig - fin) !== disc) {
+                // 차이가 할인액과 다르면 최종 금액 기준으로 원가를 맞춤
+                orig = fin + disc;
+            }
+
+            if (isNaN(fin)) fin = Math.max(0, orig - disc);
+
             const name = String(couponInfo.name || couponInfo.couponName || couponInfo.code || '할인쿠폰').trim();
 
             const bodyHtml = `
-                <div class="vip-ticket-box">
-                    <div class="vip-ticket-badge">BENEFIT APPLIED</div>
-                    <div class="vip-ticket-amount">-${disc.toLocaleString()}원 절약</div>
-                    <div class="vip-ticket-name">${escapeHtml(name)}</div>
-                    <div class="vip-ticket-meta">현장 결제 금액이 알차게 줄어들었어요</div>
-                </div>
-                <div class="vip-coupon-summary-row">
-                    <span>기존 주문 금액</span>
-                    <span>${orig.toLocaleString()}원</span>
-                </div>
-                <div class="vip-coupon-summary-row">
-                    <span>쿠폰 할인</span>
-                    <span class="vip-coupon-summary-val is-discount">-${disc.toLocaleString()}원</span>
-                </div>
-                <div class="vip-coupon-summary-row is-total">
-                    <span>최종 결제 예정 금액</span>
-                    <span>${fin.toLocaleString()}원</span>
-                </div>
-            `;
+        <div class="vip-ticket-box">
+            <div class="vip-ticket-badge">BENEFIT APPLIED</div>
+            <div class="vip-ticket-amount">-${disc.toLocaleString()}원 절약</div>
+            <div class="vip-ticket-name">${escapeHtml(name)}</div>
+            <div class="vip-ticket-meta">현장 결제 금액이 알차게 줄어들었어요</div>
+        </div>
+        <div class="vip-coupon-summary-row">
+            <span>기존 주문 금액</span>
+            <span>${orig.toLocaleString()}원</span>
+        </div>
+        <div class="vip-coupon-summary-row">
+            <span>쿠폰 할인</span>
+            <span class="vip-coupon-summary-val is-discount">-${disc.toLocaleString()}원</span>
+        </div>
+        <div class="vip-coupon-summary-row is-total">
+            <span>최종 결제 예정 금액</span>
+            <span>${fin.toLocaleString()}원</span>
+        </div>
+    `;
 
             openVipCouponPopup({
                 tag: '✨ COUPON APPLIED',
@@ -9496,6 +9515,27 @@
                     hideModal('searchModal');
                     populateUpdateSuccessModalDetails(updatedObj);
                     showModal('updateSuccessModal');
+
+                    if (finalCouponDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
+                        const appliedKey = `edit_${String(currentFoundRowIndex || nick || '')}_${finalCouponCode}_${finalCouponDiscount}_${totalPriceNum}`;
+                        if (!__shownAppliedCouponKeys.has(appliedKey)) {
+                            __shownAppliedCouponKeys.add(appliedKey);
+                            const origAmt = totalPriceNum;
+                            const finalAmt = Math.max(0, totalPriceNum - finalCouponDiscount);
+                            setTimeout(() => {
+                                showCouponAppliedPopup(
+                                    {
+                                        code: finalCouponCode,
+                                        name: finalCouponName || `${finalCouponDiscount.toLocaleString()}원 할인쿠폰`
+                                    },
+                                    origAmt,
+                                    finalCouponDiscount,
+                                    finalAmt
+                                );
+                            }, 220);
+                        }
+                    }
+
                     preserveScrollPos(keptY);
                 } else {
                     showCustomAlert("수정 안내", data.message || "예약 수정에 실패했습니다.");
