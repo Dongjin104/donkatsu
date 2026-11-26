@@ -6484,19 +6484,6 @@ function renderActiveReservationNotice(resData) {
             const dispTime = document.getElementById('displayPickupTime');
             if (dispTime) dispTime.innerText = normalizeKoreanTimeLabel(resData.pickupTime || '');
 
-            const dispPrice = document.getElementById('displayTotalPrice');
-            let parsedFinalPrice = 0;
-            if (dispPrice) {
-                const rawPrice = resData.totalPrice || '';
-                const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10);
-                if (!isNaN(numPrice) && numPrice > 0) {
-                    parsedFinalPrice = numPrice;
-                    dispPrice.innerText = numPrice.toLocaleString() + '원';
-                } else {
-                    dispPrice.innerText = String(rawPrice || '0원');
-                }
-            }
-
             function parseWonVal(v) {
                 if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
                 const d = String(v || '').replace(/[^0-9]/g, '');
@@ -6508,6 +6495,25 @@ function renderActiveReservationNotice(resData) {
                     .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, '')
                     .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
                     .trim();
+            }
+
+            const cleanNick = String(savedNick || '').trim();
+            const cleanRow = String(resData.rowIndex || '').trim();
+            const storageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
+            const nickStorageKey = `donkatsu_used_coupon_nick_${cleanNick || 'nick'}`;
+
+            let cachedSavedText = '';
+            try {
+                cachedSavedText = String(
+                    sessionStorage.getItem(storageKey) ||
+                    localStorage.getItem(storageKey) ||
+                    sessionStorage.getItem(nickStorageKey) ||
+                    localStorage.getItem(nickStorageKey) ||
+                    window.__lockedCouponText ||
+                    ''
+                ).trim();
+            } catch (e) {
+                cachedSavedText = String(window.__lockedCouponText || '').trim();
             }
 
             const nestedCoupon = (resData && (resData.usedCoupon || resData.appliedCoupon || resData.couponInfo || resData.coupon)) || null;
@@ -6642,6 +6648,42 @@ function renderActiveReservationNotice(resData) {
                 }
             }
 
+            if (!couponSummaryText && cachedSavedText) {
+                couponSummaryText = cachedSavedText;
+                const cachedMinus = cachedSavedText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
+                if (!appliedDiscount && cachedMinus) {
+                    appliedDiscount = parseWonVal(cachedMinus[1]);
+                }
+            }
+
+            if (!appliedDiscount && couponSummaryText) {
+                const sumMinus = couponSummaryText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
+                if (sumMinus) appliedDiscount = parseWonVal(sumMinus[1]);
+            }
+
+            const dispPrice = document.getElementById('displayTotalPrice');
+            let parsedFinalPrice = 0;
+            if (dispPrice) {
+                const rawPrice = resData.totalPrice || '';
+                const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10);
+                if (!isNaN(numPrice) && numPrice > 0) {
+                    const serverDiscount = parseWonVal(
+                        resData.couponDiscount ||
+                        resData.coupon_discount ||
+                        resData.discountAmount ||
+                        resData.discount_amount ||
+                        resData.discount ||
+                        0
+                    );
+                    parsedFinalPrice = (serverDiscount <= 0 && appliedDiscount > 0 && numPrice > appliedDiscount)
+                        ? Math.max(0, numPrice - appliedDiscount)
+                        : numPrice;
+                    dispPrice.innerText = parsedFinalPrice.toLocaleString() + '원';
+                } else {
+                    dispPrice.innerText = String(rawPrice || '0원');
+                }
+            }
+
             let noticeCouponRow = document.getElementById('noticeCouponRowItem');
             let noticeCouponVal = document.getElementById('displayUsedCoupon');
             if (!noticeCouponRow && dispPrice && dispPrice.parentElement) {
@@ -6680,21 +6722,13 @@ function renderActiveReservationNotice(resData) {
                 priceRow.parentElement.insertBefore(noticeCouponRow, priceRow);
             }
 
-            const cleanNick = String(savedNick || '').trim();
-            const cleanRow = String(resData.rowIndex || '').trim();
-            const storageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
-
             if (couponSummaryText) {
                 window.__lockedCouponText = couponSummaryText;
                 try {
                     localStorage.setItem(storageKey, couponSummaryText);
                     sessionStorage.setItem(storageKey, couponSummaryText);
-                } catch (e) { }
-            } else {
-                window.__lockedCouponText = '';
-                try {
-                    localStorage.removeItem(storageKey);
-                    sessionStorage.removeItem(storageKey);
+                    localStorage.setItem(nickStorageKey, couponSummaryText);
+                    sessionStorage.setItem(nickStorageKey, couponSummaryText);
                 } catch (e) { }
             }
 
@@ -6838,7 +6872,6 @@ function renderActiveReservationNotice(resData) {
                 }
             }
         }
-
 
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
