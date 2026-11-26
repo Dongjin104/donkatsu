@@ -4432,8 +4432,7 @@
                     <div id="editSauceCardContainer" class="sauce-grid"></div>
                 </div>
 
-                <!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
-                <!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
+<!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
                 <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
                     <label for="editCouponSelect"
                         style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">쿠폰
@@ -4468,17 +4467,51 @@
                         }
                         return 0;
                     }
-function syncEditCouponUi(orderObj, couponsArr) {
+                    function extractCouponFromDomFallback() {
+                        var usedEl = document.getElementById("displayUsedCoupon");
+                        var rawText = usedEl ? String(usedEl.textContent || "").replace(/^🎟\s*/, "").trim() : "";
+                        var lockedText = String(window.__lockedCouponText || "").trim();
+                        var chosenText = rawText || lockedText;
+                        if (!chosenText) return { usedCoupon: "", couponDiscount: 0 };
+
+                        var disc = 0;
+                        var mMinus = chosenText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
+                        if (mMinus) {
+                            disc = parseWonNum(mMinus[1]);
+                        } else {
+                            var priceEl = document.getElementById("displayTotalPrice");
+                            var finalPrice = priceEl ? parseWonNum(priceEl.textContent) : 0;
+                            var basePrice = getCurrentEditBasePrice();
+                            if (basePrice > finalPrice && finalPrice > 0) {
+                                disc = basePrice - finalPrice;
+                            } else {
+                                var mWon = chosenText.match(/([0-9,]+)\s*원/);
+                                if (mWon) disc = parseWonNum(mWon[1]);
+                            }
+                        }
+                        var cleanName = chosenText
+                            .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, "")
+                            .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, "")
+                            .trim();
+                        return {
+                            usedCoupon: cleanName ? (disc > 0 ? (cleanName + " (-" + disc.toLocaleString() + "원)") : cleanName) : chosenText,
+                            couponDiscount: disc
+                        };
+                    }
+                    function syncEditCouponUi(orderObj, couponsArr) {
                         var sel = document.getElementById("editCouponSelect");
                         var badge = document.getElementById("editCouponDiscountPreview");
                         var statusEl = document.getElementById("editCouponStatus");
                         if (!sel) return;
 
                         var ord = orderObj || {};
+                        var domFb = extractCouponFromDomFallback();
+
                         var usedLabel = String(
                             ord.usedCoupon ||
                             ord.couponLabel ||
                             ord.couponName ||
+                            domFb.usedCoupon ||
                             window.__lockedCouponText ||
                             ""
                         ).replace(/\s*\(\s*적용\s*중\s*\)\s*/g, "").trim();
@@ -4487,6 +4520,7 @@ function syncEditCouponUi(orderObj, couponsArr) {
                             ord.couponDiscount ||
                             ord.discountAmount ||
                             ord.discount ||
+                            domFb.couponDiscount ||
                             0
                         );
                         if (!savedDisc && usedLabel) {
@@ -4531,6 +4565,9 @@ function syncEditCouponUi(orderObj, couponsArr) {
 
                         if (hasApplied) {
                             sel.value = "__CURRENT_APPLIED__";
+                            if (sel.selectedIndex < 0 && sel.options.length > 0) {
+                                sel.selectedIndex = 0;
+                            }
                         }
 
                         var activeDisc = (sel.value === "__CURRENT_APPLIED__")
@@ -4578,31 +4615,49 @@ function syncEditCouponUi(orderObj, couponsArr) {
                     function collectEditCouponContext() {
                         var ord = window.currentReservationData || window.lastReservationData || window.activeReservation || {};
                         var cpns = window.myAvailableCoupons || window.availableCoupons || ord.availableCoupons || [];
-                        if ((!ord || (!ord.usedCoupon && !ord.couponDiscount)) && window.__lockedCouponText) {
-                            var m = String(window.__lockedCouponText).match(/([0-9,]+)\s*원/);
+                        var domFb = extractCouponFromDomFallback();
+                        if (domFb.usedCoupon || domFb.couponDiscount > 0) {
                             ord = Object.assign({}, ord, {
-                                usedCoupon: window.__lockedCouponText,
-                                couponDiscount: m ? parseWonNum(m[1]) : 0
+                                usedCoupon: ord.usedCoupon || domFb.usedCoupon,
+                                couponDiscount: ord.couponDiscount || domFb.couponDiscount
                             });
                         }
                         return { ord: ord, cpns: cpns };
                     }
 
-                    var origOpenEdit = window.openEditModal;
-                    if (typeof origOpenEdit === "function") {
-                        window.openEditModal = function () {
-                            var r = origOpenEdit.apply(this, arguments);
-                            var ctx = collectEditCouponContext();
-                            syncEditCouponUi(ctx.ord, ctx.cpns);
-                            setTimeout(function () {
-                                var latest = collectEditCouponContext();
-                                syncEditCouponUi(latest.ord, latest.cpns);
-                            }, 60);
-                            return r;
-                        };
+                    function attachEditModalCouponHook() {
+                        if (typeof window.openEditModal === "function" && !window.openEditModal.__couponHooked) {
+                            var origOpenEdit = window.openEditModal;
+                            var wrappedOpenEdit = function () {
+                                var r = origOpenEdit.apply(this, arguments);
+                                var ctx = collectEditCouponContext();
+                                syncEditCouponUi(ctx.ord, ctx.cpns);
+                                setTimeout(function () {
+                                    var latest = collectEditCouponContext();
+                                    syncEditCouponUi(latest.ord, latest.cpns);
+                                }, 80);
+                                return r;
+                            };
+                            wrappedOpenEdit.__couponHooked = true;
+                            window.openEditModal = wrappedOpenEdit;
+                        }
                     }
 
+                    attachEditModalCouponHook();
+
+                    document.addEventListener("click", function (e) {
+                        var target = e.target && e.target.closest ? e.target.closest("#editReservationMainBtn, [onclick*='openEditModal']") : null;
+                        if (target) {
+                            attachEditModalCouponHook();
+                            setTimeout(function () {
+                                var ctx = collectEditCouponContext();
+                                syncEditCouponUi(ctx.ord, ctx.cpns);
+                            }, 50);
+                        }
+                    }, true);
+
                     document.addEventListener("DOMContentLoaded", function () {
+                        attachEditModalCouponHook();
                         var ctx = collectEditCouponContext();
                         if (ctx.ord && (ctx.ord.usedCoupon || ctx.ord.couponDiscount || ctx.cpns.length > 0)) {
                             syncEditCouponUi(ctx.ord, ctx.cpns);
