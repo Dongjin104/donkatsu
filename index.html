@@ -4214,6 +4214,10 @@
                     <span class="atelier-receipt-label">변경 픽업 시간</span>
                     <span class="atelier-receipt-val" id="updateSuccessTimeVal">-</span>
                 </div>
+                <div class="atelier-receipt-row" id="updateSuccessCouponRow" style="display: none;">
+                    <span class="atelier-receipt-label">적용 쿠폰</span>
+                    <span class="atelier-receipt-val" id="updateSuccessCouponVal">-</span>
+                </div>
                 <div class="atelier-receipt-row">
                     <span class="atelier-receipt-label">현장 결제 금액</span>
                     <span class="atelier-receipt-val gold" id="updateSuccessPriceVal">-</span>
@@ -4229,6 +4233,102 @@
             </button>
         </div>
     </div>
+    <script>
+    (function () {
+        function parseWonAmount(v) {
+            if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
+            var d = String(v || '').replace(/[^0-9]/g, '');
+            return d ? (parseInt(d, 10) || 0) : 0;
+        }
+
+        function syncUpdateSuccessCouponAndPrice() {
+            var priceEl = document.getElementById('updateSuccessPriceVal');
+            var couponRow = document.getElementById('updateSuccessCouponRow');
+            var couponValEl = document.getElementById('updateSuccessCouponVal');
+            if (!priceEl) return;
+
+            var sel = document.getElementById('editCouponSelect');
+            var selectedOpt = (sel && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex] : null;
+            var selVal = sel ? String(sel.value || '').trim() : '';
+
+            var discountAmt = 0;
+            var couponName = '';
+
+            if (selectedOpt && selVal) {
+                discountAmt = parseWonAmount(selectedOpt.dataset ? selectedOpt.dataset.discount : 0);
+                couponName = String((selectedOpt.dataset && selectedOpt.dataset.label) || selectedOpt.textContent || '')
+                    .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                    .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
+                    .trim();
+            }
+
+            if (!discountAmt && typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && selVal !== '') {
+                discountAmt = parseWonAmount(appliedEditCoupon.value || appliedEditCoupon.discountAmount || appliedEditCoupon.discount || 0);
+                couponName = couponName || String(appliedEditCoupon.name || appliedEditCoupon.couponName || '').trim();
+            }
+
+            if (!discountAmt && couponName) {
+                var wonMatch = couponName.match(/([0-9,]+)\s*원/);
+                if (wonMatch) discountAmt = parseWonAmount(wonMatch[1]);
+            }
+
+            var rawPriceText = String(priceEl.textContent || '');
+            var basePrice = parseWonAmount(rawPriceText);
+            var editTotalEl = document.getElementById('editTotalPrice');
+            var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
+            if (editLivePrice > 0 && (basePrice <= 0 || basePrice === editLivePrice)) {
+                basePrice = editLivePrice;
+            }
+
+            var hasCoupon = Boolean(selVal && (couponName || discountAmt > 0));
+            if (hasCoupon) {
+                var cleanLabel = couponName || (discountAmt.toLocaleString() + '원 할인쿠폰');
+                if (couponValEl) {
+                    couponValEl.textContent = discountAmt > 0
+                        ? (cleanLabel + ' (-' + discountAmt.toLocaleString() + '원)')
+                        : cleanLabel;
+                }
+                if (couponRow) couponRow.style.display = 'flex';
+            } else {
+                if (couponValEl) couponValEl.textContent = '-';
+                if (couponRow) couponRow.style.display = 'none';
+            }
+
+            if (basePrice > 0) {
+                var finalPrice = Math.max(0, basePrice - discountAmt);
+                priceEl.textContent = finalPrice.toLocaleString() + '원';
+            }
+        }
+
+        function observeUpdateSuccessModal() {
+            var modal = document.getElementById('updateSuccessModal');
+            if (!modal) return;
+
+            var observer = new MutationObserver(function () {
+                var isVisible = modal.style.display !== 'none' &&
+                    (modal.classList.contains('show') || modal.classList.contains('active') || modal.style.display === 'block' || modal.style.display === 'flex');
+                if (isVisible) {
+                    syncUpdateSuccessCouponAndPrice();
+                }
+            });
+            observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
+
+            var submitBtn = document.querySelector('#searchModalActionBtns button[onclick*="submitEdit"], #searchModalActionBtns .confirm-btn, #searchModalActionBtns .btn-primary');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function () {
+                    setTimeout(syncUpdateSuccessCouponAndPrice, 120);
+                    setTimeout(syncUpdateSuccessCouponAndPrice, 450);
+                });
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', observeUpdateSuccessModal);
+        } else {
+            observeUpdateSuccessModal();
+        }
+    })();
+    </script>
 
     <div id="updatingModal" class="modal" style="z-index: 10046;">
         <div class="atelier-popup-card" style="max-width: 372px;">
