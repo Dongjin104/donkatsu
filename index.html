@@ -5188,12 +5188,17 @@
             if (priceEl) priceEl.textContent = (payload && payload.totalPrice) ? String(payload.totalPrice) : '0원';
 
             const couponCode = String((payload && (payload.couponCode || payload.appliedCouponCode || payload.couponId)) || '').trim();
-            const couponName = String((payload && (payload.couponName || payload.name)) || couponCode).trim();
+            const rawCouponName = String((payload && (payload.couponName || payload.name || payload.usedCouponName)) || '').trim();
+            const isCodeLikeName = /^CPN-/i.test(rawCouponName);
             const discountNum = parseInt(String((payload && (payload.couponDiscount || payload.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
-            const couponDisplayText = (couponCode || couponName || discountNum > 0)
+            const cleanCouponName = (!isCodeLikeName && rawCouponName && rawCouponName !== '없음' && rawCouponName !== '미사용')
+                ? rawCouponName
+                : (discountNum > 0 ? `${discountNum.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
+            const hasCouponInfo = Boolean(couponCode || (!isCodeLikeName && rawCouponName) || discountNum > 0);
+            const couponDisplayText = hasCouponInfo
                 ? (discountNum > 0
-                    ? `${couponName || couponCode} (-${discountNum.toLocaleString()}원)`
-                    : (couponName || couponCode))
+                    ? `${cleanCouponName} (-${discountNum.toLocaleString()}원)`
+                    : cleanCouponName)
                 : '';
 
             let couponRowEl = document.getElementById('successCouponRowItem');
@@ -6299,7 +6304,7 @@ function renderActiveReservationNotice(resData) {
                     resData.couponTitle ||
                     resData.title
                 )) ||
-                (nestedCoupon && (
+                (nestedCoupon && typeof nestedCoupon === 'object' && (
                     nestedCoupon.name ||
                     nestedCoupon.couponName ||
                     nestedCoupon.coupon_name ||
@@ -6307,6 +6312,10 @@ function renderActiveReservationNotice(resData) {
                 )) ||
                 ''
             ).trim();
+
+            if (!rawName && typeof nestedCoupon === 'string' && nestedCoupon.trim() && !/^CPN-/i.test(nestedCoupon.trim())) {
+                rawName = nestedCoupon.trim();
+            }
 
             const rawCode = String(
                 (resData && (
@@ -6317,11 +6326,12 @@ function renderActiveReservationNotice(resData) {
                     resData.couponId ||
                     resData.coupon_id
                 )) ||
-                (nestedCoupon && (
+                (nestedCoupon && typeof nestedCoupon === 'object' && (
                     nestedCoupon.code ||
                     nestedCoupon.couponId ||
                     nestedCoupon.coupon_id
                 )) ||
+                (typeof nestedCoupon === 'string' && /^CPN-/i.test(nestedCoupon.trim()) ? nestedCoupon.trim() : '') ||
                 ''
             ).trim();
 
@@ -6333,7 +6343,7 @@ function renderActiveReservationNotice(resData) {
                     resData.discount_amount ||
                     resData.discount
                 )) ||
-                (nestedCoupon && (
+                (nestedCoupon && typeof nestedCoupon === 'object' && (
                     nestedCoupon.discountAmount ||
                     nestedCoupon.value ||
                     nestedCoupon.discount
@@ -6348,13 +6358,14 @@ function renderActiveReservationNotice(resData) {
                 window.__lastAppliedCoupon || null
             ].filter(Boolean);
 
-            if (!rawName) {
+            if (!rawName || /^CPN-/i.test(rawName)) {
+                rawName = '';
                 for (let i = 0; i < localCouponCandidates.length; i++) {
                     const lc = localCouponCandidates[i];
                     const lcCode = String(lc.code || lc.couponId || '').trim();
                     const lcAmt = parseInt(String(lc.value ?? lc.discountAmount ?? lc.discount ?? '0').replace(/[^0-9]/g, ''), 10) || 0;
                     const lcName = String(lc.name || lc.couponName || '').trim();
-                    if (!lcName) continue;
+                    if (!lcName || /^CPN-/i.test(lcName)) continue;
                     if (rawCode && lcCode && lcCode.toUpperCase() === rawCode.toUpperCase()) {
                         rawName = lcName;
                         break;
@@ -6382,15 +6393,18 @@ function renderActiveReservationNotice(resData) {
                         return false;
                     });
                     if (matched) {
-                        rawName = String(matched.name || matched.couponName || matched.coupon_name || matched.title || '').trim();
-                        if (rawName) break;
+                        const mName = String(matched.name || matched.couponName || matched.coupon_name || matched.title || '').trim();
+                        if (mName && !/^CPN-/i.test(mName)) {
+                            rawName = mName;
+                            break;
+                        }
                     }
                 }
             }
 
             const hasRealCoupon = Boolean(rawCode || appliedDiscount > 0 || (rawName && rawName !== '없음' && rawName !== '미사용'));
             const fallbackName = appliedDiscount > 0 ? `${appliedDiscount.toLocaleString()}원 할인쿠폰` : '할인쿠폰';
-            const labelPart = hasRealCoupon ? (rawName || rawCode || fallbackName) : '';
+            const labelPart = hasRealCoupon ? (rawName || fallbackName) : '';
 
             let couponSummaryText = '';
             if (hasRealCoupon) {
@@ -6560,7 +6574,7 @@ function renderActiveReservationNotice(resData) {
                     const origAmt = finalAmt + appliedDiscount;
                     const couponObj = {
                         code: rawCode,
-                        name: labelPart || resData.couponName || rawCode
+                        name: labelPart || resData.couponName || fallbackName
                     };
                     setTimeout(() => {
                         showCouponAppliedPopup(couponObj, origAmt, appliedDiscount, finalAmt);
@@ -6568,6 +6582,7 @@ function renderActiveReservationNotice(resData) {
                 }
             }
         }
+        
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
