@@ -6503,28 +6503,39 @@ function renderActiveReservationNotice(resData) {
             const nickStorageKey = `donkatsu_used_coupon_nick_${cleanNick || 'nick'}`;
             const updatedOverrideKey = `donkatsu_updated_coupon_${cleanNick || 'nick'}`;
 
-            let updatedCouponOverride = '';
-            try {
-                updatedCouponOverride = String(
-                    sessionStorage.getItem(updatedOverrideKey) ||
-                    localStorage.getItem(updatedOverrideKey) ||
-                    ''
-                ).trim();
-            } catch (e) { }
+            const explicitNoCoupon = Boolean(
+                resData && (
+                    resData.clearCoupon === true ||
+                    resData.noCoupon === true ||
+                    resData.usedCoupon === '' ||
+                    resData.couponCode === ''
+                )
+            );
 
+            let updatedCouponOverride = '';
             let cachedSavedText = '';
-            try {
-                cachedSavedText = String(
-                    updatedCouponOverride ||
-                    sessionStorage.getItem(storageKey) ||
-                    localStorage.getItem(storageKey) ||
-                    sessionStorage.getItem(nickStorageKey) ||
-                    localStorage.getItem(nickStorageKey) ||
-                    window.__lockedCouponText ||
-                    ''
-                ).trim();
-            } catch (e) {
-                cachedSavedText = String(updatedCouponOverride || window.__lockedCouponText || '').trim();
+            if (!explicitNoCoupon) {
+                try {
+                    updatedCouponOverride = String(
+                        sessionStorage.getItem(updatedOverrideKey) ||
+                        localStorage.getItem(updatedOverrideKey) ||
+                        ''
+                    ).trim();
+                } catch (e) { }
+
+                try {
+                    cachedSavedText = String(
+                        updatedCouponOverride ||
+                        sessionStorage.getItem(storageKey) ||
+                        localStorage.getItem(storageKey) ||
+                        sessionStorage.getItem(nickStorageKey) ||
+                        localStorage.getItem(nickStorageKey) ||
+                        window.__lockedCouponText ||
+                        ''
+                    ).trim();
+                } catch (e) {
+                    cachedSavedText = String(updatedCouponOverride || window.__lockedCouponText || '').trim();
+                }
             }
 
             const nestedCoupon = (resData && (resData.usedCoupon || resData.appliedCoupon || resData.couponInfo || resData.coupon)) || null;
@@ -6584,7 +6595,7 @@ function renderActiveReservationNotice(resData) {
                 0
             );
 
-            const localCouponCandidates = [
+            const localCouponCandidates = explicitNoCoupon ? [] : [
                 typeof appliedQuickCoupon !== 'undefined' ? appliedQuickCoupon : null,
                 typeof appliedMainCoupon !== 'undefined' ? appliedMainCoupon : null,
                 typeof selectedCoupon !== 'undefined' ? selectedCoupon : null,
@@ -6739,6 +6750,16 @@ function renderActiveReservationNotice(resData) {
                     localStorage.setItem(nickStorageKey, couponSummaryText);
                     sessionStorage.setItem(nickStorageKey, couponSummaryText);
                 } catch (e) { }
+            } else {
+                window.__lockedCouponText = '';
+                try {
+                    localStorage.removeItem(storageKey);
+                    sessionStorage.removeItem(storageKey);
+                    localStorage.removeItem(nickStorageKey);
+                    sessionStorage.removeItem(nickStorageKey);
+                    localStorage.removeItem(updatedOverrideKey);
+                    sessionStorage.removeItem(updatedOverrideKey);
+                } catch (e) { }
             }
 
             if (noticeCouponRow && noticeCouponVal) {
@@ -6881,7 +6902,7 @@ function renderActiveReservationNotice(resData) {
                 }
             }
         }
-
+               
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
