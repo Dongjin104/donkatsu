@@ -4433,6 +4433,7 @@
                 </div>
 
                 <!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
+                <!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
                 <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
                     <label for="editCouponSelect"
                         style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">쿠폰
@@ -4451,6 +4452,125 @@
                         </div>
                     </div>
                 </div>
+                <script>
+                (function () {
+                    function parseWonNum(v) {
+                        if (typeof v === "number") return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
+                        var d = String(v || "").replace(/[^0-9]/g, "");
+                        return d ? (parseInt(d, 10) || 0) : 0;
+                    }
+                    function getCurrentEditBasePrice() {
+                        var el = document.getElementById("editTotalPrice") || document.getElementById("editModalTotalPrice");
+                        if (el) {
+                            var txt = String(el.textContent || "");
+                            var m = txt.match(/([0-9,]+)\s*원/);
+                            if (m) return parseWonNum(m[1]);
+                        }
+                        return 0;
+                    }
+                    function syncEditCouponUi(orderObj, couponsArr) {
+                        var sel = document.getElementById("editCouponSelect");
+                        var badge = document.getElementById("editCouponDiscountPreview");
+                        var statusEl = document.getElementById("editCouponStatus");
+                        if (!sel) return;
+
+                        var usedLabel = String((orderObj && (orderObj.usedCoupon || orderObj.couponLabel)) || "").trim();
+                        var savedDisc = parseWonNum((orderObj && (orderObj.couponDiscount || orderObj.discountAmount)) || 0);
+                        if (!savedDisc && usedLabel) {
+                            var dm = usedLabel.match(/([0-9,]+)\s*원/);
+                            if (dm) savedDisc = parseWonNum(dm[1]);
+                        }
+
+                        var list = Array.isArray(couponsArr) ? couponsArr : [];
+                        sel.innerHTML = "";
+
+                        if (usedLabel) {
+                            var curOpt = document.createElement("option");
+                            curOpt.value = "__CURRENT_APPLIED__";
+                            curOpt.dataset.discount = String(savedDisc);
+                            curOpt.dataset.label = usedLabel;
+                            curOpt.textContent = usedLabel + " (적용 중)";
+                            curOpt.selected = true;
+                            sel.appendChild(curOpt);
+                        } else {
+                            var noneOpt = document.createElement("option");
+                            noneOpt.value = "";
+                            noneOpt.dataset.discount = "0";
+                            noneOpt.textContent = list.length > 0 ? "쿠폰 선택 안 함 (미사용)" : "보유 중인 사용 가능 쿠폰 없음";
+                            sel.appendChild(noneOpt);
+                        }
+
+                        for (var i = 0; i < list.length; i++) {
+                            var c = list[i] || {};
+                            var cAmt = parseWonNum(c.discountAmount || c.amount || 0);
+                            var cName = String(c.couponName || c.name || "할인쿠폰").trim();
+                            var opt = document.createElement("option");
+                            opt.value = String(c.couponId || c.id || cName);
+                            opt.dataset.discount = String(cAmt);
+                            opt.dataset.label = cName + " (-" + cAmt.toLocaleString() + "원)";
+                            opt.textContent = cName + " (-" + cAmt.toLocaleString() + "원)";
+                            sel.appendChild(opt);
+                        }
+
+                        var activeDisc = (sel.value === "__CURRENT_APPLIED__")
+                            ? savedDisc
+                            : parseWonNum((sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].dataset.discount) || 0);
+
+                        if (badge) badge.textContent = "-" + activeDisc.toLocaleString() + "원 할인";
+                        if (statusEl) {
+                            if (usedLabel && sel.value === "__CURRENT_APPLIED__") {
+                                statusEl.textContent = "현재 적용된 쿠폰: " + usedLabel + " (수정 저장 시 유지됩니다)";
+                            } else if (activeDisc > 0) {
+                                statusEl.textContent = "선택된 쿠폰으로 " + activeDisc.toLocaleString() + "원 할인이 적용됩니다.";
+                            } else {
+                                statusEl.textContent = "예약 수정 시 선택된 쿠폰과 주문 금액 기준으로 할인이 자동 재계산됩니다.";
+                            }
+                        }
+                    }
+
+                    window.onSelectEditCouponDrop = function (val) {
+                        var sel = document.getElementById("editCouponSelect");
+                        var badge = document.getElementById("editCouponDiscountPreview");
+                        var statusEl = document.getElementById("editCouponStatus");
+                        var disc = 0;
+                        var label = "";
+                        if (sel && sel.selectedIndex >= 0) {
+                            var opt = sel.options[sel.selectedIndex];
+                            disc = parseWonNum(opt && opt.dataset ? opt.dataset.discount : 0);
+                            label = String((opt && opt.dataset && opt.dataset.label) || "").trim();
+                        }
+                        if (badge) badge.textContent = "-" + disc.toLocaleString() + "원 할인";
+                        if (statusEl) {
+                            statusEl.textContent = label
+                                ? ("선택된 쿠폰: " + label)
+                                : "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
+                        }
+                        if (typeof window.recalculateEditTotal === "function") {
+                            window.recalculateEditTotal();
+                        }
+                    };
+
+                    var origOpenEdit = window.openEditModal;
+                    if (typeof origOpenEdit === "function") {
+                        window.openEditModal = function () {
+                            var r = origOpenEdit.apply(this, arguments);
+                            var ord = window.currentReservationData || window.lastReservationData || window.activeReservation || {};
+                            var cpns = window.myAvailableCoupons || window.availableCoupons || ord.availableCoupons || [];
+                            syncEditCouponUi(ord, cpns);
+                            return r;
+                        };
+                    }
+
+                    document.addEventListener("DOMContentLoaded", function () {
+                        var ord = window.currentReservationData || window.lastReservationData || window.activeReservation || {};
+                        var cpns = window.myAvailableCoupons || window.availableCoupons || ord.availableCoupons || [];
+                        if (ord && (ord.usedCoupon || cpns.length > 0)) {
+                            syncEditCouponUi(ord, cpns);
+                        }
+                    });
+                })();
+                </script>
+                <!-- ▲ 여기까지 쿠폰 적용 상태 블록 교체 -->
                 <!-- ▲ 여기까지 쿠폰 적용 상태 블록 교체 -->
 
                 <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
