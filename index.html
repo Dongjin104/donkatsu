@@ -6491,10 +6491,14 @@ function renderActiveReservationNotice(resData) {
             }
 
             function cleanCouponLabel(str) {
-                return String(str || '')
+                const cleaned = String(str || '')
                     .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, '')
                     .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
                     .trim();
+                if (!cleaned || cleaned === '없음' || cleaned === '미사용' || cleaned === '할인쿠폰' || /^0\s*원\s*할인쿠폰$/i.test(cleaned)) {
+                    return '';
+                }
+                return cleaned;
             }
 
             const cleanNick = String(savedNick || '').trim();
@@ -6516,15 +6520,15 @@ function renderActiveReservationNotice(resData) {
             let cachedSavedText = '';
             if (!explicitNoCoupon) {
                 try {
-                    updatedCouponOverride = String(
+                    updatedCouponOverride = cleanCouponLabel(
                         sessionStorage.getItem(updatedOverrideKey) ||
                         localStorage.getItem(updatedOverrideKey) ||
                         ''
-                    ).trim();
+                    );
                 } catch (e) { }
 
                 try {
-                    cachedSavedText = String(
+                    cachedSavedText = cleanCouponLabel(
                         updatedCouponOverride ||
                         sessionStorage.getItem(storageKey) ||
                         localStorage.getItem(storageKey) ||
@@ -6532,9 +6536,9 @@ function renderActiveReservationNotice(resData) {
                         localStorage.getItem(nickStorageKey) ||
                         window.__lockedCouponText ||
                         ''
-                    ).trim();
+                    );
                 } catch (e) {
-                    cachedSavedText = String(updatedCouponOverride || window.__lockedCouponText || '').trim();
+                    cachedSavedText = cleanCouponLabel(updatedCouponOverride || window.__lockedCouponText || '');
                 }
             }
 
@@ -6595,56 +6599,10 @@ function renderActiveReservationNotice(resData) {
                 0
             );
 
-            const localCouponCandidates = explicitNoCoupon ? [] : [
-                typeof appliedQuickCoupon !== 'undefined' ? appliedQuickCoupon : null,
-                typeof appliedMainCoupon !== 'undefined' ? appliedMainCoupon : null,
-                typeof selectedCoupon !== 'undefined' ? selectedCoupon : null,
-                window.__lastAppliedCoupon || null
-            ].filter(Boolean);
-
-            if (!rawName || /^CPN-/i.test(rawName)) {
-                rawName = '';
-                for (let i = 0; i < localCouponCandidates.length; i++) {
-                    const lc = localCouponCandidates[i];
-                    const lcCode = String(lc.code || lc.couponId || '').trim();
-                    const lcAmt = parseWonVal(lc.value ?? lc.discountAmount ?? lc.discount ?? 0);
-                    const lcName = String(lc.name || lc.couponName || '').trim();
-                    if (!lcName || /^CPN-/i.test(lcName)) continue;
-                    if (rawCode && lcCode && lcCode.toUpperCase() === rawCode.toUpperCase()) {
-                        rawName = lcName;
-                        if (!appliedDiscount && lcAmt > 0) appliedDiscount = lcAmt;
-                        break;
-                    }
-                    if (!rawCode && appliedDiscount > 0 && lcAmt === appliedDiscount) {
-                        rawName = lcName;
-                        break;
-                    }
-                }
-            }
-
-            if ((!rawName || !appliedDiscount) && (rawCode || appliedDiscount > 0)) {
-                const pools = [
-                    Array.isArray(window.globalMyCoupons) ? window.globalMyCoupons : [],
-                    Array.isArray(window.globalCouponList) ? window.globalCouponList : []
-                ];
-                for (let p = 0; p < pools.length; p++) {
-                    const arr = pools[p];
-                    const matched = arr.find(item => {
-                        if (!item) return false;
-                        const itemCode = String(item.code || item.couponId || item.coupon_id || '').trim();
-                        const itemAmt = parseWonVal(item.discountAmount ?? item.value ?? item.discount ?? 0);
-                        if (rawCode && itemCode && itemCode.toUpperCase() === rawCode.toUpperCase()) return true;
-                        if (!rawCode && appliedDiscount > 0 && itemAmt === appliedDiscount) return true;
-                        return false;
-                    });
-                    if (matched) {
-                        const mName = String(matched.name || matched.couponName || matched.coupon_name || matched.title || '').trim();
-                        const mAmt = parseWonVal(matched.discountAmount ?? matched.value ?? matched.discount ?? 0);
-                        if (!rawName && mName && !/^CPN-/i.test(mName)) rawName = mName;
-                        if (!appliedDiscount && mAmt > 0) appliedDiscount = mAmt;
-                        if (rawName && appliedDiscount) break;
-                    }
-                }
+            if (!appliedDiscount && !explicitNoCoupon) {
+                const candidateText = updatedCouponOverride || cachedSavedText || rawName;
+                const sumMinus = String(candidateText || '').match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
+                if (sumMinus) appliedDiscount = parseWonVal(sumMinus[1]);
             }
 
             if (!appliedDiscount && rawName) {
@@ -6655,30 +6613,25 @@ function renderActiveReservationNotice(resData) {
             }
 
             const cleanedName = cleanCouponLabel(rawName);
-            const hasRealCoupon = Boolean(rawCode || appliedDiscount > 0 || (cleanedName && cleanedName !== '없음' && cleanedName !== '미사용'));
-            const fallbackName = appliedDiscount > 0 ? `${appliedDiscount.toLocaleString()}원 할인쿠폰` : '할인쿠폰';
+            const hasRealCoupon = Boolean(
+                !explicitNoCoupon && (
+                    appliedDiscount > 0 ||
+                    (rawCode && cleanedName) ||
+                    (cleanedName && appliedDiscount > 0)
+                )
+            );
+            const fallbackName = appliedDiscount > 0 ? `${appliedDiscount.toLocaleString()}원 할인쿠폰` : '';
             const labelPart = hasRealCoupon ? (cleanedName || fallbackName) : '';
 
             let couponSummaryText = '';
-            if (updatedCouponOverride) {
+            if (!explicitNoCoupon && updatedCouponOverride) {
                 couponSummaryText = updatedCouponOverride;
-            } else if (hasRealCoupon) {
-                if (labelPart && appliedDiscount > 0) {
-                    couponSummaryText = `${labelPart} (-${appliedDiscount.toLocaleString()}원)`;
-                } else if (labelPart) {
-                    couponSummaryText = labelPart;
-                } else if (appliedDiscount > 0) {
-                    couponSummaryText = `${fallbackName} (-${appliedDiscount.toLocaleString()}원)`;
-                }
-            }
-
-            if (!couponSummaryText && cachedSavedText) {
+            } else if (hasRealCoupon && labelPart) {
+                couponSummaryText = appliedDiscount > 0
+                    ? `${labelPart} (-${appliedDiscount.toLocaleString()}원)`
+                    : labelPart;
+            } else if (!explicitNoCoupon && cachedSavedText) {
                 couponSummaryText = cachedSavedText;
-            }
-
-            if (!appliedDiscount && couponSummaryText) {
-                const sumMinus = couponSummaryText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
-                if (sumMinus) appliedDiscount = parseWonVal(sumMinus[1]);
             }
 
             const dispPrice = document.getElementById('displayTotalPrice');
@@ -6902,7 +6855,7 @@ function renderActiveReservationNotice(resData) {
                 }
             }
         }
-
+        
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
@@ -9091,7 +9044,7 @@ async function openSearchModal() {
                 preserveScrollPos(keptY);
             }
         }     
-          
+
         function closeSearchModal() {
             const keptY = captureScrollPos();
             hideModal('searchModal');
