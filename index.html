@@ -9027,10 +9027,10 @@ async function openSearchModal() {
                     ? rawSavedCouponName
                     : ((matchedSavedCoupon && matchedSavedCoupon.name && !/^CPN-/i.test(matchedSavedCoupon.name))
                         ? matchedSavedCoupon.name
-                        : (savedDiscountNum > 0 ? `${savedDiscountNum.toLocaleString()}원 할인쿠폰` : ''));
+                        : '');
 
                 const finalDiscVal = savedDiscountNum || (matchedSavedCoupon && Number(matchedSavedCoupon.value)) || 0;
-                const hasExistingCoupon = Boolean(existingCouponCode || cleanSavedName || finalDiscVal > 0);
+                const hasExistingCoupon = Boolean(finalDiscVal > 0 && (existingCouponCode || cleanSavedName || matchedSavedCoupon));
 
                 appliedEditCoupon = hasExistingCoupon
                     ? Object.assign(
@@ -9051,7 +9051,7 @@ async function openSearchModal() {
 
                 populateCouponSelectBox('editCouponSelect', appliedEditCoupon ? appliedEditCoupon.code : '');
                 const editCouponSel = document.getElementById('editCouponSelect');
-                if (appliedEditCoupon && editCouponSel) {
+                if (appliedEditCoupon && editCouponSel && finalDiscVal > 0) {
                     const targetCodeUpper = String(appliedEditCoupon.code).toUpperCase();
                     let matchedOpt = Array.from(editCouponSel.options).find(o => String(o.value).toUpperCase() === targetCodeUpper);
                     if (!matchedOpt) {
@@ -9059,9 +9059,7 @@ async function openSearchModal() {
                         matchedOpt.value = appliedEditCoupon.code;
                         editCouponSel.insertBefore(matchedOpt, editCouponSel.firstChild);
                     }
-                    matchedOpt.textContent = finalDiscVal > 0
-                        ? `${appliedEditCoupon.name} — ${finalDiscVal.toLocaleString()}원 할인`
-                        : appliedEditCoupon.name;
+                    matchedOpt.textContent = `${appliedEditCoupon.name} — ${finalDiscVal.toLocaleString()}원 할인`;
                     matchedOpt.dataset.discount = String(finalDiscVal);
                     editCouponSel.value = appliedEditCoupon.code;
                 } else if (editCouponSel) {
@@ -9092,8 +9090,8 @@ async function openSearchModal() {
                 showCustomAlert("조회 오류", "예약 정보를 불러오는 중 오류가 발생했습니다.");
                 preserveScrollPos(keptY);
             }
-        }
-        
+        }     
+          
         function closeSearchModal() {
             const keptY = captureScrollPos();
             hideModal('searchModal');
