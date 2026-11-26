@@ -5195,10 +5195,14 @@
                 const mWon = rawCouponName.match(/([0-9,]+)\s*원/);
                 if (mWon) discountNum = parseInt(mWon[1].replace(/[^0-9]/g, ''), 10) || 0;
             }
-            const cleanCouponName = (!isCodeLikeName && rawCouponName && rawCouponName !== '없음' && rawCouponName !== '미사용')
-                ? rawCouponName
+            const cleanedName = String(rawCouponName || '')
+                .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, '')
+                .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                .trim();
+            const cleanCouponName = (!isCodeLikeName && cleanedName && cleanedName !== '없음' && cleanedName !== '미사용')
+                ? cleanedName
                 : (discountNum > 0 ? `${discountNum.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
-            const hasCouponInfo = Boolean(couponCode || (!isCodeLikeName && rawCouponName) || discountNum > 0);
+            const hasCouponInfo = Boolean(couponCode || (!isCodeLikeName && cleanedName) || discountNum > 0);
             const couponDisplayText = hasCouponInfo
                 ? (discountNum > 0
                     ? `${cleanCouponName} (-${discountNum.toLocaleString()}원)`
@@ -6304,6 +6308,13 @@ function renderActiveReservationNotice(resData) {
                 return d ? (parseInt(d, 10) || 0) : 0;
             }
 
+            function cleanCouponLabel(str) {
+                return String(str || '')
+                    .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, '')
+                    .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                    .trim();
+            }
+
             const nestedCoupon = (resData && (resData.usedCoupon || resData.appliedCoupon || resData.couponInfo || resData.coupon)) || null;
             let rawName = String(
                 (resData && (
@@ -6420,9 +6431,10 @@ function renderActiveReservationNotice(resData) {
                 }
             }
 
-            const hasRealCoupon = Boolean(rawCode || appliedDiscount > 0 || (rawName && rawName !== '없음' && rawName !== '미사용'));
+            const cleanedName = cleanCouponLabel(rawName);
+            const hasRealCoupon = Boolean(rawCode || appliedDiscount > 0 || (cleanedName && cleanedName !== '없음' && cleanedName !== '미사용'));
             const fallbackName = appliedDiscount > 0 ? `${appliedDiscount.toLocaleString()}원 할인쿠폰` : '할인쿠폰';
-            const labelPart = hasRealCoupon ? (rawName || fallbackName) : '';
+            const labelPart = hasRealCoupon ? (cleanedName || fallbackName) : '';
 
             let couponSummaryText = '';
             if (hasRealCoupon) {
