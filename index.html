@@ -8698,7 +8698,7 @@ function renderActiveReservationNotice(resData) {
             card.style.display = 'block';
         }
 
-        async function openSearchModal() {
+async function openSearchModal() {
             const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -8807,20 +8807,74 @@ function renderActiveReservationNotice(resData) {
                 populateTimeSelect('newPickupTime', normalizedPrevTime, true);
                 updateLiveSummary(editOrderItems, editSauceItems, 'editSelectedSummary', 'editTotalPrice');
 
-                const existingCouponCode = String(data.couponCode || '').trim().toUpperCase();
-                const matchedSavedCoupon = existingCouponCode ? findCouponByCode(existingCouponCode) : null;
-                appliedEditCoupon = matchedSavedCoupon
-                    ? Object.assign({}, matchedSavedCoupon)
-                    : (existingCouponCode
-                        ? {
-                            code: existingCouponCode,
-                            name: data.couponName || existingCouponCode,
-                            discountType: 'amount',
-                            value: parseInt(String(data.couponDiscount || '0').replace(/[^0-9]/g, ''), 10) || 0,
-                            minOrder: 0
+                const existingCouponCode = String(
+                    data.couponCode ||
+                    data.appliedCouponCode ||
+                    data.usedCouponCode ||
+                    data.couponId ||
+                    ''
+                ).trim().toUpperCase();
+                const rawSavedCouponName = String(
+                    data.couponName ||
+                    data.usedCouponName ||
+                    data.appliedCouponName ||
+                    data.usedCoupon ||
+                    ''
+                ).replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, '').replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '').trim();
+                let savedDiscountNum = parseInt(String(
+                    data.couponDiscount ||
+                    data.discountAmount ||
+                    data.discount ||
+                    '0'
+                ).replace(/[^0-9]/g, ''), 10) || 0;
+                if (!savedDiscountNum && rawSavedCouponName) {
+                    const wonMatch = rawSavedCouponName.match(/([0-9,]+)\s*원/);
+                    if (wonMatch) savedDiscountNum = parseInt(wonMatch[1].replace(/[^0-9]/g, ''), 10) || 0;
+                }
+                const matchedSavedCoupon = existingCouponCode && typeof findCouponByCode === 'function'
+                    ? findCouponByCode(existingCouponCode)
+                    : null;
+
+                const cleanSavedName = (rawSavedCouponName && !/^CPN-/i.test(rawSavedCouponName))
+                    ? rawSavedCouponName
+                    : ((matchedSavedCoupon && matchedSavedCoupon.name)
+                        ? matchedSavedCoupon.name
+                        : (savedDiscountNum > 0 ? `${savedDiscountNum.toLocaleString()}원 할인쿠폰` : '할인쿠폰'));
+
+                const hasExistingCoupon = Boolean(existingCouponCode || (rawSavedCouponName && !/^CPN-/i.test(rawSavedCouponName)) || savedDiscountNum > 0);
+                appliedEditCoupon = hasExistingCoupon
+                    ? Object.assign(
+                        {
+                            code: existingCouponCode || (matchedSavedCoupon && matchedSavedCoupon.code) || '__APPLIED__',
+                            name: cleanSavedName,
+                            discountType: (matchedSavedCoupon && matchedSavedCoupon.discountType) || 'amount',
+                            value: savedDiscountNum || (matchedSavedCoupon && Number(matchedSavedCoupon.value)) || 0,
+                            minOrder: (matchedSavedCoupon && Number(matchedSavedCoupon.minOrder)) || 0
+                        },
+                        matchedSavedCoupon || {},
+                        {
+                            name: cleanSavedName,
+                            value: savedDiscountNum || (matchedSavedCoupon && Number(matchedSavedCoupon.value)) || 0
                         }
-                        : null);
+                    )
+                    : null;
+
                 populateCouponSelectBox('editCouponSelect', appliedEditCoupon ? appliedEditCoupon.code : '');
+                const editCouponSel = document.getElementById('editCouponSelect');
+                if (appliedEditCoupon && editCouponSel) {
+                    const hasOpt = Array.from(editCouponSel.options).some(o => String(o.value).toUpperCase() === String(appliedEditCoupon.code).toUpperCase());
+                    if (!hasOpt) {
+                        const opt = document.createElement('option');
+                        opt.value = appliedEditCoupon.code;
+                        const discVal = Number(appliedEditCoupon.value || 0);
+                        opt.textContent = discVal > 0
+                            ? `${appliedEditCoupon.name} (-${discVal.toLocaleString()}원)`
+                            : appliedEditCoupon.name;
+                        opt.dataset.discount = String(discVal);
+                        editCouponSel.insertBefore(opt, editCouponSel.firstChild);
+                    }
+                    editCouponSel.value = appliedEditCoupon.code;
+                }
                 syncCouponToOrderSummary(true);
 
                 setOriginalEditSnapshot({
