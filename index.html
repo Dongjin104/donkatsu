@@ -6792,7 +6792,19 @@ function renderActiveReservationNotice(resData) {
             }
 
             if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
-                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
+                var isJustUpdated = false;
+                try {
+                    isJustUpdated = Boolean(
+                        sessionStorage.getItem('donkatsu_just_updated_reservation') ||
+                        localStorage.getItem('donkatsu_just_updated_reservation')
+                    );
+                    if (isJustUpdated) {
+                        sessionStorage.removeItem('donkatsu_just_updated_reservation');
+                        localStorage.removeItem('donkatsu_just_updated_reservation');
+                    }
+                } catch (e) { }
+
+                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}`;
                 const storageShownKey = `donkatsu_shown_applied_popup_${appliedKey}`;
                 let alreadyShownPersisted = false;
                 try {
@@ -6802,7 +6814,13 @@ function renderActiveReservationNotice(resData) {
                     );
                 } catch (e) { }
 
-                if (!__shownAppliedCouponKeys.has(appliedKey) && !alreadyShownPersisted) {
+                if (isJustUpdated) {
+                    __shownAppliedCouponKeys.add(appliedKey);
+                    try {
+                        localStorage.setItem(storageShownKey, '1');
+                        sessionStorage.setItem(storageShownKey, '1');
+                    } catch (e) { }
+                } else if (!__shownAppliedCouponKeys.has(appliedKey) && !alreadyShownPersisted) {
                     __shownAppliedCouponKeys.add(appliedKey);
                     try {
                         localStorage.setItem(storageShownKey, '1');
