@@ -9320,6 +9320,36 @@ async function openSearchModal() {
             const totalPriceNum = calculateCurrentTotalPrice(editOrderItems, editSauceItems);
             const totalPriceStr = totalPriceNum.toLocaleString() + '원';
 
+            const couponSelEl = document.getElementById('editCouponSelect');
+            const selectedCouponCode = couponSelEl ? String(couponSelEl.value || '').trim() : '';
+            const selectedCouponOpt = (couponSelEl && couponSelEl.selectedIndex >= 0) ? couponSelEl.options[couponSelEl.selectedIndex] : null;
+            let selectedCouponName = '';
+            let selectedCouponDiscount = 0;
+
+            if (selectedCouponCode && selectedCouponOpt) {
+                selectedCouponDiscount = parseInt(String(
+                    (selectedCouponOpt.dataset && selectedCouponOpt.dataset.discount) ||
+                    (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (appliedEditCoupon.value || appliedEditCoupon.discountAmount || appliedEditCoupon.discount)) ||
+                    '0'
+                ).replace(/[^0-9]/g, ''), 10) || 0;
+
+                selectedCouponName = String(
+                    (selectedCouponOpt.dataset && selectedCouponOpt.dataset.label) ||
+                    selectedCouponOpt.textContent ||
+                    (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (appliedEditCoupon.name || appliedEditCoupon.couponName)) ||
+                    ''
+                )
+                    .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                    .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
+                    .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*$/g, '')
+                    .trim();
+
+                if (!selectedCouponDiscount && selectedCouponName) {
+                    const mWon = selectedCouponName.match(/([0-9,]+)\s*원/);
+                    if (mWon) selectedCouponDiscount = parseInt(mWon[1].replace(/[^0-9]/g, ''), 10) || 0;
+                }
+            }
+
             isUpdatingReservation = true;
             const updateBtn = document.getElementById('updateBtn');
             if (updateBtn) updateBtn.disabled = true;
@@ -9339,7 +9369,11 @@ async function openSearchModal() {
                         menu: menuSummary,
                         sauce: sauceSummary,
                         pickupTime: newTime,
-                        totalPrice: totalPriceStr
+                        totalPrice: totalPriceStr,
+                        couponCode: selectedCouponCode,
+                        couponId: selectedCouponCode,
+                        couponName: selectedCouponName,
+                        couponDiscount: selectedCouponDiscount
                     })
                 });
                 const text = await res.text();
@@ -9366,6 +9400,45 @@ async function openSearchModal() {
                 }
 
                 if (data.result === 'success') {
+                    const finalCouponCode = String(data.couponCode || selectedCouponCode || '').trim();
+                    const finalCouponName = String(data.couponName || selectedCouponName || '').trim();
+                    const finalCouponDiscount = parseInt(String(
+                        data.couponDiscount !== undefined ? data.couponDiscount : selectedCouponDiscount
+                    ).replace(/[^0-9]/g, ''), 10) || 0;
+
+                    const cleanNick = String(nick || '').trim();
+                    const cleanRow = String(currentFoundRowIndex || '').trim();
+                    const rowStorageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
+                    const nickStorageKey = `donkatsu_used_coupon_nick_${cleanNick || 'nick'}`;
+
+                    if (finalCouponCode || finalCouponName || finalCouponDiscount > 0) {
+                        const summaryText = finalCouponDiscount > 0
+                            ? `${finalCouponName || (finalCouponDiscount.toLocaleString() + '원 할인쿠폰')} (-${finalCouponDiscount.toLocaleString()}원)`
+                            : finalCouponName;
+                        window.__lockedCouponText = summaryText;
+                        window.__lastAppliedCoupon = {
+                            code: finalCouponCode,
+                            name: finalCouponName,
+                            value: finalCouponDiscount,
+                            discountAmount: finalCouponDiscount
+                        };
+                        try {
+                            sessionStorage.setItem(rowStorageKey, summaryText);
+                            localStorage.setItem(rowStorageKey, summaryText);
+                            sessionStorage.setItem(nickStorageKey, summaryText);
+                            localStorage.setItem(nickStorageKey, summaryText);
+                        } catch (e) { }
+                    } else {
+                        window.__lockedCouponText = '';
+                        window.__lastAppliedCoupon = null;
+                        try {
+                            sessionStorage.removeItem(rowStorageKey);
+                            localStorage.removeItem(rowStorageKey);
+                            sessionStorage.removeItem(nickStorageKey);
+                            localStorage.removeItem(nickStorageKey);
+                        } catch (e) { }
+                    }
+
                     const updatedObj = {
                         result: 'found',
                         rowIndex: currentFoundRowIndex,
@@ -9375,6 +9448,9 @@ async function openSearchModal() {
                         sauce: sauceSummary,
                         pickupTime: newTime,
                         totalPrice: totalPriceStr,
+                        couponCode: finalCouponCode,
+                        couponName: finalCouponName,
+                        couponDiscount: finalCouponDiscount,
                         status: currentRenderedStatus || '미확인',
                         eventPrize: document.getElementById('displayEventPrize')?.innerText || ''
                     };
