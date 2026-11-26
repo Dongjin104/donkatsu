@@ -6103,7 +6103,7 @@
 
         let __lockedCouponText = '';
 
-        function renderActiveReservationNotice(resData) {
+function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6290,6 +6290,7 @@
                 noticeCouponRow = document.createElement('div');
                 noticeCouponRow.id = 'noticeCouponRowItem';
                 noticeCouponRow.className = 'order-info-row';
+                noticeCouponRow.style.alignItems = 'center';
 
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'order-info-label';
@@ -6298,7 +6299,22 @@
                 noticeCouponVal = document.createElement('span');
                 noticeCouponVal.id = 'displayUsedCoupon';
                 noticeCouponVal.className = 'order-info-value';
-                noticeCouponVal.style.cssText = 'color:#B45309;font-size:14px;font-weight:800;text-align:right;';
+                noticeCouponVal.style.cssText = [
+                    'display:inline-flex',
+                    'align-items:center',
+                    'justify-content:flex-end',
+                    'gap:6px',
+                    'color:#92400E',
+                    'background:#FEF3C7',
+                    'border:1px solid #FDE68A',
+                    'padding:4px 10px',
+                    'border-radius:999px',
+                    'font-size:12.5px',
+                    'font-weight:700',
+                    'line-height:1.35',
+                    'word-break:keep-all',
+                    'text-align:right'
+                ].join(';');
 
                 noticeCouponRow.appendChild(labelSpan);
                 noticeCouponRow.appendChild(noticeCouponVal);
@@ -6325,10 +6341,10 @@
 
             if (noticeCouponRow && noticeCouponVal) {
                 if (couponSummaryText) {
-                    noticeCouponVal.innerText = couponSummaryText;
+                    noticeCouponVal.textContent = `🎟 ${couponSummaryText}`;
                     noticeCouponRow.style.setProperty('display', 'flex', 'important');
                 } else {
-                    noticeCouponVal.innerText = '';
+                    noticeCouponVal.textContent = '';
                     noticeCouponRow.style.setProperty('display', 'none', 'important');
                 }
             }
@@ -6799,49 +6815,52 @@
         }
 
         function populateCouponSelectBox(selectId, selectedCode) {
-            const sel = document.getElementById(selectId);
-            if (!sel) return;
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
 
-            const hasCouponArray =
-                (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
-                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0);
+    const hasCouponArray =
+        (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
+        (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0);
 
-            const list = getAvailableCouponsList();
-            const currentCode = String(selectedCode || '').trim().toUpperCase();
+    const list = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
+    const currentCode = String(selectedCode || '').trim().toUpperCase();
 
-            const mergedList = list.slice();
-            if (currentCode && !mergedList.some(c => String(c.code || '').trim().toUpperCase() === currentCode)) {
-                mergedList.unshift({
-                    code: currentCode,
-                    name: `적용 중인 쿠폰 (${currentCode})`,
-                    discountType: 'amount',
-                    value: 0,
-                    minOrder: 0
-                });
-            }
+    const mergedList = list.slice();
+    if (currentCode && !mergedList.some(c => String(c.code || '').trim().toUpperCase() === currentCode)) {
+        mergedList.unshift({
+            code: currentCode,
+            name: `적용 중인 쿠폰 (${currentCode})`,
+            discountType: 'amount',
+            value: 0,
+            minOrder: 0
+        });
+    }
 
-            if (!hasCouponArray && !currentCode && window.isLoadingCoupons !== false) {
-                sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
-                sel.value = '';
-                sel.disabled = true;
-                return;
-            }
+    if (!hasCouponArray && !currentCode && window.isLoadingCoupons !== false) {
+        sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
+        sel.value = '';
+        sel.disabled = true;
+        return;
+    }
 
-            let html = `<option value="">쿠폰 선택 안 함 (미사용)</option>`;
-            if (mergedList.length === 0) {
-                html += `<option value="" disabled>보유 중인 사용 가능 쿠폰 없음</option>`;
-            } else {
-                mergedList.forEach(c => {
-                    const code = String(c.code || '').trim().toUpperCase();
-                    const selectedAttr = currentCode === code ? ' selected' : '';
-                    html += `<option value="${escapeHtml(code)}"${selectedAttr}>${escapeHtml(formatCouponOptionLabel(c))}</option>`;
-                });
-            }
+    let html = `<option value="">쿠폰 선택 안 함 (미사용)</option>`;
+    if (mergedList.length === 0) {
+        html += `<option value="" disabled>보유 중인 사용 가능 쿠폰 없음</option>`;
+    } else {
+        mergedList.forEach(c => {
+            const code = String(c.code || '').trim().toUpperCase();
+            const selectedAttr = currentCode === code ? ' selected' : '';
+            const label = typeof formatCouponOptionLabel === 'function'
+                ? formatCouponOptionLabel(c)
+                : `${c.name || code}${c.value ? ` — ${Number(c.value).toLocaleString()}원 할인` : ''}`;
+            html += `<option value="${escapeHtml(code)}"${selectedAttr}>${escapeHtml(label)}</option>`;
+        });
+    }
 
-            sel.innerHTML = html;
-            sel.value = currentCode;
-            sel.disabled = false;
-        }
+    sel.innerHTML = html;
+    sel.value = currentCode;
+    sel.disabled = false;
+}
 
         function onSelectMainCouponDrop(code) {
             const rawCode = String(code || '').trim();
@@ -8309,7 +8328,22 @@
                 pickupTime: currentState && currentState.pickupTime ? String(currentState.pickupTime) : prev.pickupTime,
                 totalPrice: Number(currentState && currentState.totalPrice !== undefined ? currentState.totalPrice : prev.totalPrice) || 0,
                 items: Object.assign({}, (currentState && currentState.items) || {}),
-                sauces: Object.assign({}, (currentState && currentState.sauces) || {})
+                sauces: Object.assign({}, (currentState && currentState.sauces) || {}),
+                couponCode: String(
+                    (currentState && (currentState.couponCode ?? currentState.appliedCouponCode)) !== undefined
+                        ? (currentState.couponCode || currentState.appliedCouponCode || '')
+                        : (prev.couponCode || '')
+                ).trim(),
+                couponName: String(
+                    (currentState && (currentState.couponName ?? currentState.appliedCouponName)) !== undefined
+                        ? (currentState.couponName || currentState.appliedCouponName || '')
+                        : (prev.couponName || '')
+                ).trim(),
+                couponDiscount: Number(
+                    (currentState && (currentState.couponDiscount ?? currentState.discountAmount)) !== undefined
+                        ? (currentState.couponDiscount || currentState.discountAmount || 0)
+                        : (prev.couponDiscount || 0)
+                ) || 0
             };
 
             const chips = [];
@@ -8339,6 +8373,23 @@
             }
             if (prev.pickupTime && curr.pickupTime && prev.pickupTime !== curr.pickupTime) {
                 chips.push({ text: `픽업 ${prev.pickupTime}→${curr.pickupTime}`, unchanged: false });
+            }
+
+            const prevCode = String(prev.couponCode || '').trim().toUpperCase();
+            const currCode = String(curr.couponCode || '').trim().toUpperCase();
+            const prevName = String(prev.couponName || '').trim() || (prevCode ? prevCode : '미사용');
+            const currName = String(curr.couponName || '').trim() || (currCode ? currCode : '미사용');
+            const prevDisc = Number(prev.couponDiscount) || 0;
+            const currDisc = Number(curr.couponDiscount) || 0;
+
+            if (!prevCode && currCode) {
+                const discSuffix = currDisc > 0 ? ` (-${currDisc.toLocaleString()}원)` : '';
+                chips.push({ text: `쿠폰 적용: 미사용 → ${currName}${discSuffix}`, unchanged: false });
+            } else if (prevCode && !currCode) {
+                chips.push({ text: `쿠폰 해제: ${prevName} → 미사용`, unchanged: false });
+            } else if (prevCode && currCode && (prevCode !== currCode || prevDisc !== currDisc)) {
+                const discSuffix = currDisc > 0 ? ` (-${currDisc.toLocaleString()}원)` : '';
+                chips.push({ text: `쿠폰 변경: ${prevName} → ${currName}${discSuffix}`, unchanged: false });
             }
 
             const diffPrice = curr.totalPrice - prev.totalPrice;
