@@ -5190,7 +5190,11 @@
             const couponCode = String((payload && (payload.couponCode || payload.appliedCouponCode || payload.couponId)) || '').trim();
             const rawCouponName = String((payload && (payload.couponName || payload.name || payload.usedCouponName)) || '').trim();
             const isCodeLikeName = /^CPN-/i.test(rawCouponName);
-            const discountNum = parseInt(String((payload && (payload.couponDiscount || payload.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            let discountNum = parseInt(String((payload && (payload.couponDiscount || payload.discountAmount)) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+            if (!discountNum && rawCouponName) {
+                const mWon = rawCouponName.match(/([0-9,]+)\s*원/);
+                if (mWon) discountNum = parseInt(mWon[1].replace(/[^0-9]/g, ''), 10) || 0;
+            }
             const cleanCouponName = (!isCodeLikeName && rawCouponName && rawCouponName !== '없음' && rawCouponName !== '미사용')
                 ? rawCouponName
                 : (discountNum > 0 ? `${discountNum.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
@@ -6596,7 +6600,7 @@ function renderActiveReservationNotice(resData) {
                 }
             }
         }
-                
+
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
