@@ -4234,100 +4234,100 @@
         </div>
     </div>
     <script>
-    (function () {
-        function parseWonAmount(v) {
-            if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
-            var d = String(v || '').replace(/[^0-9]/g, '');
-            return d ? (parseInt(d, 10) || 0) : 0;
-        }
-
-        function syncUpdateSuccessCouponAndPrice() {
-            var priceEl = document.getElementById('updateSuccessPriceVal');
-            var couponRow = document.getElementById('updateSuccessCouponRow');
-            var couponValEl = document.getElementById('updateSuccessCouponVal');
-            if (!priceEl) return;
-
-            var sel = document.getElementById('editCouponSelect');
-            var selectedOpt = (sel && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex] : null;
-            var selVal = sel ? String(sel.value || '').trim() : '';
-
-            var discountAmt = 0;
-            var couponName = '';
-
-            if (selectedOpt && selVal) {
-                discountAmt = parseWonAmount(selectedOpt.dataset ? selectedOpt.dataset.discount : 0);
-                couponName = String((selectedOpt.dataset && selectedOpt.dataset.label) || selectedOpt.textContent || '')
-                    .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
-                    .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
-                    .trim();
+        (function () {
+            function parseWonAmount(v) {
+                if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
+                var d = String(v || '').replace(/[^0-9]/g, '');
+                return d ? (parseInt(d, 10) || 0) : 0;
             }
 
-            if (!discountAmt && typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && selVal !== '') {
-                discountAmt = parseWonAmount(appliedEditCoupon.value || appliedEditCoupon.discountAmount || appliedEditCoupon.discount || 0);
-                couponName = couponName || String(appliedEditCoupon.name || appliedEditCoupon.couponName || '').trim();
-            }
+            function syncUpdateSuccessCouponAndPrice() {
+                var priceEl = document.getElementById('updateSuccessPriceVal');
+                var couponRow = document.getElementById('updateSuccessCouponRow');
+                var couponValEl = document.getElementById('updateSuccessCouponVal');
+                if (!priceEl) return;
 
-            if (!discountAmt && couponName) {
-                var wonMatch = couponName.match(/([0-9,]+)\s*원/);
-                if (wonMatch) discountAmt = parseWonAmount(wonMatch[1]);
-            }
+                var sel = document.getElementById('editCouponSelect');
+                var selectedOpt = (sel && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex] : null;
+                var selVal = sel ? String(sel.value || '').trim() : '';
 
-            var rawPriceText = String(priceEl.textContent || '');
-            var basePrice = parseWonAmount(rawPriceText);
-            var editTotalEl = document.getElementById('editTotalPrice');
-            var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
-            if (editLivePrice > 0 && (basePrice <= 0 || basePrice === editLivePrice)) {
-                basePrice = editLivePrice;
-            }
+                var discountAmt = 0;
+                var couponName = '';
 
-            var hasCoupon = Boolean(selVal && (couponName || discountAmt > 0));
-            if (hasCoupon) {
-                var cleanLabel = couponName || (discountAmt.toLocaleString() + '원 할인쿠폰');
-                if (couponValEl) {
-                    couponValEl.textContent = discountAmt > 0
-                        ? (cleanLabel + ' (-' + discountAmt.toLocaleString() + '원)')
-                        : cleanLabel;
+                if (selectedOpt && selVal) {
+                    discountAmt = parseWonAmount(selectedOpt.dataset ? selectedOpt.dataset.discount : 0);
+                    couponName = String((selectedOpt.dataset && selectedOpt.dataset.label) || selectedOpt.textContent || '')
+                        .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                        .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
+                        .trim();
                 }
-                if (couponRow) couponRow.style.display = 'flex';
-            } else {
-                if (couponValEl) couponValEl.textContent = '-';
-                if (couponRow) couponRow.style.display = 'none';
-            }
 
-            if (basePrice > 0) {
-                var finalPrice = Math.max(0, basePrice - discountAmt);
-                priceEl.textContent = finalPrice.toLocaleString() + '원';
-            }
-        }
-
-        function observeUpdateSuccessModal() {
-            var modal = document.getElementById('updateSuccessModal');
-            if (!modal) return;
-
-            var observer = new MutationObserver(function () {
-                var isVisible = modal.style.display !== 'none' &&
-                    (modal.classList.contains('show') || modal.classList.contains('active') || modal.style.display === 'block' || modal.style.display === 'flex');
-                if (isVisible) {
-                    syncUpdateSuccessCouponAndPrice();
+                if (!discountAmt && typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && selVal !== '') {
+                    discountAmt = parseWonAmount(appliedEditCoupon.value || appliedEditCoupon.discountAmount || appliedEditCoupon.discount || 0);
+                    couponName = couponName || String(appliedEditCoupon.name || appliedEditCoupon.couponName || '').trim();
                 }
-            });
-            observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
 
-            var submitBtn = document.querySelector('#searchModalActionBtns button[onclick*="submitEdit"], #searchModalActionBtns .confirm-btn, #searchModalActionBtns .btn-primary');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', function () {
-                    setTimeout(syncUpdateSuccessCouponAndPrice, 120);
-                    setTimeout(syncUpdateSuccessCouponAndPrice, 450);
+                if (!discountAmt && couponName) {
+                    var wonMatch = couponName.match(/([0-9,]+)\s*원/);
+                    if (wonMatch) discountAmt = parseWonAmount(wonMatch[1]);
+                }
+
+                var rawPriceText = String(priceEl.textContent || '');
+                var basePrice = parseWonAmount(rawPriceText);
+                var editTotalEl = document.getElementById('editTotalPrice');
+                var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
+                if (editLivePrice > 0 && (basePrice <= 0 || basePrice === editLivePrice)) {
+                    basePrice = editLivePrice;
+                }
+
+                var hasCoupon = Boolean(selVal && (couponName || discountAmt > 0));
+                if (hasCoupon) {
+                    var cleanLabel = couponName || (discountAmt.toLocaleString() + '원 할인쿠폰');
+                    if (couponValEl) {
+                        couponValEl.textContent = discountAmt > 0
+                            ? (cleanLabel + ' (-' + discountAmt.toLocaleString() + '원)')
+                            : cleanLabel;
+                    }
+                    if (couponRow) couponRow.style.display = 'flex';
+                } else {
+                    if (couponValEl) couponValEl.textContent = '-';
+                    if (couponRow) couponRow.style.display = 'none';
+                }
+
+                if (basePrice > 0) {
+                    var finalPrice = Math.max(0, basePrice - discountAmt);
+                    priceEl.textContent = finalPrice.toLocaleString() + '원';
+                }
+            }
+
+            function observeUpdateSuccessModal() {
+                var modal = document.getElementById('updateSuccessModal');
+                if (!modal) return;
+
+                var observer = new MutationObserver(function () {
+                    var isVisible = modal.style.display !== 'none' &&
+                        (modal.classList.contains('show') || modal.classList.contains('active') || modal.style.display === 'block' || modal.style.display === 'flex');
+                    if (isVisible) {
+                        syncUpdateSuccessCouponAndPrice();
+                    }
                 });
-            }
-        }
+                observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', observeUpdateSuccessModal);
-        } else {
-            observeUpdateSuccessModal();
-        }
-    })();
+                var submitBtn = document.querySelector('#searchModalActionBtns button[onclick*="submitEdit"], #searchModalActionBtns .confirm-btn, #searchModalActionBtns .btn-primary');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', function () {
+                        setTimeout(syncUpdateSuccessCouponAndPrice, 120);
+                        setTimeout(syncUpdateSuccessCouponAndPrice, 450);
+                    });
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', observeUpdateSuccessModal);
+            } else {
+                observeUpdateSuccessModal();
+            }
+        })();
     </script>
 
     <div id="updatingModal" class="modal" style="z-index: 10046;">
@@ -4532,7 +4532,7 @@
                     <div id="editSauceCardContainer" class="sauce-grid"></div>
                 </div>
 
-<!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
+                <!-- ▼ 여기부터 쿠폰 적용 상태 블록 교체 -->
                 <div class="form-group" style="margin-top:6px; margin-bottom:12px;">
                     <label for="editCouponSelect"
                         style="font-size:14px; display:block; margin-bottom:6px; font-weight:700; color:var(--text-main);">쿠폰
@@ -4552,218 +4552,218 @@
                     </div>
                 </div>
                 <script>
-                (function () {
-                    function parseWonNum(v) {
-                        if (typeof v === "number") return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
-                        var d = String(v || "").replace(/[^0-9]/g, "");
-                        return d ? (parseInt(d, 10) || 0) : 0;
-                    }
-                    function getCurrentEditBasePrice() {
-                        var el = document.getElementById("editTotalPrice") || document.getElementById("editModalTotalPrice");
-                        if (el) {
-                            var txt = String(el.textContent || "");
-                            var m = txt.match(/([0-9,]+)\s*원/);
-                            if (m) return parseWonNum(m[1]);
+                    (function () {
+                        function parseWonNum(v) {
+                            if (typeof v === "number") return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
+                            var d = String(v || "").replace(/[^0-9]/g, "");
+                            return d ? (parseInt(d, 10) || 0) : 0;
                         }
-                        return 0;
-                    }
-                    function extractCouponFromDomFallback() {
-                        var usedEl = document.getElementById("displayUsedCoupon");
-                        var rawText = usedEl ? String(usedEl.textContent || "").replace(/^🎟\s*/, "").trim() : "";
-                        var lockedText = String(window.__lockedCouponText || "").trim();
-                        var chosenText = rawText || lockedText;
-                        if (!chosenText) return { usedCoupon: "", couponDiscount: 0 };
+                        function getCurrentEditBasePrice() {
+                            var el = document.getElementById("editTotalPrice") || document.getElementById("editModalTotalPrice");
+                            if (el) {
+                                var txt = String(el.textContent || "");
+                                var m = txt.match(/([0-9,]+)\s*원/);
+                                if (m) return parseWonNum(m[1]);
+                            }
+                            return 0;
+                        }
+                        function extractCouponFromDomFallback() {
+                            var usedEl = document.getElementById("displayUsedCoupon");
+                            var rawText = usedEl ? String(usedEl.textContent || "").replace(/^🎟\s*/, "").trim() : "";
+                            var lockedText = String(window.__lockedCouponText || "").trim();
+                            var chosenText = rawText || lockedText;
+                            if (!chosenText) return { usedCoupon: "", couponDiscount: 0 };
 
-                        var disc = 0;
-                        var mMinus = chosenText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
-                        if (mMinus) {
-                            disc = parseWonNum(mMinus[1]);
-                        } else {
-                            var priceEl = document.getElementById("displayTotalPrice");
-                            var finalPrice = priceEl ? parseWonNum(priceEl.textContent) : 0;
-                            var basePrice = getCurrentEditBasePrice();
-                            if (basePrice > finalPrice && finalPrice > 0) {
-                                disc = basePrice - finalPrice;
+                            var disc = 0;
+                            var mMinus = chosenText.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)/);
+                            if (mMinus) {
+                                disc = parseWonNum(mMinus[1]);
                             } else {
-                                var mWon = chosenText.match(/([0-9,]+)\s*원/);
-                                if (mWon) disc = parseWonNum(mWon[1]);
+                                var priceEl = document.getElementById("displayTotalPrice");
+                                var finalPrice = priceEl ? parseWonNum(priceEl.textContent) : 0;
+                                var basePrice = getCurrentEditBasePrice();
+                                if (basePrice > finalPrice && finalPrice > 0) {
+                                    disc = basePrice - finalPrice;
+                                } else {
+                                    var mWon = chosenText.match(/([0-9,]+)\s*원/);
+                                    if (mWon) disc = parseWonNum(mWon[1]);
+                                }
                             }
-                        }
-                        var cleanName = chosenText
-                            .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, "")
-                            .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, "")
-                            .trim();
-                        return {
-                            usedCoupon: cleanName ? (disc > 0 ? (cleanName + " (-" + disc.toLocaleString() + "원)") : cleanName) : chosenText,
-                            couponDiscount: disc
-                        };
-                    }
-                    function syncEditCouponUi(orderObj, couponsArr) {
-                        var sel = document.getElementById("editCouponSelect");
-                        var badge = document.getElementById("editCouponDiscountPreview");
-                        var statusEl = document.getElementById("editCouponStatus");
-                        if (!sel) return;
-
-                        var ord = orderObj || {};
-                        var domFb = extractCouponFromDomFallback();
-
-                        var usedLabel = String(
-                            ord.usedCoupon ||
-                            ord.couponLabel ||
-                            ord.couponName ||
-                            domFb.usedCoupon ||
-                            window.__lockedCouponText ||
-                            ""
-                        ).replace(/\s*\(\s*적용\s*중\s*\)\s*/g, "").trim();
-
-                        var savedDisc = parseWonNum(
-                            ord.couponDiscount ||
-                            ord.discountAmount ||
-                            ord.discount ||
-                            domFb.couponDiscount ||
-                            0
-                        );
-                        if (!savedDisc && usedLabel) {
-                            var dm = usedLabel.match(/([0-9,]+)\s*원/);
-                            if (dm) savedDisc = parseWonNum(dm[1]);
-                        }
-
-                        var list = Array.isArray(couponsArr) ? couponsArr : [];
-                        sel.innerHTML = "";
-
-                        var hasApplied = Boolean(usedLabel || savedDisc > 0);
-                        if (hasApplied) {
-                            var displayAppliedLabel = usedLabel || (savedDisc.toLocaleString() + "원 할인쿠폰");
-                            var curOpt = document.createElement("option");
-                            curOpt.value = "__CURRENT_APPLIED__";
-                            curOpt.dataset.discount = String(savedDisc);
-                            curOpt.dataset.label = displayAppliedLabel;
-                            curOpt.textContent = displayAppliedLabel + " (적용 중)";
-                            curOpt.selected = true;
-                            sel.appendChild(curOpt);
-                        }
-
-                        var noneOpt = document.createElement("option");
-                        noneOpt.value = "";
-                        noneOpt.dataset.discount = "0";
-                        noneOpt.dataset.label = "";
-                        noneOpt.textContent = list.length > 0 ? "쿠폰 선택 안 함 (미사용)" : "보유 중인 사용 가능 쿠폰 없음";
-                        if (!hasApplied) noneOpt.selected = true;
-                        sel.appendChild(noneOpt);
-
-                        for (var i = 0; i < list.length; i++) {
-                            var c = list[i] || {};
-                            var cAmt = parseWonNum(c.discountAmount || c.amount || c.value || 0);
-                            var cName = String(c.couponName || c.name || "할인쿠폰").trim();
-                            var opt = document.createElement("option");
-                            opt.value = String(c.couponId || c.id || c.code || (cName + "_" + i));
-                            opt.dataset.discount = String(cAmt);
-                            opt.dataset.label = cName + " (-" + cAmt.toLocaleString() + "원)";
-                            opt.textContent = cName + " — " + cAmt.toLocaleString() + "원 할인";
-                            sel.appendChild(opt);
-                        }
-
-                        if (hasApplied) {
-                            sel.value = "__CURRENT_APPLIED__";
-                            if (sel.selectedIndex < 0 && sel.options.length > 0) {
-                                sel.selectedIndex = 0;
-                            }
-                        }
-
-                        var activeDisc = (sel.value === "__CURRENT_APPLIED__")
-                            ? savedDisc
-                            : parseWonNum((sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].dataset.discount) || 0);
-
-                        if (badge) badge.textContent = activeDisc > 0 ? ("-" + activeDisc.toLocaleString() + "원 할인") : "0원 할인";
-                        if (statusEl) {
-                            if (hasApplied && sel.value === "__CURRENT_APPLIED__") {
-                                statusEl.textContent = "✓ " + (usedLabel || (savedDisc.toLocaleString() + "원 할인쿠폰")) + " 적용 중 (수정 저장 시 유지됩니다)";
-                            } else if (activeDisc > 0) {
-                                statusEl.textContent = "✓ 선택된 쿠폰으로 " + activeDisc.toLocaleString() + "원 할인이 적용됩니다.";
-                            } else {
-                                statusEl.textContent = "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
-                            }
-                        }
-
-                        if (typeof window.recalculateEditTotal === "function") {
-                            window.recalculateEditTotal();
-                        }
-                    }
-
-                    window.onSelectEditCouponDrop = function (val) {
-                        var sel = document.getElementById("editCouponSelect");
-                        var badge = document.getElementById("editCouponDiscountPreview");
-                        var statusEl = document.getElementById("editCouponStatus");
-                        var disc = 0;
-                        var label = "";
-                        if (sel && sel.selectedIndex >= 0) {
-                            var opt = sel.options[sel.selectedIndex];
-                            disc = parseWonNum(opt && opt.dataset ? opt.dataset.discount : 0);
-                            label = String((opt && opt.dataset && opt.dataset.label) || "").trim();
-                        }
-                        if (badge) badge.textContent = disc > 0 ? ("-" + disc.toLocaleString() + "원 할인") : "0원 할인";
-                        if (statusEl) {
-                            statusEl.textContent = label
-                                ? ("✓ " + label + " 적용")
-                                : "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
-                        }
-                        if (typeof window.recalculateEditTotal === "function") {
-                            window.recalculateEditTotal();
-                        }
-                    };
-
-                    function collectEditCouponContext() {
-                        var ord = window.currentReservationData || window.lastReservationData || window.activeReservation || {};
-                        var cpns = window.myAvailableCoupons || window.availableCoupons || ord.availableCoupons || [];
-                        var domFb = extractCouponFromDomFallback();
-                        if (domFb.usedCoupon || domFb.couponDiscount > 0) {
-                            ord = Object.assign({}, ord, {
-                                usedCoupon: ord.usedCoupon || domFb.usedCoupon,
-                                couponDiscount: ord.couponDiscount || domFb.couponDiscount
-                            });
-                        }
-                        return { ord: ord, cpns: cpns };
-                    }
-
-                    function attachEditModalCouponHook() {
-                        if (typeof window.openEditModal === "function" && !window.openEditModal.__couponHooked) {
-                            var origOpenEdit = window.openEditModal;
-                            var wrappedOpenEdit = function () {
-                                var r = origOpenEdit.apply(this, arguments);
-                                var ctx = collectEditCouponContext();
-                                syncEditCouponUi(ctx.ord, ctx.cpns);
-                                setTimeout(function () {
-                                    var latest = collectEditCouponContext();
-                                    syncEditCouponUi(latest.ord, latest.cpns);
-                                }, 80);
-                                return r;
+                            var cleanName = chosenText
+                                .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*/g, "")
+                                .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, "")
+                                .trim();
+                            return {
+                                usedCoupon: cleanName ? (disc > 0 ? (cleanName + " (-" + disc.toLocaleString() + "원)") : cleanName) : chosenText,
+                                couponDiscount: disc
                             };
-                            wrappedOpenEdit.__couponHooked = true;
-                            window.openEditModal = wrappedOpenEdit;
                         }
-                    }
+                        function syncEditCouponUi(orderObj, couponsArr) {
+                            var sel = document.getElementById("editCouponSelect");
+                            var badge = document.getElementById("editCouponDiscountPreview");
+                            var statusEl = document.getElementById("editCouponStatus");
+                            if (!sel) return;
 
-                    attachEditModalCouponHook();
+                            var ord = orderObj || {};
+                            var domFb = extractCouponFromDomFallback();
 
-                    document.addEventListener("click", function (e) {
-                        var target = e.target && e.target.closest ? e.target.closest("#editReservationMainBtn, [onclick*='openEditModal']") : null;
-                        if (target) {
-                            attachEditModalCouponHook();
-                            setTimeout(function () {
-                                var ctx = collectEditCouponContext();
-                                syncEditCouponUi(ctx.ord, ctx.cpns);
-                            }, 50);
+                            var usedLabel = String(
+                                ord.usedCoupon ||
+                                ord.couponLabel ||
+                                ord.couponName ||
+                                domFb.usedCoupon ||
+                                window.__lockedCouponText ||
+                                ""
+                            ).replace(/\s*\(\s*적용\s*중\s*\)\s*/g, "").trim();
+
+                            var savedDisc = parseWonNum(
+                                ord.couponDiscount ||
+                                ord.discountAmount ||
+                                ord.discount ||
+                                domFb.couponDiscount ||
+                                0
+                            );
+                            if (!savedDisc && usedLabel) {
+                                var dm = usedLabel.match(/([0-9,]+)\s*원/);
+                                if (dm) savedDisc = parseWonNum(dm[1]);
+                            }
+
+                            var list = Array.isArray(couponsArr) ? couponsArr : [];
+                            sel.innerHTML = "";
+
+                            var hasApplied = Boolean(usedLabel || savedDisc > 0);
+                            if (hasApplied) {
+                                var displayAppliedLabel = usedLabel || (savedDisc.toLocaleString() + "원 할인쿠폰");
+                                var curOpt = document.createElement("option");
+                                curOpt.value = "__CURRENT_APPLIED__";
+                                curOpt.dataset.discount = String(savedDisc);
+                                curOpt.dataset.label = displayAppliedLabel;
+                                curOpt.textContent = displayAppliedLabel + " (적용 중)";
+                                curOpt.selected = true;
+                                sel.appendChild(curOpt);
+                            }
+
+                            var noneOpt = document.createElement("option");
+                            noneOpt.value = "";
+                            noneOpt.dataset.discount = "0";
+                            noneOpt.dataset.label = "";
+                            noneOpt.textContent = list.length > 0 ? "쿠폰 선택 안 함 (미사용)" : "보유 중인 사용 가능 쿠폰 없음";
+                            if (!hasApplied) noneOpt.selected = true;
+                            sel.appendChild(noneOpt);
+
+                            for (var i = 0; i < list.length; i++) {
+                                var c = list[i] || {};
+                                var cAmt = parseWonNum(c.discountAmount || c.amount || c.value || 0);
+                                var cName = String(c.couponName || c.name || "할인쿠폰").trim();
+                                var opt = document.createElement("option");
+                                opt.value = String(c.couponId || c.id || c.code || (cName + "_" + i));
+                                opt.dataset.discount = String(cAmt);
+                                opt.dataset.label = cName + " (-" + cAmt.toLocaleString() + "원)";
+                                opt.textContent = cName + " — " + cAmt.toLocaleString() + "원 할인";
+                                sel.appendChild(opt);
+                            }
+
+                            if (hasApplied) {
+                                sel.value = "__CURRENT_APPLIED__";
+                                if (sel.selectedIndex < 0 && sel.options.length > 0) {
+                                    sel.selectedIndex = 0;
+                                }
+                            }
+
+                            var activeDisc = (sel.value === "__CURRENT_APPLIED__")
+                                ? savedDisc
+                                : parseWonNum((sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].dataset.discount) || 0);
+
+                            if (badge) badge.textContent = activeDisc > 0 ? ("-" + activeDisc.toLocaleString() + "원 할인") : "0원 할인";
+                            if (statusEl) {
+                                if (hasApplied && sel.value === "__CURRENT_APPLIED__") {
+                                    statusEl.textContent = "✓ " + (usedLabel || (savedDisc.toLocaleString() + "원 할인쿠폰")) + " 적용 중 (수정 저장 시 유지됩니다)";
+                                } else if (activeDisc > 0) {
+                                    statusEl.textContent = "✓ 선택된 쿠폰으로 " + activeDisc.toLocaleString() + "원 할인이 적용됩니다.";
+                                } else {
+                                    statusEl.textContent = "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
+                                }
+                            }
+
+                            if (typeof window.recalculateEditTotal === "function") {
+                                window.recalculateEditTotal();
+                            }
                         }
-                    }, true);
 
-                    document.addEventListener("DOMContentLoaded", function () {
+                        window.onSelectEditCouponDrop = function (val) {
+                            var sel = document.getElementById("editCouponSelect");
+                            var badge = document.getElementById("editCouponDiscountPreview");
+                            var statusEl = document.getElementById("editCouponStatus");
+                            var disc = 0;
+                            var label = "";
+                            if (sel && sel.selectedIndex >= 0) {
+                                var opt = sel.options[sel.selectedIndex];
+                                disc = parseWonNum(opt && opt.dataset ? opt.dataset.discount : 0);
+                                label = String((opt && opt.dataset && opt.dataset.label) || "").trim();
+                            }
+                            if (badge) badge.textContent = disc > 0 ? ("-" + disc.toLocaleString() + "원 할인") : "0원 할인";
+                            if (statusEl) {
+                                statusEl.textContent = label
+                                    ? ("✓ " + label + " 적용")
+                                    : "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
+                            }
+                            if (typeof window.recalculateEditTotal === "function") {
+                                window.recalculateEditTotal();
+                            }
+                        };
+
+                        function collectEditCouponContext() {
+                            var ord = window.currentReservationData || window.lastReservationData || window.activeReservation || {};
+                            var cpns = window.myAvailableCoupons || window.availableCoupons || ord.availableCoupons || [];
+                            var domFb = extractCouponFromDomFallback();
+                            if (domFb.usedCoupon || domFb.couponDiscount > 0) {
+                                ord = Object.assign({}, ord, {
+                                    usedCoupon: ord.usedCoupon || domFb.usedCoupon,
+                                    couponDiscount: ord.couponDiscount || domFb.couponDiscount
+                                });
+                            }
+                            return { ord: ord, cpns: cpns };
+                        }
+
+                        function attachEditModalCouponHook() {
+                            if (typeof window.openEditModal === "function" && !window.openEditModal.__couponHooked) {
+                                var origOpenEdit = window.openEditModal;
+                                var wrappedOpenEdit = function () {
+                                    var r = origOpenEdit.apply(this, arguments);
+                                    var ctx = collectEditCouponContext();
+                                    syncEditCouponUi(ctx.ord, ctx.cpns);
+                                    setTimeout(function () {
+                                        var latest = collectEditCouponContext();
+                                        syncEditCouponUi(latest.ord, latest.cpns);
+                                    }, 80);
+                                    return r;
+                                };
+                                wrappedOpenEdit.__couponHooked = true;
+                                window.openEditModal = wrappedOpenEdit;
+                            }
+                        }
+
                         attachEditModalCouponHook();
-                        var ctx = collectEditCouponContext();
-                        if (ctx.ord && (ctx.ord.usedCoupon || ctx.ord.couponDiscount || ctx.cpns.length > 0)) {
-                            syncEditCouponUi(ctx.ord, ctx.cpns);
-                        }
-                    });
-                })();
+
+                        document.addEventListener("click", function (e) {
+                            var target = e.target && e.target.closest ? e.target.closest("#editReservationMainBtn, [onclick*='openEditModal']") : null;
+                            if (target) {
+                                attachEditModalCouponHook();
+                                setTimeout(function () {
+                                    var ctx = collectEditCouponContext();
+                                    syncEditCouponUi(ctx.ord, ctx.cpns);
+                                }, 50);
+                            }
+                        }, true);
+
+                        document.addEventListener("DOMContentLoaded", function () {
+                            attachEditModalCouponHook();
+                            var ctx = collectEditCouponContext();
+                            if (ctx.ord && (ctx.ord.usedCoupon || ctx.ord.couponDiscount || ctx.cpns.length > 0)) {
+                                syncEditCouponUi(ctx.ord, ctx.cpns);
+                            }
+                        });
+                    })();
                 </script>
                 <!-- ▲ 여기까지 쿠폰 적용 상태 블록 교체 -->
                 <!-- ▲ 여기까지 쿠폰 적용 상태 블록 교체 -->
@@ -6431,7 +6431,7 @@
 
         let __lockedCouponText = '';
 
-function renderActiveReservationNotice(resData) {
+        function renderActiveReservationNotice(resData) {
             const keptY = captureScrollPos();
             setLoadingSkeletonVisible(false);
 
@@ -6855,7 +6855,7 @@ function renderActiveReservationNotice(resData) {
                 }
             }
         }
-        
+
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
@@ -7223,53 +7223,89 @@ function renderActiveReservationNotice(resData) {
         }
 
         function populateCouponSelectBox(selectId, selectedCode) {
-    const sel = document.getElementById(selectId);
-    if (!sel) return;
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
 
-    const hasCouponArray =
-        (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
-        (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0);
+            const hasCouponArray =
+                (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
+                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0);
 
-    const list = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
-    const currentCode = String(selectedCode || '').trim().toUpperCase();
+            const list = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
+            const currentCode = String(selectedCode || '').trim().toUpperCase();
 
-    const mergedList = list.slice();
-    if (currentCode && !mergedList.some(c => String(c.code || '').trim().toUpperCase() === currentCode)) {
-        mergedList.unshift({
-            code: currentCode,
-            name: `적용 중인 쿠폰 (${currentCode})`,
-            discountType: 'amount',
-            value: 0,
-            minOrder: 0
-        });
-    }
+            const mergedList = [];
+            const seenCodes = new Set();
 
-    if (!hasCouponArray && !currentCode && window.isLoadingCoupons !== false) {
-        sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
-        sel.value = '';
-        sel.disabled = true;
-        return;
-    }
+            function pushUniqueCoupon(c) {
+                if (!c) return;
+                const code = String(c.code || c.couponId || '').trim().toUpperCase();
+                const val = Number(c.value ?? c.discountAmount ?? c.discount ?? 0) || 0;
+                const rawName = String(c.name || c.couponName || '').trim();
+                if (!code && val <= 0 && !rawName) return;
+                if (code && seenCodes.has(code)) return;
+                if (code) seenCodes.add(code);
+                mergedList.push({
+                    code: code || '__APPLIED__',
+                    name: rawName || (val > 0 ? `${val.toLocaleString()}원 할인쿠폰` : code),
+                    discountType: c.discountType || 'amount',
+                    value: val,
+                    minOrder: Number(c.minOrder) || 0
+                });
+            }
 
-    let html = `<option value="">쿠폰 선택 안 함 (미사용)</option>`;
-    if (mergedList.length === 0) {
-        html += `<option value="" disabled>보유 중인 사용 가능 쿠폰 없음</option>`;
-    } else {
-        mergedList.forEach(c => {
-            const code = String(c.code || '').trim().toUpperCase();
-            const selectedAttr = currentCode === code ? ' selected' : '';
-            const label = typeof formatCouponOptionLabel === 'function'
-                ? formatCouponOptionLabel(c)
-                : `${c.name || code}${c.value ? ` — ${Number(c.value).toLocaleString()}원 할인` : ''}`;
-            html += `<option value="${escapeHtml(code)}"${selectedAttr}>${escapeHtml(label)}</option>`;
-        });
-    }
+            if (selectId === 'editCouponSelect') {
+                const initC = window.__initialEditCoupon;
+                if (initC && (Number(initC.value) > 0 || String(initC.code || '').trim())) {
+                    pushUniqueCoupon(initC);
+                }
+                if (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (Number(appliedEditCoupon.value) > 0 || String(appliedEditCoupon.code || '').trim())) {
+                    pushUniqueCoupon(appliedEditCoupon);
+                }
+            }
 
-    sel.innerHTML = html;
-    sel.value = currentCode;
-    sel.disabled = false;
-}
+            list.forEach(c => pushUniqueCoupon(c));
 
+            if (currentCode && !seenCodes.has(currentCode)) {
+                const fallbackDisc = (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && String(appliedEditCoupon.code || '').toUpperCase() === currentCode)
+                    ? (Number(appliedEditCoupon.value) || 0)
+                    : 0;
+                const fallbackName = (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && appliedEditCoupon.name)
+                    ? appliedEditCoupon.name
+                    : (fallbackDisc > 0 ? `${fallbackDisc.toLocaleString()}원 할인쿠폰` : `적용 중인 쿠폰 (${currentCode})`);
+                pushUniqueCoupon({
+                    code: currentCode,
+                    name: fallbackName,
+                    discountType: 'amount',
+                    value: fallbackDisc,
+                    minOrder: 0
+                });
+            }
+
+            if (!hasCouponArray && !currentCode && mergedList.length === 0 && window.isLoadingCoupons !== false) {
+                sel.innerHTML = `<option value="">쿠폰 불러오는 중...</option>`;
+                sel.value = '';
+                sel.disabled = true;
+                return;
+            }
+
+            let html = `<option value="">쿠폰 선택 안 함 (미사용)</option>`;
+            if (mergedList.length === 0) {
+                html += `<option value="" disabled>보유 중인 사용 가능 쿠폰 없음</option>`;
+            } else {
+                mergedList.forEach(c => {
+                    const code = String(c.code || '').trim().toUpperCase();
+                    const selectedAttr = currentCode === code ? ' selected' : '';
+                    const label = typeof formatCouponOptionLabel === 'function'
+                        ? formatCouponOptionLabel(c)
+                        : `${c.name || code}${Number(c.value) > 0 ? ` — ${Number(c.value).toLocaleString()}원 할인` : ''}`;
+                    html += `<option value="${escapeHtml(code)}"${selectedAttr}>${escapeHtml(label)}</option>`;
+                });
+            }
+
+            sel.innerHTML = html;
+            sel.value = currentCode;
+            sel.disabled = false;
+        }
         function onSelectMainCouponDrop(code) {
             const rawCode = String(code || '').trim();
             if (!rawCode) {
@@ -8712,12 +8748,20 @@ function renderActiveReservationNotice(resData) {
                 ? normalizeKoreanTimeLabel(selTime.value || '')
                 : originalEditSnapshot.pickupTime;
 
+            const activeCoupon = (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon) ? appliedEditCoupon : null;
+            const activeCouponCode = activeCoupon ? String(activeCoupon.code || '').trim() : '';
+            const activeCouponName = activeCoupon ? String(activeCoupon.name || '').trim() : '';
+            const activeCouponDiscount = activeCoupon ? (Number(activeCoupon.value ?? activeCoupon.discountAmount ?? activeCoupon.discount ?? 0) || 0) : 0;
+
             renderEditReservationDiff({
                 cookType: getCurrentEditCookLabel(),
                 pickupTime: currentPickup || originalEditSnapshot.pickupTime,
                 totalPrice: getCurrentEditTotalPrice(),
                 items: editOrderItems,
-                sauces: editSauceItems
+                sauces: editSauceItems,
+                couponCode: activeCouponCode,
+                couponName: activeCouponName,
+                couponDiscount: activeCouponDiscount
             });
         }
 
@@ -8832,7 +8876,7 @@ function renderActiveReservationNotice(resData) {
             card.style.display = 'block';
         }
 
-async function openSearchModal() {
+        async function openSearchModal() {
             const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -9043,7 +9087,7 @@ async function openSearchModal() {
                 showCustomAlert("조회 오류", "예약 정보를 불러오는 중 오류가 발생했습니다.");
                 preserveScrollPos(keptY);
             }
-        }     
+        }
 
         function closeSearchModal() {
             const keptY = captureScrollPos();
