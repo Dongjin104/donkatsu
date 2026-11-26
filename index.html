@@ -6638,8 +6638,21 @@ function renderActiveReservationNotice(resData) {
 
             if (!rewardShown && rawCode && appliedDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
                 const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}_${parsedFinalPrice}`;
-                if (!__shownAppliedCouponKeys.has(appliedKey)) {
+                const storageShownKey = `donkatsu_shown_applied_popup_${appliedKey}`;
+                let alreadyShownPersisted = false;
+                try {
+                    alreadyShownPersisted = Boolean(
+                        localStorage.getItem(storageShownKey) ||
+                        sessionStorage.getItem(storageShownKey)
+                    );
+                } catch (e) { }
+
+                if (!__shownAppliedCouponKeys.has(appliedKey) && !alreadyShownPersisted) {
                     __shownAppliedCouponKeys.add(appliedKey);
+                    try {
+                        localStorage.setItem(storageShownKey, '1');
+                        sessionStorage.setItem(storageShownKey, '1');
+                    } catch (e) { }
                     const finalAmt = parsedFinalPrice > 0 ? parsedFinalPrice : 0;
                     const origAmt = finalAmt + appliedDiscount;
                     const couponObj = {
@@ -6651,7 +6664,6 @@ function renderActiveReservationNotice(resData) {
                     }, 180);
                 }
             }
-        }
 
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
