@@ -41,9 +41,9 @@
             left: 0;
             width: 100%;
             height: 100vh;
-            background: rgba(18, 18, 18, 0.45);
-            backdrop-filter: blur(2.5px);
-            -webkit-backdrop-filter: blur(2.5px);
+            background: rgba(18, 18, 18, 0.72);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             z-index: 99999;
             display: flex;
             justify-content: center;
@@ -57,7 +57,7 @@
             background: var(--surface-color);
             border: 1px solid rgba(197, 160, 89, 0.4);
             border-radius: 20px;
-            padding: 44px 36px;
+            padding: 40px 30px;
             max-width: 380px;
             width: 100%;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
@@ -80,7 +80,7 @@
             background: var(--accent-gold-bg);
             padding: 5px 12px;
             border-radius: 20px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             display: inline-block;
             border: 1px solid rgba(197, 160, 89, 0.2);
         }
@@ -89,7 +89,7 @@
             font-size: 21px;
             font-weight: 800;
             color: var(--text-main);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             letter-spacing: -0.02em;
         }
 
@@ -117,6 +117,28 @@
             font-size: 0.92rem;
             font-weight: 800;
             letter-spacing: -0.02em;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .key-btn {
+            background: var(--surface-sub);
+            border: 1px solid var(--border-color);
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-size: 0.68rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .key-btn:hover {
+            background: #2c2c2c;
         }
 
         .status-badge {
@@ -481,7 +503,7 @@
             <div style="font-size: 2.5rem; margin-bottom: 12px;">🍳</div>
             <h2 class="popup-title">주방 뷰를 시작합니다</h2>
             <p class="popup-desc">
-                실시간 주문 접수 시스템이 준비되었습니다.<br>화면을 터치하여 대시보드를 활성화하세요.
+                실시간 주문 접수 시스템이 준비되었습니다.<br>화면을 터치하여 관리자 인증 후 대시보드를 활성화하세요.
             </p>
         </div>
     </div>
@@ -489,26 +511,30 @@
     <header>
         <h1>🍳 장날동천 주방 뷰</h1>
 
-        <div class="online-status-container">
-            <button id="onlineBadgeBtn" class="online-badge" onclick="toggleOnlineDropdown()">
-                <span class="pulse-dot"></span>
-                <span id="activeVisitorsBadge" class="badge-text">접속 중: 0명</span>
-                <span class="arrow-icon">▼</span>
-            </button>
+        <div class="header-right">
+            <button type="button" class="key-btn" onclick="handleManualKeyChange()">🔑 키 재입력</button>
 
-            <div id="onlineDropdownPanel" class="online-dropdown-panel">
-                <div class="dropdown-header">
-                    <span>실시간 접속 목록</span>
-                    <span id="dropdownSubCount">총 0명</span>
+            <div class="online-status-container">
+                <button id="onlineBadgeBtn" class="online-badge" onclick="toggleOnlineDropdown()">
+                    <span class="pulse-dot"></span>
+                    <span id="activeVisitorsBadge" class="badge-text">접속 중: 0명</span>
+                    <span class="arrow-icon">▼</span>
+                </button>
+
+                <div id="onlineDropdownPanel" class="online-dropdown-panel">
+                    <div class="dropdown-header">
+                        <span>실시간 접속 목록</span>
+                        <span id="dropdownSubCount">총 0명</span>
+                    </div>
+                    <ul id="onlineUserList" class="online-user-list">
+                        <li style="color: #888; justify-content: center;">목록 로딩중...</li>
+                    </ul>
                 </div>
-                <ul id="onlineUserList" class="online-user-list">
-                    <li style="color: #888; justify-content: center;">목록 로딩중...</li>
-                </ul>
             </div>
-        </div>
 
-        <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ef4444; font-weight:bold;">0</span> / 총
-            <span id="totalCount">0</span></div>
+            <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ef4444; font-weight:bold;">0</span> / 총
+                <span id="totalCount">0</span></div>
+        </div>
     </header>
 
     <div id="custom-modal"
@@ -527,7 +553,7 @@
     </div>
 
     <div id="orderContainer" class="order-list">
-        <div style="text-align:center; padding: 25px; color:var(--text-sub);">주문 목록을 불러오는 중...</div>
+        <div style="text-align:center; padding: 25px; color:var(--text-sub);">관리자 인증 후 주문 목록을 불러옵니다...</div>
     </div>
 
     <script>
@@ -539,6 +565,7 @@
         let lastActiveUsersSignature = "";
         let isFetchingOrders = false;
         let isFetchingActiveUsers = false;
+        let isAdminAuthenticated = false;
 
         function escapeHtml(str) {
             return String(str === null || str === undefined ? '' : str)
@@ -613,8 +640,7 @@
             return audioCtx;
         }
 
-        function startDashboard() {
-            getAudioContext();
+        function hideBlurOverlay() {
             const overlay = document.getElementById('blurOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
@@ -623,15 +649,20 @@
                     overlay.style.display = 'none';
                 }, 400);
             }
+        }
+
+        function startDashboard() {
+            getAudioContext();
             ensureAdminAuth(function () {
+                hideBlurOverlay();
+                lastOrderSignature = "";
+                lastActiveUsersSignature = "";
                 fetchOrders();
                 fetchActiveUsers();
             });
         }
 
-        // ===== [보안 패치] 주방 대시보드 관리자 인증 =====
-        // 이 코드가 없으면 주문 조회/상태변경 API가 거부되도록 서버가 막아 두었으므로,
-        // 여기서 코드를 받아 매 요청에 함께 실어 보낸다.
+        // ===== [보안 패치] 주방 대시보드 관리자 인증 (ADMIN_API_KEY) =====
         const ADMIN_KEY_STORAGE_NAME = 'jnal_admin_key';
 
         function getStoredAdminKey() {
@@ -640,24 +671,45 @@
 
         function setStoredAdminKey(val) {
             try {
-                if (val) localStorage.setItem(ADMIN_KEY_STORAGE_NAME, val);
+                if (val) localStorage.setItem(ADMIN_KEY_STORAGE_NAME, String(val).trim());
                 else localStorage.removeItem(ADMIN_KEY_STORAGE_NAME);
             } catch (e) { }
+        }
+
+        function verifyKeyWithServer(candidateKey, done) {
+            const clean = String(candidateKey || '').trim();
+            if (!clean) {
+                if (done) done(false);
+                return;
+            }
+            callGasAPI('verifyAdminCode', { code: clean, adminKey: clean }, function (res) {
+                const ok = Boolean(res && res.result === 'ok' && res.valid === true);
+                if (done) done(ok);
+            }, true);
         }
 
         function ensureAdminAuth(onSuccess) {
             const stored = getStoredAdminKey();
             if (stored) {
-                onSuccess();
+                verifyKeyWithServer(stored, function (isValid) {
+                    if (isValid) {
+                        isAdminAuthenticated = true;
+                        onSuccess();
+                    } else {
+                        setStoredAdminKey('');
+                        isAdminAuthenticated = false;
+                        promptAdminKey(onSuccess);
+                    }
+                });
                 return;
             }
             promptAdminKey(onSuccess);
         }
 
         function promptAdminKey(onSuccess) {
-            const entered = prompt("주방 대시보드 관리자 코드를 입력하세요:");
+            const entered = prompt("주방 대시보드 관리자 키(ADMIN_API_KEY)를 입력하세요:");
             if (entered === null) {
-                alert("관리자 코드를 입력해야 대시보드를 사용할 수 있습니다. 새로고침 후 다시 시도해 주세요.");
+                alert("관리자 키를 입력해야 주방 뷰를 사용할 수 있습니다.");
                 return;
             }
             const trimmed = String(entered).trim();
@@ -665,24 +717,41 @@
                 promptAdminKey(onSuccess);
                 return;
             }
-            callGasAPI('verifyAdminCode', { code: trimmed }, function (res) {
-                if (res && res.valid) {
+            verifyKeyWithServer(trimmed, function (isValid) {
+                if (isValid) {
                     setStoredAdminKey(trimmed);
+                    isAdminAuthenticated = true;
                     onSuccess();
                 } else {
-                    alert("관리자 코드가 올바르지 않습니다. 다시 입력해 주세요.");
+                    alert("관리자 키가 올바르지 않습니다. 다시 입력해 주세요.");
                     promptAdminKey(onSuccess);
                 }
             });
         }
 
+        function handleManualKeyChange() {
+            setStoredAdminKey('');
+            isAdminAuthenticated = false;
+            promptAdminKey(function () {
+                hideBlurOverlay();
+                lastOrderSignature = "";
+                lastActiveUsersSignature = "";
+                fetchOrders();
+                fetchActiveUsers();
+            });
+        }
+
         let __adminReauthInProgress = false;
         function handleAdminAuthFailure() {
+            isAdminAuthenticated = false;
             if (__adminReauthInProgress) return;
             __adminReauthInProgress = true;
             setStoredAdminKey('');
             promptAdminKey(function () {
                 __adminReauthInProgress = false;
+                hideBlurOverlay();
+                lastOrderSignature = "";
+                lastActiveUsersSignature = "";
                 fetchOrders();
                 fetchActiveUsers();
             });
@@ -712,7 +781,7 @@
             } catch (e) { }
         }
 
-        function callGasAPI(action, params = {}, callback) {
+        function callGasAPI(action, params = {}, callback, skipAuthCheck = false) {
             const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
             let settled = false;
             const script = document.createElement('script');
@@ -748,7 +817,7 @@
                 mergedParams.clientId = formatKakaoId(kakaoId);
             }
             const storedAdminKeyForCall = getStoredAdminKey();
-            if (storedAdminKeyForCall && !mergedParams.adminKey) {
+            if (!skipAuthCheck && storedAdminKeyForCall && !mergedParams.adminKey) {
                 mergedParams.adminKey = storedAdminKeyForCall;
             }
             mergedParams._ts = Date.now();
@@ -772,7 +841,7 @@
         }
 
         function fetchOrders() {
-            if (isFetchingOrders) return;
+            if (!isAdminAuthenticated || isFetchingOrders) return;
             isFetchingOrders = true;
             callGasAPI('getAdminOrderList', {}, function (data) {
                 isFetchingOrders = false;
@@ -943,15 +1012,21 @@
         }
 
         function toggleStatus(rowIndex, currentStatus) {
+            if (!isAdminAuthenticated) return;
             getAudioContext();
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
+                if (res && res.result === 'error') {
+                    handleAdminAuthFailure();
+                    return;
+                }
                 lastOrderSignature = "";
                 fetchOrders();
             });
         }
 
         function completeOrder(rowIndex) {
+            if (!isAdminAuthenticated) return;
             getAudioContext();
             const modal = document.getElementById('custom-modal');
             const confirmBtn = document.getElementById('modal-confirm-btn');
@@ -967,6 +1042,10 @@
             newConfirmBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
                 callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: '완료' }, function (res) {
+                    if (res && res.result === 'error') {
+                        handleAdminAuthFailure();
+                        return;
+                    }
                     lastOrderSignature = "";
                     fetchOrders();
                 });
@@ -1001,7 +1080,7 @@
         });
 
         function fetchActiveUsers() {
-            if (isFetchingActiveUsers) return;
+            if (!isAdminAuthenticated || isFetchingActiveUsers) return;
             isFetchingActiveUsers = true;
             callGasAPI('getActiveUsers', {}, function(data) {
                 isFetchingActiveUsers = false;
@@ -1044,8 +1123,6 @@
         }
 
         setInterval(fetchActiveUsers, 3000);
-        setTimeout(fetchActiveUsers, 800);
-
         setInterval(fetchOrders, 2500);
     </script>
 </body>

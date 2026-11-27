@@ -29,6 +29,27 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
         }
 
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 6px;
+        }
+
+        .auth-reset-btn {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-reset-btn:hover {
+            background: #e2e8f0;
+        }
+
         h1 {
             color: #e65100;
             font-size: 22px;
@@ -174,6 +195,9 @@
 
 <body>
     <div class="container">
+        <div class="top-bar">
+            <button type="button" class="auth-reset-btn" onclick="resetAdminAuth()">🔑 관리자 키 변경</button>
+        </div>
         <h1>📸 메뉴 사진 일괄 등록기</h1>
         <div class="subtitle">핸드폰 사진을 선택하면 구글 드라이브에 자동 업로드 및 시트 연동됩니다</div>
 
@@ -234,9 +258,7 @@
             }
         }
 
-        // ===== [보안 패치] 관리자 인증 =====
-        // 사진 업로드(uploadMenuImage)는 서버에서 관리자 코드를 요구하도록 막아 두었으므로,
-        // 여기서 코드를 받아 저장해 두고 매 업로드 요청에 함께 실어 보낸다.
+        // ===== [보안 패치] 관리자 인증 (ADMIN_API_KEY) =====
         const ADMIN_KEY_STORAGE_NAME = 'jnal_admin_key';
 
         function getAdminKey() {
@@ -245,32 +267,39 @@
 
         function setAdminKey(val) {
             try {
-                if (val) localStorage.setItem(ADMIN_KEY_STORAGE_NAME, val);
+                if (val) localStorage.setItem(ADMIN_KEY_STORAGE_NAME, String(val).trim());
                 else localStorage.removeItem(ADMIN_KEY_STORAGE_NAME);
             } catch (e) { }
         }
 
         async function verifyAdminKey(key) {
+            const cleanKey = String(key || '').trim();
+            if (!cleanKey) return false;
             try {
                 const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action: 'verifyAdminCode', code: key })
+                    body: JSON.stringify({ action: 'verifyAdminCode', code: cleanKey })
                 });
-                const data = JSON.parse(await res.text());
-                return Boolean(data && data.valid);
+                const text = await res.text();
+                const data = JSON.parse(text);
+                return Boolean(data && data.result === 'ok' && data.valid === true);
             } catch (e) {
                 return false;
             }
         }
 
-        async function ensureAdminAuthorized() {
-            const storedKey = getAdminKey();
-            if (storedKey && await verifyAdminKey(storedKey)) {
-                return true;
+        async function ensureAdminAuthorized(forcePrompt = false) {
+            if (!forcePrompt) {
+                const storedKey = getAdminKey();
+                if (storedKey && await verifyAdminKey(storedKey)) {
+                    return true;
+                }
+                setAdminKey('');
             }
+
             while (true) {
-                const entered = prompt("메뉴 사진 등록 관리자 코드를 입력하세요:");
+                const entered = prompt("메뉴 사진 등록 관리자 키(ADMIN_API_KEY)를 입력하세요:");
                 if (entered === null) return false;
                 const trimmed = String(entered).trim();
                 if (!trimmed) continue;
@@ -278,24 +307,19 @@
                     setAdminKey(trimmed);
                     return true;
                 }
-                alert("관리자 코드가 올바르지 않습니다. 다시 입력해 주세요.");
+                alert("관리자 키가 올바르지 않습니다. 다시 입력해 주세요.");
             }
         }
 
-        window.addEventListener('DOMContentLoaded', async function () {
-            const authorized = await ensureAdminAuthorized();
-            if (!authorized) {
-                const select = document.getElementById('menuSelect');
-                select.innerHTML = '<option value="">관리자 인증이 필요합니다. 새로고침 후 다시 시도해 주세요.</option>';
-                return;
-            }
-
+        async function loadMenuList() {
+            const select = document.getElementById('menuSelect');
+            select.disabled = true;
+            select.innerHTML = '<option value="">메뉴 목록 불러오는 중...</option>';
             try {
-                const res = await fetch(WEB_APP_URL + "?action=getSettings", { method: 'GET' });
+                const res = await fetch(WEB_APP_URL + "?action=getSettings&_ts=" + Date.now(), { method: 'GET' });
                 const text = await res.text();
                 const data = JSON.parse(text);
 
-                const select = document.getElementById('menuSelect');
                 select.innerHTML = '<option value="" disabled selected>-- 메뉴를 선택하세요 --</option>';
 
                 if (data.menuList && data.menuList.length > 0) {
@@ -310,8 +334,28 @@
                     select.innerHTML = '<option value="">등록된 메뉴가 없습니다</option>';
                 }
             } catch (e) {
+                select.innerHTML = '<option value="">메뉴 목록 불러오기 실패</option>';
                 alert("메뉴 목록을 불러오지 못했습니다. 새로고침해 주세요.");
             }
+        }
+
+        async function resetAdminAuth() {
+            setAdminKey('');
+            const ok = await ensureAdminAuthorized(true);
+            if (ok) {
+                alert("관리자 키가 확인되었습니다.");
+                await loadMenuList();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async function () {
+            const authorized = await ensureAdminAuthorized(false);
+            if (!authorized) {
+                const select = document.getElementById('menuSelect');
+                select.innerHTML = '<option value="">관리자 인증이 필요합니다. 새로고침 후 다시 시도해 주세요.</option>';
+                return;
+            }
+            await loadMenuList();
         });
 
         document.getElementById('fileInput').addEventListener('change', function (e) {
@@ -427,6 +471,12 @@
             const targetFiles = retryOnly ? failedFilesList.slice() : selectedFiles.slice();
             if (!menuName || targetFiles.length === 0) return;
 
+            const hasAuth = await ensureAdminAuthorized(false);
+            if (!hasAuth) {
+                alert("관리자 인증이 취소되었습니다.");
+                return;
+            }
+
             isUploading = true;
 
             const uploadBtn = document.getElementById('uploadBtn');
@@ -463,7 +513,9 @@
                         const payload = {
                             action: 'uploadMenuImage',
                             menuName: menuName,
+                            targetName: menuName,
                             imageBase64: base64Data,
+                            base64Data: base64Data,
                             fileName: `${menuName}_${Date.now()}_${i + 1}.jpg`,
                             isFirst: isFirstUpload,
                             adminKey: getAdminKey()
@@ -480,6 +532,9 @@
                         try { result = JSON.parse(text); } catch (e) { }
 
                         if (!res.ok || !result || result.result !== 'success') {
+                            if (result && String(result.message || '').includes('관리자 인증')) {
+                                setAdminKey('');
+                            }
                             throw new Error((result && result.message) ? result.message : '서버 응답 오류');
                         }
 
