@@ -4694,18 +4694,65 @@
                             var sel = document.getElementById("editCouponSelect");
                             var badge = document.getElementById("editCouponDiscountPreview");
                             var statusEl = document.getElementById("editCouponStatus");
+                            var targetCode = String(val || "").trim().toUpperCase();
+
                             var disc = 0;
-                            var label = "";
-                            if (sel && sel.selectedIndex >= 0) {
-                                var opt = sel.options[sel.selectedIndex];
-                                disc = parseWonNum(opt && opt.dataset ? opt.dataset.discount : 0);
-                                label = String((opt && opt.dataset && opt.dataset.label) || "").trim();
+                            var couponName = "";
+
+                            if (targetCode) {
+                                var candidates = [];
+                                if (Array.isArray(window.globalMyCoupons)) candidates = candidates.concat(window.globalMyCoupons);
+                                if (Array.isArray(window.globalCouponList)) candidates = candidates.concat(window.globalCouponList);
+                                if (typeof getAvailableCouponsList === "function") {
+                                    var avail = getAvailableCouponsList();
+                                    if (Array.isArray(avail)) candidates = candidates.concat(avail);
+                                }
+                                if (window.__initialEditCoupon) candidates.push(window.__initialEditCoupon);
+                                if (typeof appliedEditCoupon !== "undefined" && appliedEditCoupon) candidates.push(appliedEditCoupon);
+                                if (typeof appliedCoupon !== "undefined" && appliedCoupon) candidates.push(appliedCoupon);
+
+                                for (var i = 0; i < candidates.length; i++) {
+                                    var c = candidates[i] || {};
+                                    var cCode = String(c.code || c.couponId || c.id || "").trim().toUpperCase();
+                                    if (cCode && cCode === targetCode) {
+                                        couponName = String(c.name || c.couponName || c.title || "").trim();
+                                        disc = parseWonNum(c.value ?? c.discountAmount ?? c.discount ?? c.amount ?? 0);
+                                        break;
+                                    }
+                                }
+
+                                if ((!couponName || disc <= 0) && sel && sel.selectedIndex >= 0) {
+                                    var opt = sel.options[sel.selectedIndex];
+                                    var optText = String((opt && opt.textContent) || "").trim();
+                                    var splitPart = optText.split("—")[0].split("(")[0].trim();
+                                    if (!couponName && splitPart && !/^CPN[-_]/i.test(splitPart)) {
+                                        couponName = splitPart;
+                                    }
+                                    if (!disc) {
+                                        var dsDisc = parseWonNum(opt && opt.dataset ? opt.dataset.discount : 0);
+                                        if (dsDisc > 0) {
+                                            disc = dsDisc;
+                                        } else {
+                                            var mDisc = optText.match(/([0-9,]+)\s*원/);
+                                            if (mDisc) disc = parseWonNum(mDisc[1]);
+                                        }
+                                    }
+                                }
+
+                                if (!couponName) {
+                                    couponName = disc > 0 ? (disc.toLocaleString() + "원 할인쿠폰") : "할인쿠폰";
+                                }
                             }
-                            if (badge) badge.textContent = disc > 0 ? ("-" + disc.toLocaleString() + "원 할인") : "0원 할인";
+
+                            if (badge) {
+                                badge.textContent = disc > 0 ? ("-" + disc.toLocaleString() + "원 할인") : "0원 할인";
+                            }
                             if (statusEl) {
-                                statusEl.textContent = label
-                                    ? ("✓ " + label + " 적용")
-                                    : "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
+                                if (targetCode) {
+                                    statusEl.textContent = "✓ " + couponName + " 적용 (" + (disc > 0 ? ("-" + disc.toLocaleString() + "원") : "0원") + ")";
+                                } else {
+                                    statusEl.textContent = "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
+                                }
                             }
                             if (typeof window.recalculateEditTotal === "function") {
                                 window.recalculateEditTotal();
@@ -4765,7 +4812,6 @@
                         });
                     })();
                 </script>
-                <!-- ▲ 여기까지 쿠폰 적용 상태 블록 교체 -->
                 <!-- ▲ 여기까지 쿠폰 적용 상태 블록 교체 -->
 
                 <p style="margin:8px 0; font-size:14px; color:var(--text-main);"><b>현재 픽업 시간:</b> <span id="resTime"
@@ -6875,7 +6921,7 @@
                 }
             }
         }
-        
+
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
@@ -7345,6 +7391,7 @@
             sel.value = currentCode;
             sel.disabled = false;
         }
+
         function onSelectMainCouponDrop(code) {
             const rawCode = String(code || '').trim();
             if (!rawCode) {
