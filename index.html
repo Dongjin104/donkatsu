@@ -7450,11 +7450,75 @@
             const subtotal = isEditMode
                 ? calculateCurrentTotalPrice(editOrderItems, editSauceItems)
                 : calculateCurrentTotalPrice(orderItems, sauceItems);
-            const coupon = isEditMode ? appliedEditCoupon : appliedMainCoupon;
+
+            let coupon = isEditMode ? appliedEditCoupon : appliedMainCoupon;
             const previewEl = document.getElementById(isEditMode ? 'editCouponDiscountPreview' : 'couponDiscountPreview');
             const statusEl = document.getElementById(isEditMode ? 'editCouponStatus' : 'mainCouponStatus');
             const priceElId = isEditMode ? 'editTotalPrice' : 'mainTotalPrice';
             const priceEl = document.getElementById(priceElId);
+
+            function resolveCouponDetails(rawCoupon) {
+                if (!rawCoupon) return null;
+
+                const rawCode = String(rawCoupon.code || rawCoupon.couponId || rawCoupon.id || '').trim();
+                const upperCode = rawCode.toUpperCase();
+                let name = String(rawCoupon.name || rawCoupon.couponName || rawCoupon.title || '').trim();
+                let val = Number(rawCoupon.value ?? rawCoupon.discountAmount ?? rawCoupon.discount ?? rawCoupon.amount ?? 0) || 0;
+                const discountType = rawCoupon.discountType || 'amount';
+                const minOrder = Number(rawCoupon.minOrder) || 0;
+
+                const sources = [];
+                if (Array.isArray(window.globalMyCoupons)) sources.push(...window.globalMyCoupons);
+                if (Array.isArray(window.globalCouponList)) sources.push(...window.globalCouponList);
+                if (typeof getAvailableCouponsList === 'function') {
+                    const avail = getAvailableCouponsList();
+                    if (Array.isArray(avail)) sources.push(...avail);
+                }
+                if (window.__initialEditCoupon) sources.push(window.__initialEditCoupon);
+                if (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon) sources.push(appliedEditCoupon);
+                if (typeof appliedMainCoupon !== 'undefined' && appliedMainCoupon) sources.push(appliedMainCoupon);
+
+                for (let i = 0; i < sources.length; i++) {
+                    const item = sources[i];
+                    if (!item) continue;
+                    const itemCode = String(item.code || item.couponId || item.id || '').trim().toUpperCase();
+                    const itemName = String(item.name || item.couponName || item.title || '').trim();
+                    const itemVal = Number(item.value ?? item.discountAmount ?? item.discount ?? item.amount ?? 0) || 0;
+
+                    const isSameCode = upperCode && itemCode && itemCode === upperCode;
+                    const isSameName = name && itemName && name === itemName;
+
+                    if (isSameCode || isSameName) {
+                        if (itemName && (!name || /^CPN[-_]/i.test(name))) {
+                            name = itemName;
+                        }
+                        if (itemVal > 0 && val <= 0) {
+                            val = itemVal;
+                        }
+                        if (isSameCode) break;
+                    }
+                }
+
+                if (!name || /^CPN[-_]/i.test(name)) {
+                    name = val > 0 ? `${val.toLocaleString()}원 할인쿠폰` : (rawCode || '할인쿠폰');
+                }
+
+                return {
+                    ...rawCoupon,
+                    code: rawCode,
+                    name,
+                    discountType,
+                    value: val,
+                    minOrder
+                };
+            }
+
+            coupon = resolveCouponDetails(coupon);
+            if (isEditMode && coupon) {
+                appliedEditCoupon = coupon;
+            } else if (!isEditMode && coupon) {
+                appliedMainCoupon = coupon;
+            }
 
             if (!coupon) {
                 if (previewEl) previewEl.textContent = isEditMode ? '0원 할인' : '미선택';
@@ -7473,20 +7537,25 @@
                 if (previewEl) previewEl.textContent = '최소 주문금액 미달';
                 if (statusEl) {
                     statusEl.className = 'coupon-status-banner is-error';
-                    statusEl.textContent = `[${escapeHtml(coupon.name || coupon.code)}] 쿠폰은 ${minOrder.toLocaleString()}원 이상 주문 시 적용됩니다. (현재 ${subtotal.toLocaleString()}원)`;
+                    statusEl.textContent = `[${coupon.name || coupon.code}] 쿠폰은 ${minOrder.toLocaleString()}원 이상 주문 시 적용됩니다. (현재 ${subtotal.toLocaleString()}원)`;
                 }
                 if (priceEl) priceEl.innerText = subtotal.toLocaleString();
                 return;
             }
 
-            const discount = computeCouponDiscountAmount(coupon, subtotal);
+            let discount = typeof computeCouponDiscountAmount === 'function'
+                ? (Number(computeCouponDiscountAmount(coupon, subtotal)) || 0)
+                : 0;
+            if (discount <= 0 && (Number(coupon.value) || 0) > 0) {
+                discount = Math.min(subtotal, Number(coupon.value) || 0);
+            }
             const finalPrice = Math.max(0, subtotal - discount);
 
             if (previewEl) previewEl.textContent = `-${discount.toLocaleString()}원 할인`;
             if (priceEl) priceEl.innerText = finalPrice.toLocaleString();
             if (statusEl) {
                 statusEl.className = 'coupon-status-banner is-applied';
-                statusEl.textContent = `✓ ${escapeHtml(coupon.name || coupon.code)} 적용 (-${discount.toLocaleString()}원 → 최종 ${finalPrice.toLocaleString()}원)`;
+                statusEl.textContent = `✓ ${coupon.name || coupon.code} 적용 (-${discount.toLocaleString()}원 → 최종 ${finalPrice.toLocaleString()}원)`;
             }
         }
 
