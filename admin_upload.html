@@ -234,7 +234,62 @@
             }
         }
 
+        // ===== [보안 패치] 관리자 인증 =====
+        // 사진 업로드(uploadMenuImage)는 서버에서 관리자 코드를 요구하도록 막아 두었으므로,
+        // 여기서 코드를 받아 저장해 두고 매 업로드 요청에 함께 실어 보낸다.
+        const ADMIN_KEY_STORAGE_NAME = 'jnal_admin_key';
+
+        function getAdminKey() {
+            try { return (localStorage.getItem(ADMIN_KEY_STORAGE_NAME) || '').trim(); } catch (e) { return ''; }
+        }
+
+        function setAdminKey(val) {
+            try {
+                if (val) localStorage.setItem(ADMIN_KEY_STORAGE_NAME, val);
+                else localStorage.removeItem(ADMIN_KEY_STORAGE_NAME);
+            } catch (e) { }
+        }
+
+        async function verifyAdminKey(key) {
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'verifyAdminCode', code: key })
+                });
+                const data = JSON.parse(await res.text());
+                return Boolean(data && data.valid);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function ensureAdminAuthorized() {
+            const storedKey = getAdminKey();
+            if (storedKey && await verifyAdminKey(storedKey)) {
+                return true;
+            }
+            while (true) {
+                const entered = prompt("메뉴 사진 등록 관리자 코드를 입력하세요:");
+                if (entered === null) return false;
+                const trimmed = String(entered).trim();
+                if (!trimmed) continue;
+                if (await verifyAdminKey(trimmed)) {
+                    setAdminKey(trimmed);
+                    return true;
+                }
+                alert("관리자 코드가 올바르지 않습니다. 다시 입력해 주세요.");
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', async function () {
+            const authorized = await ensureAdminAuthorized();
+            if (!authorized) {
+                const select = document.getElementById('menuSelect');
+                select.innerHTML = '<option value="">관리자 인증이 필요합니다. 새로고침 후 다시 시도해 주세요.</option>';
+                return;
+            }
+
             try {
                 const res = await fetch(WEB_APP_URL + "?action=getSettings", { method: 'GET' });
                 const text = await res.text();
@@ -410,7 +465,8 @@
                             menuName: menuName,
                             imageBase64: base64Data,
                             fileName: `${menuName}_${Date.now()}_${i + 1}.jpg`,
-                            isFirst: isFirstUpload
+                            isFirst: isFirstUpload,
+                            adminKey: getAdminKey()
                         };
 
                         const res = await fetch(WEB_APP_URL, {

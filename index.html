@@ -5348,21 +5348,35 @@
             proceedAfterSecretGate(payloadToRun, isQuickFlag);
         }
 
-        function handleSecretGateDrawSubmit() {
+        async function handleSecretGateDrawSubmit() {
             if (!pendingSecretGatePayload) {
                 closeSecretCodeGateModal();
                 return;
             }
             const inputEl = document.getElementById('secretGateInput');
             const entered = String(inputEl ? inputEl.value : '').trim();
-            const expected = String(serverSecretCode || '').trim();
 
             if (!entered) {
                 showSecretGateError('⚠️ 시크릿 코드를 입력해 주세요! 코드를 모르시면 아래 버튼으로 오픈채팅방 공지를 확인해 주세요.');
                 return;
             }
 
-            if (!expected || entered !== expected) {
+            // [보안 패치] 시크릿코드 값을 클라이언트로 내려받지 않고, 서버에서 직접 대조한다.
+            let isValid = false;
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'verifySecretCode', code: entered })
+                });
+                const resData = JSON.parse(await res.text());
+                isValid = Boolean(resData && resData.valid);
+            } catch (e) {
+                showSecretGateError('⚠️ 서버 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+                return;
+            }
+
+            if (!isValid) {
                 showSecretGateError('⚠️ 시크릿 코드가 일치하지 않습니다! (코드가 변경되었을 수 있으니 아래 버튼으로 오픈채팅방 공지를 확인해 주세요)');
                 return;
             }
@@ -7848,12 +7862,28 @@
             hideModal('noticeModal');
         }
 
-        function openAdminAuthPrompt() {
+        async function openAdminAuthPrompt() {
             purgeLegacyAdminKeyLocalStorage();
             const entered = prompt("관리자 테스트 접속 코드를 입력하세요:");
             if (entered === null) return;
             const trimmed = String(entered).trim();
-            if (serverMaintenanceCode && trimmed === String(serverMaintenanceCode).trim()) {
+
+            // [보안 패치] 코드값을 클라이언트에 내려받아 비교하지 않고, 서버에 직접 검증을 맡긴다.
+            let isValid = false;
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'verifyAdminCode', code: trimmed })
+                });
+                const resData = JSON.parse(await res.text());
+                isValid = Boolean(resData && resData.valid);
+            } catch (e) {
+                showCustomAlert("접속 오류", "서버 확인 중 오류가 발생했습니다. 다시 시도해 주세요.");
+                return;
+            }
+
+            if (isValid) {
                 setAdminApiKeyValue(trimmed);
                 try { window.sessionStorage.setItem('isAdminTestMode', 'true'); } catch (e) { }
                 try { window.localStorage.removeItem('isAdminTestMode'); } catch (e) { }

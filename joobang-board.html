@@ -623,8 +623,69 @@
                     overlay.style.display = 'none';
                 }, 400);
             }
-            fetchOrders();
-            fetchActiveUsers();
+            ensureAdminAuth(function () {
+                fetchOrders();
+                fetchActiveUsers();
+            });
+        }
+
+        // ===== [보안 패치] 주방 대시보드 관리자 인증 =====
+        // 이 코드가 없으면 주문 조회/상태변경 API가 거부되도록 서버가 막아 두었으므로,
+        // 여기서 코드를 받아 매 요청에 함께 실어 보낸다.
+        const ADMIN_KEY_STORAGE_NAME = 'jnal_admin_key';
+
+        function getStoredAdminKey() {
+            try { return (localStorage.getItem(ADMIN_KEY_STORAGE_NAME) || '').trim(); } catch (e) { return ''; }
+        }
+
+        function setStoredAdminKey(val) {
+            try {
+                if (val) localStorage.setItem(ADMIN_KEY_STORAGE_NAME, val);
+                else localStorage.removeItem(ADMIN_KEY_STORAGE_NAME);
+            } catch (e) { }
+        }
+
+        function ensureAdminAuth(onSuccess) {
+            const stored = getStoredAdminKey();
+            if (stored) {
+                onSuccess();
+                return;
+            }
+            promptAdminKey(onSuccess);
+        }
+
+        function promptAdminKey(onSuccess) {
+            const entered = prompt("주방 대시보드 관리자 코드를 입력하세요:");
+            if (entered === null) {
+                alert("관리자 코드를 입력해야 대시보드를 사용할 수 있습니다. 새로고침 후 다시 시도해 주세요.");
+                return;
+            }
+            const trimmed = String(entered).trim();
+            if (!trimmed) {
+                promptAdminKey(onSuccess);
+                return;
+            }
+            callGasAPI('verifyAdminCode', { code: trimmed }, function (res) {
+                if (res && res.valid) {
+                    setStoredAdminKey(trimmed);
+                    onSuccess();
+                } else {
+                    alert("관리자 코드가 올바르지 않습니다. 다시 입력해 주세요.");
+                    promptAdminKey(onSuccess);
+                }
+            });
+        }
+
+        let __adminReauthInProgress = false;
+        function handleAdminAuthFailure() {
+            if (__adminReauthInProgress) return;
+            __adminReauthInProgress = true;
+            setStoredAdminKey('');
+            promptAdminKey(function () {
+                __adminReauthInProgress = false;
+                fetchOrders();
+                fetchActiveUsers();
+            });
         }
 
         function playNewOrderSound() {
@@ -686,6 +747,10 @@
             if (kakaoId && !mergedParams.clientId) {
                 mergedParams.clientId = formatKakaoId(kakaoId);
             }
+            const storedAdminKeyForCall = getStoredAdminKey();
+            if (storedAdminKeyForCall && !mergedParams.adminKey) {
+                mergedParams.adminKey = storedAdminKeyForCall;
+            }
             mergedParams._ts = Date.now();
 
             let url = GAS_WEBAPP_URL + '?action=' + encodeURIComponent(action) + '&callback=' + encodeURIComponent(callbackName);
@@ -712,6 +777,10 @@
             callGasAPI('getAdminOrderList', {}, function (data) {
                 isFetchingOrders = false;
                 if (data === null || data === undefined) return;
+                if (data && data.result === 'error') {
+                    handleAdminAuthFailure();
+                    return;
+                }
                 const ordersList = Array.isArray(data)
                     ? data
                     : (data && Array.isArray(data.orders) ? data.orders : null);
@@ -937,6 +1006,10 @@
             callGasAPI('getActiveUsers', {}, function(data) {
                 isFetchingActiveUsers = false;
                 if (!data || typeof data !== 'object') return;
+                if (data.result === 'error') {
+                    handleAdminAuthFailure();
+                    return;
+                }
                 const badge = document.getElementById('activeVisitorsBadge');
                 const subCount = document.getElementById('dropdownSubCount');
                 const listEl = document.getElementById('onlineUserList');
