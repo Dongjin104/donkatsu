@@ -7386,8 +7386,6 @@
 
             const savedNick = sess.identifier || localStorage.getItem('savedNickname') || (typeof TripleStorage !== 'undefined' && typeof TripleStorage.getCookie === 'function' ? TripleStorage.getCookie('savedNickname') : '') || globalUserNickname || "";
 
-            isLiveSyncRequest = true;
-
             const markOk = () => {
                 if (typeof setCustomerNetStatus === 'function') {
                     setCustomerNetStatus('ok', '원활');
@@ -7400,21 +7398,38 @@
                 }
             };
 
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                markWarn();
+                return;
+            }
+
+            isLiveSyncRequest = true;
+
             try {
-                const res = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'checkSimple',
-                        nickname: savedNick,
-                        clientId: clientId,
-                        kakaoId: sess.kakaoId,
-                        kakaoNickname: sess.kakaoNickname,
-                        phone4: sess.phone4,
-                        isPolling: true,
-                        _ts: Date.now()
-                    })
-                });
+                const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                const timeoutId = controller ? setTimeout(() => controller.abort(), 10000) : null;
+
+                let res;
+                try {
+                    res = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        signal: controller ? controller.signal : undefined,
+                        body: JSON.stringify({
+                            action: 'checkSimple',
+                            nickname: savedNick,
+                            clientId: clientId,
+                            kakaoId: sess.kakaoId,
+                            kakaoNickname: sess.kakaoNickname,
+                            phone4: sess.phone4,
+                            isPolling: true,
+                            _ts: Date.now()
+                        })
+                    });
+                } finally {
+                    if (timeoutId) clearTimeout(timeoutId);
+                }
+
                 const text = await res.text();
                 let data = null;
                 try { data = JSON.parse(text); } catch (e) {
