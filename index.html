@@ -5107,6 +5107,7 @@
                                 couponDiscount: disc
                             };
                         }
+
                         function syncEditCouponUi(orderObj, couponsArr) {
                             var sel = document.getElementById("editCouponSelect");
                             var badge = document.getElementById("editCouponDiscountPreview");
@@ -5116,7 +5117,6 @@
                             var ord = orderObj || {};
                             var domFb = extractCouponFromDomFallback();
 
-                            // 사용자가 드롭박스에서 이미 다른 값을 골라둔 상태면 그 선택을 유지
                             var prevSelectedVal = String(sel.value || "").trim();
                             var hasUserChangedSelection = Boolean(sel.dataset && sel.dataset.userPicked === "1");
 
@@ -5146,31 +5146,13 @@
                                 .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*/g, "")
                                 .trim();
 
-                            // 원래 이 예약에 적용되어 있던 쿠폰 정보를 보관해 드롭박스 재렌더 시에도 유지
-                            if (cleanUsedName || savedDisc > 0) {
-                                window.__pinnedEditAppliedCoupon = {
+                            // 현재 예약에 원래 적용되어 있던 A쿠폰을 1회 고정 저장(다른 쿠폰으로 바꿔도 목록에서 빠지지 않게 유지)
+                            if (!window.__originalAppliedCouponForEdit && (cleanUsedName || savedDisc > 0)) {
+                                window.__originalAppliedCouponForEdit = {
+                                    code: String(ord.couponCode || ord.couponId || "").trim().toUpperCase() || "__ORIG_APPLIED__",
                                     name: cleanUsedName || (savedDisc.toLocaleString() + "원 할인쿠폰"),
                                     discount: savedDisc
                                 };
-                            }
-
-                            var list = Array.isArray(couponsArr) ? couponsArr.slice() : [];
-                            if (window.__pinnedEditAppliedCoupon) {
-                                var pin = window.__pinnedEditAppliedCoupon;
-                                var alreadyInList = list.some(function (item) {
-                                    if (!item) return false;
-                                    var iName = String(item.couponName || item.name || "").trim();
-                                    var iAmt = parseWonNum(item.discountAmount || item.amount || item.value || 0);
-                                    return (pin.name && iName && iName === pin.name && iAmt === pin.discount);
-                                });
-                                if (!alreadyInList) {
-                                    list.unshift({
-                                        couponId: "__CURRENT_APPLIED__",
-                                        couponName: pin.name,
-                                        discountAmount: pin.discount,
-                                        _isPinnedApplied: true
-                                    });
-                                }
                             }
 
                             var optionsData = [];
@@ -5182,10 +5164,10 @@
                                 var code = String(item.value || "").trim().toUpperCase();
                                 var name = String(item.name || "할인쿠폰").trim();
                                 var amt = parseWonNum(item.discount || 0);
-                                var isPinned = Boolean(item.isPinned);
+                                var isOrig = Boolean(item.isOrig);
                                 var label = String(item.label || (name + (amt > 0 ? (" (-" + amt.toLocaleString() + "원)") : ""))).trim();
                                 var baseText = String(item.text || (name + (amt > 0 ? (" — " + amt.toLocaleString() + "원 할인") : ""))).trim();
-                                var text = isPinned && baseText.indexOf("(적용 중)") === -1 ? (baseText + " (적용 중)") : baseText;
+                                var text = isOrig && baseText.indexOf("(기존 적용)") === -1 ? (baseText + " (기존 적용)") : baseText;
 
                                 if (code && seenCodes[code]) return;
                                 var nameAmtKey = name + "__" + amt;
@@ -5203,6 +5185,21 @@
                                 });
                             }
 
+                            var origCoupon = window.__originalAppliedCouponForEdit;
+                            var origMatchedValue = "";
+                            if (origCoupon) {
+                                addOptionItem({
+                                    value: origCoupon.code,
+                                    discount: origCoupon.discount,
+                                    name: origCoupon.name,
+                                    label: origCoupon.name + (origCoupon.discount > 0 ? (" (-" + origCoupon.discount.toLocaleString() + "원)") : ""),
+                                    text: origCoupon.name + (origCoupon.discount > 0 ? (" — " + origCoupon.discount.toLocaleString() + "원 할인") : ""),
+                                    isOrig: true
+                                });
+                                origMatchedValue = String(origCoupon.code).toUpperCase();
+                            }
+
+                            var list = Array.isArray(couponsArr) ? couponsArr : [];
                             for (var i = 0; i < list.length; i++) {
                                 var c = list[i] || {};
                                 var cCode = String(c.couponId || c.code || c.id || "").trim().toUpperCase();
@@ -5214,38 +5211,22 @@
                                     name: cName,
                                     label: cName + " (-" + cAmt.toLocaleString() + "원)",
                                     text: cName + " — " + cAmt.toLocaleString() + "원 할인",
-                                    isPinned: Boolean(c._isPinnedApplied)
+                                    isOrig: false
                                 });
                             }
 
-                            var hasApplied = Boolean(cleanUsedName || savedDisc > 0);
                             var matchedValue = "";
-
-                            if (hasApplied) {
+                            if (origMatchedValue) {
+                                matchedValue = origMatchedValue;
+                            } else if (cleanUsedName || savedDisc > 0) {
                                 for (var j = 0; j < optionsData.length; j++) {
                                     var optItem = optionsData[j];
                                     var sameName = cleanUsedName && (optItem.name === cleanUsedName || optItem.name.indexOf(cleanUsedName) !== -1 || cleanUsedName.indexOf(optItem.name) !== -1);
                                     var sameAmt = savedDisc > 0 && optItem.discount === savedDisc;
                                     if (sameName || sameAmt) {
                                         matchedValue = optItem.value;
-                                        if (!savedDisc && optItem.discount > 0) savedDisc = optItem.discount;
-                                        if (!cleanUsedName && optItem.name) cleanUsedName = optItem.name;
                                         break;
                                     }
-                                }
-
-                                if (!matchedValue) {
-                                    var fallbackName = cleanUsedName || (savedDisc.toLocaleString() + "원 할인쿠폰");
-                                    var fallbackCode = "__CURRENT_APPLIED__";
-                                    addOptionItem({
-                                        value: fallbackCode,
-                                        discount: savedDisc,
-                                        name: fallbackName,
-                                        label: fallbackName + (savedDisc > 0 ? (" (-" + savedDisc.toLocaleString() + "원)") : ""),
-                                        text: fallbackName + (savedDisc > 0 ? (" — " + savedDisc.toLocaleString() + "원 할인") : ""),
-                                        isPinned: true
-                                    });
-                                    matchedValue = fallbackCode;
                                 }
                             }
 
@@ -5296,7 +5277,7 @@
                             }
                             if (statusEl) {
                                 if (activeLabel) {
-                                    statusEl.textContent = "✓ " + activeLabel + " 적용 중 (수정 저장 시 유지됩니다)";
+                                    statusEl.textContent = "✓ " + activeLabel + " 적용 중 (수정 저장 시 반영됩니다)";
                                 } else {
                                     statusEl.textContent = "쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.";
                                 }
@@ -5321,6 +5302,7 @@
 
                             if (targetCode) {
                                 var candidates = [];
+                                if (window.__originalAppliedCouponForEdit) candidates.push(window.__originalAppliedCouponForEdit);
                                 if (Array.isArray(window.globalMyCoupons)) candidates = candidates.concat(window.globalMyCoupons);
                                 if (Array.isArray(window.globalCouponList)) candidates = candidates.concat(window.globalCouponList);
                                 if (typeof getAvailableCouponsList === "function") {
@@ -5400,7 +5382,7 @@
                                     if (selEl && selEl.dataset) {
                                         delete selEl.dataset.userPicked;
                                     }
-                                    window.__pinnedEditAppliedCoupon = null;
+                                    window.__originalAppliedCouponForEdit = null;
                                     var r = origOpenEdit.apply(this, arguments);
                                     var ctx = collectEditCouponContext();
                                     syncEditCouponUi(ctx.ord, ctx.cpns);
@@ -5424,7 +5406,7 @@
                                 if (selEl && selEl.dataset) {
                                     delete selEl.dataset.userPicked;
                                 }
-                                window.__pinnedEditAppliedCoupon = null;
+                                window.__originalAppliedCouponForEdit = null;
                                 attachEditModalCouponHook();
                                 setTimeout(function () {
                                     var ctx = collectEditCouponContext();
