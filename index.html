@@ -3302,19 +3302,27 @@
         }
 
         .atelier-order-strip {
+            margin: 10px 0 12px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255, 252, 245, 0.96), rgba(246, 239, 224, 0.88));
+            border: 1px solid rgba(184, 154, 92, 0.35);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            color: #3b3224;
+        }
+
+        .atelier-strip-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin: 10px 0 12px;
-            padding: 10px 13px;
-            border-radius: 12px;
-            background: linear-gradient(180deg, rgba(255, 252, 245, 0.95), rgba(246, 239, 224, 0.88));
-            border: 1px solid rgba(184, 154, 92, 0.35);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-            font-size: 12.5px;
-            line-height: 1.35;
-            color: #4a3f2d;
+        }
+
+        .atelier-strip-left {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
         }
 
         .atelier-strip-label {
@@ -3329,27 +3337,30 @@
             border: 1px solid rgba(184, 154, 92, 0.25);
         }
 
-        .atelier-strip-dot {
-            color: rgba(140, 109, 56, 0.45);
-            flex-shrink: 0;
-        }
-
-        .atelier-strip-meta {
-            flex: 1;
-            min-width: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 500;
-            color: #3b3224;
+        .atelier-strip-time {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #4a3f2d;
         }
 
         .atelier-strip-price {
             flex-shrink: 0;
+            font-size: 13.5px;
             font-weight: 800;
-            font-size: 13px;
             letter-spacing: -0.01em;
             color: #1f1911;
+        }
+
+        .atelier-strip-menu {
+            margin-top: 7px;
+            padding-top: 7px;
+            border-top: 1px dashed rgba(184, 154, 92, 0.28);
+            font-size: 12.5px;
+            font-weight: 500;
+            line-height: 1.45;
+            color: #2c2419;
+            word-break: keep-all;
+            overflow-wrap: break-word;
         }
     </style>
 </head>
@@ -4300,10 +4311,14 @@
             </div>
 
             <div class="atelier-order-strip" id="secretModalOrderSummary">
-                <span class="atelier-strip-label">예약 요약</span>
-                <span class="atelier-strip-dot">·</span>
-                <span class="atelier-strip-meta" id="modalSummaryText">-</span>
-                <span class="atelier-strip-price" id="modalSummaryPrice">-</span>
+                <div class="atelier-strip-top">
+                    <span class="atelier-strip-left">
+                        <span class="atelier-strip-label">예약 요약</span>
+                        <span class="atelier-strip-time" id="modalSummaryTime">-</span>
+                    </span>
+                    <span class="atelier-strip-price" id="modalSummaryPrice">-</span>
+                </div>
+                <div class="atelier-strip-menu" id="modalSummaryMenu">-</div>
             </div>
 
             <div class="secret-gate-actions">
@@ -5985,18 +6000,18 @@
         }
 
         function formatOrderSummaryForSecretModal(payload) {
-            const metaEl = document.getElementById('modalSummaryText');
+            const timeEl = document.getElementById('modalSummaryTime');
+            const menuEl = document.getElementById('modalSummaryMenu');
             const priceEl = document.getElementById('modalSummaryPrice');
-            if (!metaEl || !priceEl) return;
+            if (!timeEl || !menuEl || !priceEl) return;
 
             const p = payload && typeof payload === 'object' ? payload : {};
             const pickupTime = String(p.pickupTime || '').trim() || '시간 미선택';
             const menuSummary = String(p.menuSummary || '').trim() || '메뉴 미선택';
             const totalPrice = String(p.totalPrice || '').trim() || '0원';
 
-            const combined = `${pickupTime} · ${menuSummary}`;
-            metaEl.textContent = combined;
-            metaEl.title = combined;
+            timeEl.textContent = pickupTime;
+            menuEl.textContent = menuSummary;
             priceEl.textContent = totalPrice;
         }
 
