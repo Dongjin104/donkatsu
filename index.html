@@ -6086,6 +6086,12 @@
                 return Boolean(target.closest('.quick-coupon-switch, [class*="quick-coupon" i], [id*="quickCoupon" i]'));
             }
 
+            function isCookTypeTarget(target) {
+                if (!target || typeof target.closest !== 'function') return false;
+                if (target.id === 'cook1' || target.id === 'cook2' || target.name === 'cookType') return true;
+                return Boolean(target.closest('label[for="cook1"], label[for="cook2"], .radio-btn'));
+            }
+
             function isAtelierLoadingScreenVisible() {
                 const candidates = document.querySelectorAll(
                     '[id*="loading" i], [id*="Loading"], [class*="loading" i], [class*="Loading"], [id*="submitting" i], [class*="submitting" i], [id*="progress" i], [id*="spinner" i]'
@@ -6121,6 +6127,19 @@
                     return null;
                 }
 
+                // 조리방식(튀겨서 포장/생고기) 라디오/라벨은 change 시 1회 재생해 중복 방지
+                if (isCookTypeTarget(target)) {
+                    return null;
+                }
+
+                // 조리법 안내 모달의 "확인했습니다" 등 모달 버튼은 tap 재생
+                const modalBtnEl = target.closest(
+                    '.modal-btn, .close-btn, [onclick*="closeCookingGuideModal"]'
+                );
+                if (modalBtnEl && !modalBtnEl.disabled) {
+                    return 'tap';
+                }
+
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
@@ -6135,7 +6154,6 @@
                     return 'confirm';
                 }
 
-                // select 드롭박스는 열 때 소리 없이 값 선택(change) 시 tap 1회만 재생
                 const dropEl = target.closest(
                     '[role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
@@ -6151,7 +6169,7 @@
                 }
 
                 const tapEl = target.closest(
-                    'button, .modal-btn, .close-btn'
+                    'button'
                 );
                 if (tapEl && !tapEl.disabled) {
                     return 'tap';
@@ -6180,7 +6198,7 @@
 
                 if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
 
-                if (isQuickCouponTarget(e.target)) {
+                if (isQuickCouponTarget(e.target) || isCookTypeTarget(e.target)) {
                     pendingIsQuickCoupon = true;
                     return;
                 }
@@ -6210,9 +6228,15 @@
                     return;
                 }
 
+                if (el.name === 'cookType' || el.id === 'cook1' || el.id === 'cook2' || isCookTypeTarget(el)) {
+                    clearPendingSound();
+                    playOnceAtelierTouchSound('tap');
+                    return;
+                }
+
                 if (el.tagName === 'SELECT') {
                     playOnceAtelierTouchSound('tap');
-                } else if (el.type === 'checkbox') {
+                } else if (el.type === 'checkbox' || el.type === 'radio') {
                     playOnceAtelierTouchSound('tap');
                 }
             }, { passive: true, capture: true });
