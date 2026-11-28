@@ -5494,6 +5494,10 @@
                         픽업 시간 선택</span>
                     <select id="newPickupTime" style="padding:11px; font-size:14px;"
                         onchange="handleEditTimeSelectChange(this)"></select>
+                    <div id="editPickupTimeAlert" class="pickup-inline-alert" role="alert" aria-live="polite" style="display: none;">
+                        <span class="pickup-inline-alert-badge">PICKUP</span>
+                        <span id="editPickupTimeAlertText">원하시는 픽업 시간을 먼저 선택해 주세요.</span>
+                    </div>
                     <div id="editBusyInfoBox" class="busy-info-box"></div>
                 </div>
             </div>
@@ -11546,6 +11550,24 @@
             const menuSummary = menuParts.join(', ');
 
             const editSelectEl = document.getElementById('newPickupTime');
+            const editAlertEl = document.getElementById('editPickupTimeAlert');
+            const editAlertTextEl = document.getElementById('editPickupTimeAlertText');
+
+            function hideEditPickupAlert() {
+                if (editSelectEl) {
+                    editSelectEl.classList.remove('pickup-select-error');
+                }
+                if (editAlertEl) {
+                    editAlertEl.classList.remove('is-visible');
+                    editAlertEl.style.display = 'none';
+                }
+            }
+
+            if (editSelectEl && !editSelectEl.__editAlertChangeBound) {
+                editSelectEl.__editAlertChangeBound = true;
+                editSelectEl.addEventListener('change', hideEditPickupAlert);
+            }
+
             const newTime = editSelectEl ? editSelectEl.value : '';
             const selectedOpt = editSelectEl && editSelectEl.selectedOptions ? editSelectEl.selectedOptions[0] : null;
             if (!newTime || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
@@ -11553,31 +11575,22 @@
                     ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
                     : '원하시는 픽업 시간을 먼저 선택해 주세요.';
 
-                const editAlertEl = document.getElementById('newPickupTimeAlert') || document.getElementById('editPickupTimeAlert');
-                const editAlertTextEl = document.getElementById('newPickupTimeAlertText') || document.getElementById('editPickupTimeAlertText');
-
-                if (editAlertEl && editSelectEl) {
-                    if (editAlertTextEl) editAlertTextEl.textContent = msg;
+                if (editAlertTextEl) {
+                    editAlertTextEl.textContent = msg;
+                }
+                if (editAlertEl) {
+                    editAlertEl.style.display = 'flex';
                     editAlertEl.classList.add('is-visible');
+                }
+                if (editSelectEl) {
                     editSelectEl.classList.add('pickup-select-error');
-                    editSelectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                } else if (typeof showPickupTimeLuxuryAlert === 'function') {
-                    showPickupTimeLuxuryAlert(msg);
-                    if (editSelectEl) {
-                        editSelectEl.classList.add('pickup-select-error');
-                        editSelectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+                    const targetScrollEl = editAlertEl || editSelectEl;
+                    targetScrollEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 return;
             }
 
-            if (editSelectEl) {
-                editSelectEl.classList.remove('pickup-select-error');
-            }
-            const editAlertClearEl = document.getElementById('newPickupTimeAlert') || document.getElementById('editPickupTimeAlert');
-            if (editAlertClearEl) {
-                editAlertClearEl.classList.remove('is-visible');
-            }
+            hideEditPickupAlert();
             if (typeof clearPickupTimeLuxuryAlert === 'function') {
                 clearPickupTimeLuxuryAlert();
             }
