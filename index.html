@@ -4334,15 +4334,22 @@
                 <label for="mainCouponSelect">보유 쿠폰 선택 (선택)</label>
                 <div class="coupon-atelier-card">
                     <div class="coupon-top-row">
-                        <span class="coupon-pill-tag">✦ MY COUPON</span>
-                        <span id="couponDiscountPreview" class="coupon-discount-pill">미선택</span>
+                        <label class="quick-coupon-toggle-label" for="mainUseCouponCheckbox">
+                            <input type="checkbox" id="mainUseCouponCheckbox" onchange="toggleMainCouponUsage()">
+                            <span class="quick-coupon-switch" aria-hidden="true"></span>
+                            <span>쿠폰 사용하기</span>
+                        </label>
+                        <span id="couponDiscountPreview" class="coupon-discount-pill">쿠폰 미사용</span>
                     </div>
-                    <select id="mainCouponSelect" class="coupon-select-box"
-                        onchange="onSelectMainCouponDrop(this.value)">
-                        <option value="">쿠폰 선택 안 함 (미사용)</option>
-                    </select>
-                    <div id="mainCouponStatus" class="coupon-status-banner is-info">
-                        쿠폰이 있어도 원치 않으시면 "쿠폰 선택 안 함"으로 두시면 됩니다.
+
+                    <div id="mainCouponControls" style="display: none; margin-top: 8px;">
+                        <select id="mainCouponSelect" class="coupon-select-box"
+                            onchange="onSelectMainCouponDrop(this.value)">
+                            <option value="">쿠폰 선택 안 함 (미사용)</option>
+                        </select>
+                        <div id="mainCouponStatus" class="coupon-status-banner is-info">
+                            사용하실 쿠폰을 고르거나 "쿠폰 선택 안 함"을 유지해 주세요.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -9160,7 +9167,13 @@
                 ? calculateCurrentTotalPrice(editOrderItems, editSauceItems)
                 : calculateCurrentTotalPrice(orderItems, sauceItems);
 
-            let coupon = isEditMode ? appliedEditCoupon : appliedMainCoupon;
+            const mainCheckbox = !isEditMode ? document.getElementById('mainUseCouponCheckbox') : null;
+            const isMainCouponOn = isEditMode ? true : !!(mainCheckbox && mainCheckbox.checked);
+
+            let coupon = (!isEditMode && !isMainCouponOn)
+                ? null
+                : (isEditMode ? appliedEditCoupon : appliedMainCoupon);
+
             const previewEl = document.getElementById(isEditMode ? 'editCouponDiscountPreview' : 'couponDiscountPreview');
             const statusEl = document.getElementById(isEditMode ? 'editCouponStatus' : 'mainCouponStatus');
             const priceElId = isEditMode ? 'editTotalPrice' : 'mainTotalPrice';
@@ -9225,18 +9238,22 @@
             coupon = resolveCouponDetails(coupon);
             if (isEditMode && coupon) {
                 appliedEditCoupon = coupon;
-            } else if (!isEditMode && coupon) {
+            } else if (!isEditMode && isMainCouponOn && coupon) {
                 appliedMainCoupon = coupon;
             }
 
             if (!coupon) {
-                if (previewEl) previewEl.textContent = isEditMode ? '0원 할인' : '미선택';
+                if (previewEl) {
+                    previewEl.textContent = isEditMode
+                        ? '0원 할인'
+                        : (isMainCouponOn ? '미선택' : '쿠폰 미사용');
+                }
                 if (priceEl) priceEl.innerText = subtotal.toLocaleString();
                 if (statusEl) {
                     statusEl.className = 'coupon-status-banner is-info';
                     statusEl.textContent = isEditMode
                         ? '쿠폰이 선택되지 않았습니다. 필요할 때 드롭박스에서 고르실 수 있습니다.'
-                        : '쿠폰이 있어도 원치 않으시면 "쿠폰 선택 안 함"으로 두시면 됩니다.';
+                        : '사용하실 쿠폰을 고르거나 "쿠폰 선택 안 함"을 유지해 주세요.';
                 }
                 return;
             }
@@ -9267,7 +9284,7 @@
                 statusEl.textContent = `✓ ${coupon.name || coupon.code} 적용 (-${discount.toLocaleString()}원 → 최종 ${finalPrice.toLocaleString()}원)`;
             }
         }
-
+        
         function getQuickReorderSubtotal(summaryObj) {
             if (!summaryObj) return 0;
             const menuSummary = String(summaryObj.menu || '').trim();
@@ -12932,6 +12949,25 @@
             </div>
         `).join('');
             infoBox.style.display = 'block';
+        }
+
+        function toggleMainCouponUsage() {
+            const checkbox = document.getElementById('mainUseCouponCheckbox');
+            const controlsEl = document.getElementById('mainCouponControls');
+            const useCoupon = !!(checkbox && checkbox.checked);
+
+            if (controlsEl) {
+                controlsEl.style.display = useCoupon ? 'block' : 'none';
+            }
+
+            if (!useCoupon) {
+                appliedMainCoupon = null;
+                populateCouponSelectBox('mainCouponSelect', '');
+            }
+
+            if (typeof syncCouponToOrderSummary === 'function') {
+                syncCouponToOrderSummary(false);
+            }
         }
 
         function parseSummaryToMap(summaryStr) {
