@@ -11549,8 +11549,15 @@
             const newTime = editSelectEl ? editSelectEl.value : '';
             const selectedOpt = editSelectEl && editSelectEl.selectedOptions ? editSelectEl.selectedOptions[0] : null;
             if (!newTime || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
-                showCustomAlert("알림", "선택 가능한 픽업 시간을 선택해 주세요! (준비중 시간대는 선택할 수 없습니다)");
+                showPickupTimeLuxuryAlert(
+                    selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1')
+                        ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
+                        : '원하시는 픽업 시간을 먼저 선택해 주세요.'
+                );
                 return;
+            }
+            if (typeof clearPickupTimeLuxuryAlert === 'function') {
+                clearPickupTimeLuxuryAlert();
             }
 
             const cookEl = document.querySelector('input[name="editCookType"]:checked');
