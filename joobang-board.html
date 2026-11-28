@@ -150,6 +150,55 @@
             color: var(--text-sub);
         }
 
+        .net-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--surface-sub);
+            border: 1px solid var(--border-color);
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            cursor: pointer;
+        }
+
+        .net-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #9ca3af;
+            flex-shrink: 0;
+        }
+
+        .net-status-badge.ok .net-dot {
+            background-color: #22c55e;
+        }
+
+        .net-status-badge.ok {
+            color: #86efac;
+        }
+
+        .net-status-badge.slow .net-dot {
+            background-color: #eab308;
+        }
+
+        .net-status-badge.slow {
+            color: #fde047;
+            border-color: rgba(234, 179, 8, 0.45);
+        }
+
+        .net-status-badge.error .net-dot {
+            background-color: #ef4444;
+        }
+
+        .net-status-badge.error {
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(127, 29, 29, 0.25);
+        }
+
         .online-status-container {
             position: relative;
             display: inline-block;
@@ -534,6 +583,11 @@
 
             <div class="status-badge">대기: <span id="unconfirmedCount" style="color:#ef4444; font-weight:bold;">0</span> / 총
                 <span id="totalCount">0</span></div>
+
+            <button type="button" id="netStatusBadge" class="net-status-badge" onclick="manualSyncNow()" title="누르면 즉시 동기화">
+                <span class="net-dot"></span>
+                <span id="netStatusText">대기 중</span>
+            </button>
         </div>
     </header>
 
@@ -566,6 +620,8 @@
         let isFetchingActiveUsers = false;
         let isAdminAuthenticated = false;
         let prevKitchenOrderMap = null;
+        let consecutivePollFailures = 0;
+        let lastPollSuccessAt = 0;
 
         // ===== 주방 MP3 알림음 플레이어 (신규예약 / 변경예약) =====
         const KITCHEN_SOUND_MAP = {
@@ -625,6 +681,69 @@
             playKitchenMp3('changeOrder');
         }
 
+        // ===== 주방 통신/폴링 상태 표시 =====
+        function setNetStatusBadge(state, label) {
+            const badge = document.getElementById('netStatusBadge');
+            const textEl = document.getElementById('netStatusText');
+            if (!badge || !textEl) return;
+            badge.classList.remove('ok', 'slow', 'error');
+            if (state) badge.classList.add(state);
+            textEl.textContent = label;
+        }
+
+        function updatePollHealthIndicator() {
+            if (!isAdminAuthenticated) {
+                setNetStatusBadge('', '대기 중');
+                return;
+            }
+            if (navigator.onLine === false) {
+                setNetStatusBadge('error', '오프라인');
+                return;
+            }
+            if (consecutivePollFailures >= 2) {
+                setNetStatusBadge('error', '연결 확인');
+                return;
+            }
+            if (consecutivePollFailures === 1 || (lastPollSuccessAt > 0 && Date.now() - lastPollSuccessAt > 7000)) {
+                setNetStatusBadge('slow', '응답 지연');
+                return;
+            }
+            if (lastPollSuccessAt > 0) {
+                setNetStatusBadge('ok', '연결됨');
+            } else {
+                setNetStatusBadge('slow', '동기화 중');
+            }
+        }
+
+        function manualSyncNow() {
+            if (!isAdminAuthenticated) return;
+            setNetStatusBadge('slow', '동기화 중');
+            fetchOrders();
+            fetchActiveUsers();
+        }
+
+        window.addEventListener('offline', function () {
+            consecutivePollFailures = Math.max(consecutivePollFailures, 2);
+            updatePollHealthIndicator();
+        });
+
+        window.addEventListener('online', function () {
+            consecutivePollFailures = 0;
+            updatePollHealthIndicator();
+            if (isAdminAuthenticated) {
+                fetchOrders();
+                fetchActiveUsers();
+            }
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && isAdminAuthenticated) {
+                updatePollHealthIndicator();
+                fetchOrders();
+                fetchActiveUsers();
+            }
+        });
+
         function getKitchenOrderKey(order, idx) {
             if (order && typeof order === 'object') {
                 if (order.rowIndex !== undefined && order.rowIndex !== null && String(order.rowIndex).trim() !== '') {
@@ -661,7 +780,6 @@
                 nextMap.set(key, getKitchenOrderContentSignature(item));
             });
 
-            // 최초 진입 시에는 기준점만 저장하고 소리는 울리지 않음
             if (prevKitchenOrderMap === null) {
                 prevKitchenOrderMap = nextMap;
                 return;
@@ -759,6 +877,7 @@
 
         function startDashboard() {
             __preloadKitchenSounds();
+            setNetStatusBadge('slow', '동기화 중');
             ensureAdminAuth(function () {
                 hideBlurOverlay();
                 lastOrderSignature = "";
@@ -838,6 +957,7 @@
         function handleManualKeyChange() {
             setStoredAdminKey('');
             isAdminAuthenticated = false;
+            setNetStatusBadge('', '대기 중');
             promptAdminKey(function () {
                 hideBlurOverlay();
                 lastOrderSignature = "";
@@ -850,6 +970,7 @@
         let __adminReauthInProgress = false;
         function handleAdminAuthFailure() {
             isAdminAuthenticated = false;
+            setNetStatusBadge('', '대기 중');
             if (__adminReauthInProgress) return;
             __adminReauthInProgress = true;
             setStoredAdminKey('');
@@ -926,11 +1047,17 @@
         }
 
         function fetchOrders() {
-            if (!isAdminAuthenticated || isFetchingOrders) return;
+            if (!isAdminAuthenticated) return;
+            updatePollHealthIndicator();
+            if (isFetchingOrders) return;
             isFetchingOrders = true;
             callGasAPI('getAdminOrderList', {}, function (data) {
                 isFetchingOrders = false;
-                if (data === null || data === undefined) return;
+                if (data === null || data === undefined) {
+                    consecutivePollFailures++;
+                    updatePollHealthIndicator();
+                    return;
+                }
                 if (data && data.result === 'error') {
                     handleAdminAuthFailure();
                     return;
@@ -938,7 +1065,14 @@
                 const ordersList = Array.isArray(data)
                     ? data
                     : (data && Array.isArray(data.orders) ? data.orders : null);
-                if (!ordersList) return;
+                if (!ordersList) {
+                    consecutivePollFailures++;
+                    updatePollHealthIndicator();
+                    return;
+                }
+                consecutivePollFailures = 0;
+                lastPollSuccessAt = Date.now();
+                updatePollHealthIndicator();
                 detectAndPlayOrderAlerts(ordersList);
                 renderOrders(ordersList);
             });
