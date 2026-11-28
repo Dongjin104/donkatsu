@@ -6347,7 +6347,6 @@
             if (timeEl) timeEl.textContent = (updatedObj && updatedObj.pickupTime) ? normalizeKoreanTimeLabel(updatedObj.pickupTime) : '-';
 
             if (priceEl) {
-                const rawPriceNum = parseInt(String((updatedObj && updatedObj.totalPrice) || '0').replace(/[^0-9]/g, ''), 10) || 0;
                 const discNum = parseInt(String(
                     (updatedObj && (updatedObj.couponDiscount ?? updatedObj.discountAmount ?? updatedObj.discount)) || '0'
                 ).replace(/[^0-9]/g, ''), 10) || 0;
@@ -6356,20 +6355,16 @@
                     ? (parseInt(String(calculateCurrentTotalPrice(editOrderItems, editSauceItems) || '0').replace(/[^0-9]/g, ''), 10) || 0)
                     : 0;
 
-                let finalPayNum = rawPriceNum;
-                if (discNum > 0) {
-                    if (menuSubtotal > 0 && rawPriceNum >= menuSubtotal) {
-                        finalPayNum = Math.max(0, menuSubtotal - discNum);
-                    } else if (rawPriceNum > 0 && Math.abs((menuSubtotal || (rawPriceNum + discNum)) - rawPriceNum) === discNum) {
-                        finalPayNum = rawPriceNum;
-                    } else if (rawPriceNum > 0) {
-                        finalPayNum = rawPriceNum;
-                    }
-                } else if (menuSubtotal > 0) {
-                    finalPayNum = menuSubtotal;
+                const rawPriceNum = parseInt(String((updatedObj && updatedObj.totalPrice) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+
+                // 주문 원가(menuSubtotal)가 있으면 원가 기준으로 계산하고, 없으면 rawPriceNum을 기준으로 처리
+                let baseAmt = menuSubtotal > 0 ? menuSubtotal : rawPriceNum;
+                if (menuSubtotal <= 0 && rawPriceNum > 0 && discNum > 0 && rawPriceNum < 10000) {
+                    baseAmt = rawPriceNum + discNum;
                 }
 
-                priceEl.textContent = (finalPayNum > 0 ? finalPayNum : rawPriceNum).toLocaleString() + '원';
+                const finalAmt = discNum > 0 ? Math.max(0, baseAmt - discNum) : baseAmt;
+                priceEl.textContent = finalAmt.toLocaleString() + '원';
             }
         }
 
@@ -7889,7 +7884,7 @@
                 }
             }
         }
-        
+
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
