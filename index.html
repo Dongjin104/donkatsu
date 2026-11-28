@@ -5830,18 +5830,21 @@
             }
         }
 
-        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 터치 사운드 연결 (pointerdown 즉시 반응 + 연타 대응)
+        // [6-3단계] 화면의 버튼·카드·팝업 실제 탭/클릭 시 터치 사운드 연결 (스크롤 오작동 차단)
         (function bindAtelierTouchSounds() {
             if (window.__atelierTouchSoundBound) return;
             window.__atelierTouchSoundBound = true;
 
+            let activePointerId = null;
             let downX = 0;
             let downY = 0;
             let movedTooFar = false;
+            let scrollOccurred = false;
+            let scrollTimer = null;
 
             function isAtelierLoadingScreenVisible() {
                 const candidates = document.querySelectorAll(
-                    '[id*="loading" i], [id*="Loading"], [class*="loading" i], [class*="Loading"], [id*="submitting" i], [class*="submitting" i], [id*="progress" i], [class*="spinner" i]'
+                    '[id*="loading" i], [id*="Loading"], [class*="loading" i], [class*="Loading"], [id*="submitting" i], [class*="submitting" i], [id*="progress" i], [id*="spinner" i]'
                 );
                 for (const el of candidates) {
                     if (!(el instanceof HTMLElement)) continue;
@@ -5866,24 +5869,15 @@
                 return false;
             }
 
-            document.addEventListener('pointerdown', function (e) {
-                if (!e.isTrusted) return;
-                downX = e.clientX;
-                downY = e.clientY;
-                movedTooFar = false;
-
-                if (isAtelierLoadingScreenVisible()) return;
-
-                const target = e.target;
-                if (!target || typeof target.closest !== 'function') return;
+            function resolveSoundType(target) {
+                if (!target || typeof target.closest !== 'function') return null;
 
                 // 예약 완료(#successModal) · 변경 완료(#updateSuccessModal) 팝업 내부 버튼은 가벼운 tap.mp3
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
                 if (inDoneModal && !inDoneModal.disabled) {
-                    playAtelierTouchSound('tap');
-                    return;
+                    return 'tap';
                 }
 
                 // 확인/접속/저장/예약 신청 계열 버튼 -> confirm.mp3
@@ -5891,8 +5885,7 @@
                     '.atelier-confirm-btn, button[type="submit"], [id*="confirm"], [id*="Confirm"], [id*="submit"], [id*="Submit"]'
                 );
                 if (confirmEl && !confirmEl.disabled) {
-                    playAtelierTouchSound('confirm');
-                    return;
+                    return 'confirm';
                 }
 
                 // 메뉴 카드·수량(+/-) 버튼 -> drop.mp3
@@ -5900,8 +5893,7 @@
                     '.qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
                 if (dropEl && !dropEl.disabled) {
-                    playAtelierTouchSound('drop');
-                    return;
+                    return 'drop';
                 }
 
                 // 그 외 일반 버튼·모달 닫기/취소 -> tap.mp3
@@ -5909,15 +5901,65 @@
                     'button, .modal-btn, .close-btn'
                 );
                 if (tapEl && !tapEl.disabled) {
-                    playAtelierTouchSound('tap');
+                    return 'tap';
                 }
+
+                return null;
+            }
+
+            window.addEventListener('scroll', function () {
+                scrollOccurred = true;
+                movedTooFar = true;
+                if (scrollTimer) clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(function () {
+                    scrollOccurred = false;
+                }, 120);
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointerdown', function (e) {
+                if (!e.isTrusted) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+                activePointerId = e.pointerId;
+                downX = e.clientX;
+                downY = e.clientY;
+                movedTooFar = scrollOccurred;
             }, { passive: true, capture: true });
 
             document.addEventListener('pointermove', function (e) {
+                if (!e.isTrusted) return;
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
                 if (movedTooFar) return;
+
                 if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
                     movedTooFar = true;
                 }
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointerup', function (e) {
+                if (!e.isTrusted) return;
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
+                const shouldPlay =
+                    !movedTooFar &&
+                    !scrollOccurred &&
+                    !(Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) &&
+                    !isAtelierLoadingScreenVisible();
+
+                activePointerId = null;
+
+                if (!shouldPlay) return;
+
+                const soundType = resolveSoundType(e.target);
+                if (soundType) {
+                    playAtelierTouchSound(soundType);
+                }
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointercancel', function (e) {
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
+                activePointerId = null;
+                movedTooFar = true;
             }, { passive: true, capture: true });
         })();
 
