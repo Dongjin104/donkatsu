@@ -7864,7 +7864,7 @@
                 }
             }
         }
-        
+
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
@@ -8254,9 +8254,34 @@
             const sel = document.getElementById(selectId);
             if (!sel) return;
 
+            function isCouponCodeToken(str) {
+                const s = String(str || '').trim();
+                if (!s) return false;
+                return /^CPN(?=[-_A-Z0-9]*$)/i.test(s) || /^CPN[-_A-Z0-9]{2,}$/i.test(s);
+            }
+
+            function cleanCouponDisplayName(str) {
+                const s = String(str || '')
+                    .replace(/^\s*적용\s*중\s*인\s*쿠폰\s*\([^)]*\)\s*/i, '')
+                    .replace(/\s*\(\s*-?\s*[0-9,]+\s*원\s*\)\s*/g, '')
+                    .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
+                    .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                    .trim();
+                if (!s || isCouponCodeToken(s)) return '';
+                return s;
+            }
+
+            function parseAmountVal(v) {
+                if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
+                const d = String(v || '').replace(/[^0-9]/g, '');
+                return d ? (parseInt(d, 10) || 0) : 0;
+            }
+
             const hasCouponArray =
                 (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
-                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0);
+                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0) ||
+                (Array.isArray(window.myAvailableCoupons) && window.myAvailableCoupons.length > 0) ||
+                (Array.isArray(window.availableCoupons) && window.availableCoupons.length > 0);
 
             const list = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
             const currentCode = String(selectedCode || '').trim().toUpperCase();
@@ -8268,32 +8293,112 @@
             function pushUniqueCoupon(c) {
                 if (!c) return;
                 const code = String(c.code || c.couponId || c.id || '').trim().toUpperCase();
-                const val = Number(c.value ?? c.discountAmount ?? c.discount ?? c.amount ?? 0) || 0;
+                let val = parseAmountVal(c.value ?? c.discountAmount ?? c.discount ?? c.amount ?? 0);
                 const rawName = String(c.name || c.couponName || c.title || '').trim();
-                if (!code && val <= 0 && !rawName) return;
+
+                if (!val && rawName) {
+                    const wonMatch = rawName.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)|([0-9,]+)\s*원/);
+                    if (wonMatch) {
+                        val = parseAmountVal(wonMatch[1] || wonMatch[2]);
+                    }
+                }
+
+                const cleanName = cleanCouponDisplayName(rawName);
+                if (!code && val <= 0 && !cleanName) return;
 
                 if (code && seenCodes.has(code)) return;
-                const fallbackKey = `${rawName}__${val}`;
+                const fallbackKey = `${cleanName || code}__${val}`;
                 if (!code && seenKeys.has(fallbackKey)) return;
 
                 if (code) seenCodes.add(code);
                 seenKeys.add(fallbackKey);
 
+                const safeName = cleanName || (val > 0 ? `${val.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
+
                 mergedList.push({
                     code: code || '__APPLIED__',
-                    name: rawName || (val > 0 ? `${val.toLocaleString()}원 할인쿠폰` : code),
+                    name: safeName,
                     discountType: c.discountType || 'amount',
                     value: val,
                     minOrder: Number(c.minOrder) || 0
                 });
             }
 
+            function findMatchedCouponInfo(code) {
+                if (!code) return null;
+
+                const candidateArrays = [
+                    list,
+                    window.globalMyCoupons,
+                    window.globalCouponList,
+                    window.myAvailableCoupons,
+                    window.availableCoupons,
+                    window.userCoupons,
+                    window.issuedCoupons,
+                    (window.currentReservationData && window.currentReservationData.availableCoupons),
+                    (window.lastReservationData && window.lastReservationData.availableCoupons)
+                ];
+
+                for (let i = 0; i < candidateArrays.length; i++) {
+                    const arr = candidateArrays[i];
+                    if (!Array.isArray(arr)) continue;
+                    for (let j = 0; j < arr.length; j++) {
+                        const item = arr[j];
+                        if (!item || typeof item !== 'object') continue;
+                        const itemCode = String(item.code || item.couponCode || item.couponId || item.id || '').trim().toUpperCase();
+                        if (itemCode && itemCode === code) {
+                            const itemName = cleanCouponDisplayName(item.name || item.couponName || item.title || item.label || '');
+                            const itemVal = parseAmountVal(item.value ?? item.discountAmount ?? item.discount ?? item.amount ?? 0);
+                            if (itemName || itemVal > 0) {
+                                return {
+                                    code: code,
+                                    name: itemName || `${itemVal.toLocaleString()}원 할인쿠폰`,
+                                    value: itemVal
+                                };
+                            }
+                        }
+                    }
+                }
+
+                const extraObjs = [
+                    (typeof appliedEditCoupon !== 'undefined' ? appliedEditCoupon : null),
+                    window.__initialEditCoupon,
+                    window.currentReservationData,
+                    window.lastReservationData
+                ];
+
+                for (let k = 0; k < extraObjs.length; k++) {
+                    const obj = extraObjs[k];
+                    if (!obj || typeof obj !== 'object') continue;
+                    const objCode = String(
+                        obj.code || obj.couponCode || obj.appliedCouponCode || obj.usedCouponCode || obj.couponId || ''
+                    ).trim().toUpperCase();
+                    const objName = cleanCouponDisplayName(
+                        obj.name || obj.couponName || obj.usedCouponName || obj.appliedCouponName || ''
+                    );
+                    const objVal = parseAmountVal(
+                        obj.value ?? obj.discountAmount ?? obj.couponDiscount ?? obj.discount ?? obj.amount ?? 0
+                    );
+                    if ((objCode && objCode === code) || objName || objVal > 0) {
+                        if (objName || objVal > 0) {
+                            return {
+                                code: code,
+                                name: objName || `${objVal.toLocaleString()}원 할인쿠폰`,
+                                value: objVal
+                            };
+                        }
+                    }
+                }
+
+                return null;
+            }
+
             if (selectId === 'editCouponSelect') {
                 const initC = window.__initialEditCoupon;
-                if (initC && (Number(initC.value ?? initC.discountAmount ?? initC.discount ?? 0) > 0 || String(initC.code || initC.couponId || '').trim())) {
+                if (initC && (parseAmountVal(initC.value ?? initC.discountAmount ?? initC.discount ?? 0) > 0 || cleanCouponDisplayName(initC.name || initC.couponName))) {
                     pushUniqueCoupon(initC);
                 }
-                if (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (Number(appliedEditCoupon.value ?? appliedEditCoupon.discountAmount ?? appliedEditCoupon.discount ?? 0) > 0 || String(appliedEditCoupon.code || appliedEditCoupon.couponId || '').trim())) {
+                if (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (parseAmountVal(appliedEditCoupon.value ?? appliedEditCoupon.discountAmount ?? appliedEditCoupon.discount ?? 0) > 0 || cleanCouponDisplayName(appliedEditCoupon.name || appliedEditCoupon.couponName))) {
                     pushUniqueCoupon(appliedEditCoupon);
                 }
             }
@@ -8301,12 +8406,12 @@
             list.forEach(c => pushUniqueCoupon(c));
 
             if (currentCode && !seenCodes.has(currentCode)) {
-                const fallbackDisc = (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && String(appliedEditCoupon.code || appliedEditCoupon.couponId || '').toUpperCase() === currentCode)
-                    ? (Number(appliedEditCoupon.value ?? appliedEditCoupon.discountAmount ?? appliedEditCoupon.discount ?? 0) || 0)
-                    : 0;
-                const fallbackName = (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (appliedEditCoupon.name || appliedEditCoupon.couponName))
-                    ? (appliedEditCoupon.name || appliedEditCoupon.couponName)
-                    : (fallbackDisc > 0 ? `${fallbackDisc.toLocaleString()}원 할인쿠폰` : `적용 중인 쿠폰 (${currentCode})`);
+                const matched = findMatchedCouponInfo(currentCode);
+                const fallbackDisc = matched ? matched.value : 0;
+                const fallbackName = matched
+                    ? matched.name
+                    : (fallbackDisc > 0 ? `${fallbackDisc.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
+
                 pushUniqueCoupon({
                     code: currentCode,
                     name: fallbackName,
@@ -8330,9 +8435,11 @@
                 mergedList.forEach(c => {
                     const code = String(c.code || '').trim().toUpperCase();
                     const selectedAttr = currentCode === code ? ' selected' : '';
+                    const cleanOptName = cleanCouponDisplayName(c.name) || (Number(c.value) > 0 ? `${Number(c.value).toLocaleString()}원 할인쿠폰` : '할인쿠폰');
+                    const cleanItem = Object.assign({}, c, { name: cleanOptName });
                     const label = typeof formatCouponOptionLabel === 'function'
-                        ? formatCouponOptionLabel(c)
-                        : `${c.name || code}${Number(c.value) > 0 ? ` — ${Number(c.value).toLocaleString()}원 할인` : ''}`;
+                        ? formatCouponOptionLabel(cleanItem)
+                        : `${cleanOptName}${Number(c.value) > 0 ? ` — ${Number(c.value).toLocaleString()}원 할인` : ''}`;
                     html += `<option value="${escapeHtml(code)}"${selectedAttr}>${escapeHtml(label)}</option>`;
                 });
             }
