@@ -5522,7 +5522,7 @@
                     <div id="editPickupTimeAlert" class="pickup-inline-alert" role="alert" aria-live="polite"
                         style="display: none;">
                         <span class="pickup-inline-alert-badge">PICKUP</span>
-                        <span id="editPickupTimeAlertText">원하시는 픽업 시간을 먼저 선택해 주세요.</span>
+                        <span id="editPickupTimeAlertText">픽업 시간을 먼저 선택해 주세요.</span>
                     </div>
                     <div id="editBusyInfoBox" class="busy-info-box"></div>
                 </div>
@@ -7295,7 +7295,7 @@
             }
         }
 
-        function showPickupTimeLuxuryAlert(message = '원하시는 픽업 시간을 먼저 선택해 주세요.') {
+        function showPickupTimeLuxuryAlert(message = '픽업 시간을 먼저 선택해 주세요.') {
             const selectEl = document.getElementById('pickupTime');
             const alertEl = document.getElementById('pickupTimeAlert');
             const alertTextEl = document.getElementById('pickupTimeAlertText');
@@ -7307,7 +7307,7 @@
             }
         }
 
-        function showQuickPickupTimeLuxuryAlert(message = '원하시는 픽업 시간을 먼저 선택해 주세요.') {
+        function showQuickPickupTimeLuxuryAlert(message = '픽업 시간을 먼저 선택해 주세요.') {
             const selectEl = document.getElementById('quickPickupTime');
             const alertEl = document.getElementById('quickPickupTimeAlert');
             const alertTextEl = document.getElementById('quickPickupTimeAlertText');
@@ -10120,7 +10120,7 @@
                 showQuickPickupTimeLuxuryAlert(
                     selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1')
                         ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
-                        : '원하시는 픽업 시간을 먼저 선택해 주세요.'
+                        : '픽업 시간을 먼저 선택해 주세요.'
                 );
                 return;
             }
@@ -10342,7 +10342,7 @@
                 showPickupTimeLuxuryAlert(
                     selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1')
                         ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
-                        : '원하시는 픽업 시간을 먼저 선택해 주세요.'
+                        : '픽업 시간을 먼저 선택해 주세요.'
                 );
                 return;
             }
@@ -11599,7 +11599,7 @@
             if (!newTime || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
                 const msg = (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))
                     ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
-                    : '원하시는 픽업 시간을 먼저 선택해 주세요.';
+                    : '픽업 시간을 먼저 선택해 주세요.';
 
                 if (editAlertTextEl) {
                     editAlertTextEl.textContent = msg;
