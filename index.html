@@ -11549,12 +11549,34 @@
             const newTime = editSelectEl ? editSelectEl.value : '';
             const selectedOpt = editSelectEl && editSelectEl.selectedOptions ? editSelectEl.selectedOptions[0] : null;
             if (!newTime || (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))) {
-                showPickupTimeLuxuryAlert(
-                    selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1')
-                        ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
-                        : '원하시는 픽업 시간을 먼저 선택해 주세요.'
-                );
+                const msg = (selectedOpt && (selectedOpt.disabled || selectedOpt.dataset.isPrep === '1'))
+                    ? '준비 중인 시간대예요. 선택 가능한 픽업 시간을 골라주세요.'
+                    : '원하시는 픽업 시간을 먼저 선택해 주세요.';
+
+                const editAlertEl = document.getElementById('newPickupTimeAlert') || document.getElementById('editPickupTimeAlert');
+                const editAlertTextEl = document.getElementById('newPickupTimeAlertText') || document.getElementById('editPickupTimeAlertText');
+
+                if (editAlertEl && editSelectEl) {
+                    if (editAlertTextEl) editAlertTextEl.textContent = msg;
+                    editAlertEl.classList.add('is-visible');
+                    editSelectEl.classList.add('pickup-select-error');
+                    editSelectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else if (typeof showPickupTimeLuxuryAlert === 'function') {
+                    showPickupTimeLuxuryAlert(msg);
+                    if (editSelectEl) {
+                        editSelectEl.classList.add('pickup-select-error');
+                        editSelectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
                 return;
+            }
+
+            if (editSelectEl) {
+                editSelectEl.classList.remove('pickup-select-error');
+            }
+            const editAlertClearEl = document.getElementById('newPickupTimeAlert') || document.getElementById('editPickupTimeAlert');
+            if (editAlertClearEl) {
+                editAlertClearEl.classList.remove('is-visible');
             }
             if (typeof clearPickupTimeLuxuryAlert === 'function') {
                 clearPickupTimeLuxuryAlert();
@@ -11784,6 +11806,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
+        
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
