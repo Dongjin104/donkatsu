@@ -6994,6 +6994,9 @@
                 if (Array.isArray(data.pickupTimesList)) {
                     mergedSettings.pickupTimesList = data.pickupTimesList;
                 }
+                if (Array.isArray(data.fortuneList)) {
+                    mergedSettings.fortuneList = data.fortuneList;
+                }
 
                 const nextSig = buildLiveSnapshotSignature({
                     settings: mergedSettings,
@@ -9910,6 +9913,9 @@
                     if (Array.isArray(rawData.pickupTimesList)) {
                         mergedSettings.pickupTimesList = rawData.pickupTimesList;
                     }
+                    if (Array.isArray(data.fortuneList)) {
+                        mergedSettings.fortuneList = data.fortuneList;
+                    }
                     saveSettingsCache(mergedSettings);
                     applySettingsObject(mergedSettings);
                 }
@@ -10787,6 +10793,9 @@
                 const mergedSettings = Object.assign({}, data.settings || {});
                 if (Array.isArray(data.pickupTimesList)) {
                     mergedSettings.pickupTimesList = data.pickupTimesList;
+                }
+                if (Array.isArray(data.fortuneList)) {
+                    mergedSettings.fortuneList = data.fortuneList;
                 }
                 if (data.settings || Array.isArray(data.pickupTimesList)) {
                     saveSettingsCache(mergedSettings);
