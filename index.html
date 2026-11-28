@@ -3291,6 +3291,38 @@
             font-weight: 700;
             color: #8A6A2F;
         }
+
+        /* 메뉴 카드 및 -/+ 버튼 컴팩트 스타일 */
+        .menu-card,
+        .menu-item {
+            padding: 10px 12px !important;
+            margin-bottom: 8px !important;
+            border-radius: 12px !important;
+        }
+
+        .menu-card img,
+        .menu-item img {
+            width: 54px !important;
+            height: 54px !important;
+            border-radius: 8px !important;
+            object-fit: cover !important;
+        }
+
+        .qty-btn,
+        .btn-qty,
+        .count-btn,
+        button[class*="qty"],
+        button[class*="plus"],
+        button[class*="minus"] {
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
+            flex: 0 0 34px !important;
+            padding: 0 !important;
+            border-radius: 999px !important;
+            font-size: 17px !important;
+            line-height: 1 !important;
+        }
     </style>
 </head>
 
@@ -5673,7 +5705,7 @@
             }
         }
 
-// [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundCache = {};
         let __atelierSoundCtx = null;
         let __atelierHasUserGesture = false;
