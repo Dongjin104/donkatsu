@@ -5656,9 +5656,11 @@
                 const target = e.target;
                 if (!target || typeof target.closest !== 'function') return;
 
-                // 변경 완료 팝업(#updateSuccessModal) 내부 버튼은 가벼운 tap.mp3로 처리
-                const inUpdateSuccessModal = target.closest('#updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn');
-                if (inUpdateSuccessModal && !inUpdateSuccessModal.disabled) {
+                // 예약 완료(#successModal) · 변경 완료(#updateSuccessModal) 팝업 내부 버튼은 가벼운 tap.mp3로 처리
+                const inDoneModal = target.closest(
+                    '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
+                );
+                if (inDoneModal && !inDoneModal.disabled) {
                     playAtelierTouchSound('tap');
                     return;
                 }
