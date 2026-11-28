@@ -4052,6 +4052,17 @@
                     overflow-wrap: break-word;
                     text-align: left;
                 }
+
+                .atelier-strip-coupon {
+                    margin-top: 6px;
+                    padding-top: 6px;
+                    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+                    font-size: 12.5px;
+                    font-weight: 700;
+                    color: var(--accent-dark, #8b5a14);
+                    word-break: keep-all;
+                    text-align: left;
+                }
             </style>
 
             <script>
@@ -4403,6 +4414,7 @@
                     <span class="atelier-strip-price" id="modalSummaryPrice">-</span>
                 </div>
                 <div class="atelier-strip-menu" id="modalSummaryMenu">-</div>
+                <div class="atelier-strip-coupon" id="modalSummaryCoupon" style="display: none;"></div>
             </div>
 
             <div class="secret-gate-actions">
@@ -6369,8 +6381,57 @@
         }
 
         function openSecretCodeGateModal(basePayload, isQuick) {
-            formatOrderSummaryForSecretModal(basePayload);
-            pendingSecretGatePayload = basePayload;
+            const p = (basePayload && typeof basePayload === 'object') ? { ...basePayload } : {};
+
+            const hasPayloadCoupon = Boolean(
+                String(p.couponSummary || p.couponText || p.couponLabel || p.couponName || '').trim() ||
+                (parseInt(String(p.couponDiscount !== undefined ? p.couponDiscount : (p.discountAmount || 0)).replace(/[^0-9]/g, ''), 10) || 0) > 0
+            );
+
+            if (!hasPayloadCoupon) {
+                const isQuickActive = Boolean(isQuick);
+                const couponCheckbox = isQuickActive
+                    ? document.getElementById('quickUseCouponCheckbox')
+                    : null;
+                const couponEnabled = isQuickActive ? Boolean(couponCheckbox && couponCheckbox.checked) : true;
+
+                if (couponEnabled) {
+                    const selEl = isQuickActive
+                        ? document.getElementById('quickCouponSelect')
+                        : document.getElementById('mainCouponSelect');
+                    const statusEl = isQuickActive
+                        ? document.getElementById('quickCouponStatus')
+                        : document.getElementById('mainCouponStatus');
+
+                    const opt = (selEl && selEl.selectedIndex >= 0) ? selEl.options[selEl.selectedIndex] : null;
+                    const optText = opt ? String(opt.textContent || '').trim() : '';
+                    const isRealCouponSelected = Boolean(opt && String(opt.value || '').trim());
+
+                    if (isRealCouponSelected) {
+                        const dsDiscount = parseInt(String((opt.dataset && opt.dataset.discount) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                        const matchWon = optText.match(/([0-9,]+)\s*원/);
+                        const parsedDiscount = dsDiscount || (matchWon ? (parseInt(matchWon[1].replace(/[^0-9]/g, ''), 10) || 0) : 0);
+                        const cleanName = String((opt.dataset && opt.dataset.label) || optText)
+                            .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
+                            .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
+                            .replace(/\s*\(\s*-\s*[0-9,]+\s*원\s*\)\s*$/g, '')
+                            .trim();
+
+                        if (cleanName || parsedDiscount > 0) {
+                            p.couponName = cleanName || '할인쿠폰';
+                            p.couponDiscount = parsedDiscount;
+                        }
+                    } else if (statusEl && statusEl.textContent) {
+                        const stText = String(statusEl.textContent).trim();
+                        if (!/미선택|선택\s*안\s*함|유지해\s*주세요/.test(stText) && /할인|쿠폰/.test(stText)) {
+                            p.couponSummary = stText.replace(/^✓\s*/, '').trim();
+                        }
+                    }
+                }
+            }
+
+            formatOrderSummaryForSecretModal(p);
+            pendingSecretGatePayload = p;
             pendingSecretGateIsQuick = Boolean(isQuick);
 
             const inputEl = document.getElementById('secretGateInput');
@@ -6419,6 +6480,7 @@
             const timeEl = document.getElementById('modalSummaryTime');
             const menuEl = document.getElementById('modalSummaryMenu');
             const priceEl = document.getElementById('modalSummaryPrice');
+            const couponEl = document.getElementById('modalSummaryCoupon');
             if (!timeEl || !menuEl || !priceEl) return;
 
             const p = payload && typeof payload === 'object' ? payload : {};
@@ -6429,6 +6491,38 @@
             timeEl.textContent = pickupTime;
             menuEl.textContent = menuSummary;
             priceEl.textContent = totalPrice;
+
+            if (couponEl) {
+                const rawCouponText = String(
+                    p.couponSummary ||
+                    p.couponText ||
+                    p.couponLabel ||
+                    p.couponName ||
+                    ''
+                ).trim();
+
+                const discountNum = parseInt(String(
+                    p.couponDiscount !== undefined ? p.couponDiscount : (p.discountAmount || 0)
+                ).replace(/[^0-9]/g, ''), 10) || 0;
+
+                let displayCoupon = '';
+                if (rawCouponText) {
+                    const hasMinus = /-\s*[0-9,]+원/.test(rawCouponText);
+                    displayCoupon = (!hasMinus && discountNum > 0)
+                        ? `${rawCouponText} (-${discountNum.toLocaleString()}원)`
+                        : rawCouponText;
+                } else if (discountNum > 0) {
+                    displayCoupon = `할인쿠폰 (-${discountNum.toLocaleString()}원)`;
+                }
+
+                if (displayCoupon) {
+                    couponEl.textContent = `쿠폰: ${displayCoupon}`;
+                    couponEl.style.display = 'block';
+                } else {
+                    couponEl.textContent = '';
+                    couponEl.style.display = 'none';
+                }
+            }
         }
 
         function handleSecretGateNormalSubmit() {
