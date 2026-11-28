@@ -5591,43 +5591,94 @@
             }
         }
 
-        // [6-3단계] Web Audio API 기반 잔잔한 터치 사운드
-        let __atelierAudioCtx = null;
+        // [6-3단계] 아이 엄마 타겟용 따뜻하고 부드러운 사운드 (우드/물방울/차분한 차임)
+let __atelierAudioCtx = null;
 
-        function playAtelierTouchSound(type = 'tap') {
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
+function playAtelierTouchSound(type = 'tap') {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
 
-                if (!__atelierAudioCtx) {
-                    __atelierAudioCtx = new AudioCtx();
-                }
-                if (__atelierAudioCtx.state === 'suspended') {
-                    __atelierAudioCtx.resume().catch(() => { });
-                }
+        if (!__atelierAudioCtx) {
+            __atelierAudioCtx = new AudioCtx();
+        }
+        if (__atelierAudioCtx.state === 'suspended') {
+            __atelierAudioCtx.resume().catch(() => {});
+        }
 
-                const now = __atelierAudioCtx.currentTime;
+        const now = __atelierAudioCtx.currentTime;
+
+        if (type === 'confirm') {
+            // 따뜻하고 차분한 2음 차임 (C5 -> G5 느낌의 부드러운 삼각파)
+            const notes = [523.25, 783.99];
+            notes.forEach((freq, idx) => {
+                const startAt = now + idx * 0.065;
                 const osc = __atelierAudioCtx.createOscillator();
                 const gain = __atelierAudioCtx.createGain();
 
-                const isConfirm = type === 'confirm';
-                osc.type = isConfirm ? 'triangle' : 'sine';
-                osc.frequency.setValueAtTime(isConfirm ? 660 : 520, now);
-                osc.frequency.exponentialRampToValueAtTime(isConfirm ? 880 : 340, now + 0.065);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, startAt);
 
-                gain.gain.setValueAtTime(0.0001, now);
-                gain.gain.linearRampToValueAtTime(isConfirm ? 0.07 : 0.045, now + 0.008);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
+                gain.gain.setValueAtTime(0.0001, startAt);
+                gain.gain.linearRampToValueAtTime(0.05, startAt + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.16);
 
                 osc.connect(gain);
                 gain.connect(__atelierAudioCtx.destination);
 
-                osc.start(now);
-                osc.stop(now + 0.08);
-            } catch (e) {
-                // 오디오 차단/미지원 환경에서도 UI 동작은 멈추지 않음
-            }
+                osc.start(startAt);
+                osc.stop(startAt + 0.17);
+            });
+            return;
         }
+
+        if (type === 'drop') {
+            // 맑고 둥근 물방울 톤
+            const osc = __atelierAudioCtx.createOscillator();
+            const gain = __atelierAudioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(420, now);
+            osc.frequency.exponentialRampToValueAtTime(720, now + 0.075);
+
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(0.045, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+
+            osc.connect(gain);
+            gain.connect(__atelierAudioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.09);
+            return;
+        }
+
+        // 기본 'tap': 날카롭지 않은 따뜻한 원목 톡 소리
+        const osc = __atelierAudioCtx.createOscillator();
+        const filter = __atelierAudioCtx.createBiquadFilter();
+        const gain = __atelierAudioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(310, now);
+        osc.frequency.exponentialRampToValueAtTime(195, now + 0.055);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1100, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.055, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(__atelierAudioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.07);
+    } catch (e) {
+        // 사운드 오류 시에도 UI 동작은 그대로 유지
+    }
+}
 
         // [6-3단계] 화면의 버튼·카드·팝업 조작 시 터치 사운드 연결
         (function bindAtelierTouchSounds() {
