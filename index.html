@@ -6345,7 +6345,32 @@
             if (menuEl) menuEl.textContent = (updatedObj && updatedObj.menu) ? String(updatedObj.menu) : '-';
             if (sauceEl) sauceEl.textContent = (updatedObj && updatedObj.sauce) ? String(updatedObj.sauce) : '없음';
             if (timeEl) timeEl.textContent = (updatedObj && updatedObj.pickupTime) ? normalizeKoreanTimeLabel(updatedObj.pickupTime) : '-';
-            if (priceEl) priceEl.textContent = (updatedObj && updatedObj.totalPrice) ? String(updatedObj.totalPrice) : '0원';
+
+            if (priceEl) {
+                const rawPriceNum = parseInt(String((updatedObj && updatedObj.totalPrice) || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                const discNum = parseInt(String(
+                    (updatedObj && (updatedObj.couponDiscount ?? updatedObj.discountAmount ?? updatedObj.discount)) || '0'
+                ).replace(/[^0-9]/g, ''), 10) || 0;
+
+                const menuSubtotal = (typeof calculateCurrentTotalPrice === 'function' && typeof editOrderItems !== 'undefined' && typeof editSauceItems !== 'undefined')
+                    ? (parseInt(String(calculateCurrentTotalPrice(editOrderItems, editSauceItems) || '0').replace(/[^0-9]/g, ''), 10) || 0)
+                    : 0;
+
+                let finalPayNum = rawPriceNum;
+                if (discNum > 0) {
+                    if (menuSubtotal > 0 && rawPriceNum >= menuSubtotal) {
+                        finalPayNum = Math.max(0, menuSubtotal - discNum);
+                    } else if (rawPriceNum > 0 && Math.abs((menuSubtotal || (rawPriceNum + discNum)) - rawPriceNum) === discNum) {
+                        finalPayNum = rawPriceNum;
+                    } else if (rawPriceNum > 0) {
+                        finalPayNum = rawPriceNum;
+                    }
+                } else if (menuSubtotal > 0) {
+                    finalPayNum = menuSubtotal;
+                }
+
+                priceEl.textContent = (finalPayNum > 0 ? finalPayNum : rawPriceNum).toLocaleString() + '원';
+            }
         }
 
         function reloadAfterUpdateSuccess() {
@@ -7632,21 +7657,27 @@
             if (dispPrice) {
                 const rawPrice = resData.totalPrice || '';
                 const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10);
+                const serverDiscount = parseWonVal(
+                    resData.couponDiscount ||
+                    resData.coupon_discount ||
+                    resData.discountAmount ||
+                    resData.discount_amount ||
+                    resData.discount ||
+                    0
+                );
+
                 if (!isNaN(numPrice) && numPrice > 0) {
-                    const serverDiscount = parseWonVal(
-                        resData.couponDiscount ||
-                        resData.coupon_discount ||
-                        resData.discountAmount ||
-                        resData.discount_amount ||
-                        resData.discount ||
-                        0
-                    );
-                    if (serverDiscount <= 0 && appliedDiscount > 0 && numPrice > appliedDiscount) {
-                        parsedBasePrice = numPrice;
-                        parsedFinalPrice = Math.max(0, numPrice - appliedDiscount);
-                    } else if (appliedDiscount > 0 && numPrice > appliedDiscount) {
-                        parsedFinalPrice = numPrice;
-                        parsedBasePrice = numPrice + appliedDiscount;
+                    if (appliedDiscount > 0) {
+                        if (serverDiscount > 0) {
+                            parsedFinalPrice = numPrice;
+                            parsedBasePrice = numPrice + appliedDiscount;
+                        } else if (numPrice > appliedDiscount) {
+                            parsedBasePrice = numPrice;
+                            parsedFinalPrice = Math.max(0, numPrice - appliedDiscount);
+                        } else {
+                            parsedFinalPrice = numPrice;
+                            parsedBasePrice = numPrice + appliedDiscount;
+                        }
                     } else {
                         parsedFinalPrice = numPrice;
                         parsedBasePrice = numPrice;
@@ -7858,7 +7889,7 @@
                 }
             }
         }
-
+        
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
