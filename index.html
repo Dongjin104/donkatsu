@@ -5755,7 +5755,7 @@
             }
         }
 
-        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+// [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundPools = {};
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
@@ -5830,17 +5830,27 @@
             }
         }
 
-        // [6-3단계] 화면의 버튼·카드·팝업 실제 탭/클릭 시 터치 사운드 연결 (스크롤 오작동 차단)
+        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 즉시 반응 + 스크롤 시 재생 취소
         (function bindAtelierTouchSounds() {
             if (window.__atelierTouchSoundBound) return;
             window.__atelierTouchSoundBound = true;
 
+            const SCROLL_CANCEL_DELAY_MS = 120;
             let activePointerId = null;
             let downX = 0;
             let downY = 0;
-            let movedTooFar = false;
+            let pendingTimer = null;
+            let pendingSoundType = null;
             let scrollOccurred = false;
-            let scrollTimer = null;
+            let scrollResetTimer = null;
+
+            function clearPendingSound() {
+                if (pendingTimer) {
+                    clearTimeout(pendingTimer);
+                    pendingTimer = null;
+                }
+                pendingSoundType = null;
+            }
 
             function isAtelierLoadingScreenVisible() {
                 const candidates = document.querySelectorAll(
@@ -5909,9 +5919,9 @@
 
             window.addEventListener('scroll', function () {
                 scrollOccurred = true;
-                movedTooFar = true;
-                if (scrollTimer) clearTimeout(scrollTimer);
-                scrollTimer = setTimeout(function () {
+                clearPendingSound();
+                if (scrollResetTimer) clearTimeout(scrollResetTimer);
+                scrollResetTimer = setTimeout(function () {
                     scrollOccurred = false;
                 }, 120);
             }, { passive: true, capture: true });
@@ -5920,46 +5930,40 @@
                 if (!e.isTrusted) return;
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
 
+                clearPendingSound();
                 activePointerId = e.pointerId;
                 downX = e.clientX;
                 downY = e.clientY;
-                movedTooFar = scrollOccurred;
+
+                if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
+
+                const soundType = resolveSoundType(e.target);
+                if (!soundType) return;
+
+                pendingSoundType = soundType;
+                pendingTimer = setTimeout(function () {
+                    const typeToPlay = pendingSoundType;
+                    clearPendingSound();
+                    if (typeToPlay && !scrollOccurred && !isAtelierLoadingScreenVisible()) {
+                        playAtelierTouchSound(typeToPlay);
+                    }
+                }, SCROLL_CANCEL_DELAY_MS);
             }, { passive: true, capture: true });
 
             document.addEventListener('pointermove', function (e) {
                 if (!e.isTrusted) return;
                 if (activePointerId !== null && e.pointerId !== activePointerId) return;
-                if (movedTooFar) return;
+                if (!pendingTimer) return;
 
                 if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
-                    movedTooFar = true;
-                }
-            }, { passive: true, capture: true });
-
-            document.addEventListener('pointerup', function (e) {
-                if (!e.isTrusted) return;
-                if (activePointerId !== null && e.pointerId !== activePointerId) return;
-
-                const shouldPlay =
-                    !movedTooFar &&
-                    !scrollOccurred &&
-                    !(Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) &&
-                    !isAtelierLoadingScreenVisible();
-
-                activePointerId = null;
-
-                if (!shouldPlay) return;
-
-                const soundType = resolveSoundType(e.target);
-                if (soundType) {
-                    playAtelierTouchSound(soundType);
+                    clearPendingSound();
                 }
             }, { passive: true, capture: true });
 
             document.addEventListener('pointercancel', function (e) {
                 if (activePointerId !== null && e.pointerId !== activePointerId) return;
+                clearPendingSound();
                 activePointerId = null;
-                movedTooFar = true;
             }, { passive: true, capture: true });
         })();
 
