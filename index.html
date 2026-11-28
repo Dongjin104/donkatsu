@@ -5755,7 +5755,7 @@
             }
         }
 
-        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+// [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundPools = {};
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
@@ -5830,10 +5830,27 @@
             }
         }
 
-        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 pointerdown 즉시 터치 사운드 재생
+        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 즉시 반응 + 스크롤 시 재생 취소
         (function bindAtelierTouchSounds() {
             if (window.__atelierTouchSoundBound) return;
             window.__atelierTouchSoundBound = true;
+
+            const SCROLL_CANCEL_DELAY_MS = 120;
+            let activePointerId = null;
+            let downX = 0;
+            let downY = 0;
+            let pendingTimer = null;
+            let pendingSoundType = null;
+            let scrollOccurred = false;
+            let scrollResetTimer = null;
+
+            function clearPendingSound() {
+                if (pendingTimer) {
+                    clearTimeout(pendingTimer);
+                    pendingTimer = null;
+                }
+                pendingSoundType = null;
+            }
 
             function isAtelierLoadingScreenVisible() {
                 const candidates = document.querySelectorAll(
@@ -5862,21 +5879,15 @@
                 return false;
             }
 
-            document.addEventListener('pointerdown', function (e) {
-                if (!e.isTrusted) return;
-                if (e.pointerType === 'mouse' && e.button !== 0) return;
-                if (isAtelierLoadingScreenVisible()) return;
-
-                const target = e.target;
-                if (!target || typeof target.closest !== 'function') return;
+            function resolveSoundType(target) {
+                if (!target || typeof target.closest !== 'function') return null;
 
                 // 예약 완료(#successModal) · 변경 완료(#updateSuccessModal) 팝업 내부 버튼은 가벼운 tap.mp3
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
                 if (inDoneModal && !inDoneModal.disabled) {
-                    playAtelierTouchSound('tap');
-                    return;
+                    return 'tap';
                 }
 
                 // 확인/접속/저장/예약 신청 계열 버튼 -> confirm.mp3
@@ -5884,8 +5895,7 @@
                     '.atelier-confirm-btn, button[type="submit"], [id*="confirm"], [id*="Confirm"], [id*="submit"], [id*="Submit"]'
                 );
                 if (confirmEl && !confirmEl.disabled) {
-                    playAtelierTouchSound('confirm');
-                    return;
+                    return 'confirm';
                 }
 
                 // 메뉴 카드·수량(+/-) 버튼 -> drop.mp3
@@ -5893,8 +5903,7 @@
                     '.qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
                 if (dropEl && !dropEl.disabled) {
-                    playAtelierTouchSound('drop');
-                    return;
+                    return 'drop';
                 }
 
                 // 그 외 일반 버튼·모달 닫기/취소 -> tap.mp3
@@ -5902,60 +5911,111 @@
                     'button, .modal-btn, .close-btn'
                 );
                 if (tapEl && !tapEl.disabled) {
-                    playAtelierTouchSound('tap');
+                    return 'tap';
                 }
+
+                return null;
+            }
+
+            window.addEventListener('scroll', function () {
+                scrollOccurred = true;
+                clearPendingSound();
+                if (scrollResetTimer) clearTimeout(scrollResetTimer);
+                scrollResetTimer = setTimeout(function () {
+                    scrollOccurred = false;
+                }, 120);
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointerdown', function (e) {
+                if (!e.isTrusted) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+                clearPendingSound();
+                activePointerId = e.pointerId;
+                downX = e.clientX;
+                downY = e.clientY;
+
+                if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
+
+                const soundType = resolveSoundType(e.target);
+                if (!soundType) return;
+
+                pendingSoundType = soundType;
+                pendingTimer = setTimeout(function () {
+                    const typeToPlay = pendingSoundType;
+                    clearPendingSound();
+                    if (typeToPlay && !scrollOccurred && !isAtelierLoadingScreenVisible()) {
+                        playAtelierTouchSound(typeToPlay);
+                    }
+                }, SCROLL_CANCEL_DELAY_MS);
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointermove', function (e) {
+                if (!e.isTrusted) return;
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
+                if (!pendingTimer) return;
+
+                if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
+                    clearPendingSound();
+                }
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointercancel', function (e) {
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
+                clearPendingSound();
+                activePointerId = null;
             }, { passive: true, capture: true });
         })();
 
-        window.addEventListener('scroll', function () {
-            scrollOccurred = true;
-            clearPendingSound();
-            if (scrollResetTimer) clearTimeout(scrollResetTimer);
-            scrollResetTimer = setTimeout(function () {
-                scrollOccurred = false;
-            }, 120);
-        }, { passive: true, capture: true });
-
-        document.addEventListener('pointerdown', function (e) {
-            if (!e.isTrusted) return;
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-
-            clearPendingSound();
-            activePointerId = e.pointerId;
-            downX = e.clientX;
-            downY = e.clientY;
-
-            if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
-
-            const soundType = resolveSoundType(e.target);
-            if (!soundType) return;
-
-            pendingSoundType = soundType;
-            pendingTimer = setTimeout(function () {
-                const typeToPlay = pendingSoundType;
+            window.addEventListener('scroll', function () {
+                scrollOccurred = true;
                 clearPendingSound();
-                if (typeToPlay && !scrollOccurred && !isAtelierLoadingScreenVisible()) {
-                    playAtelierTouchSound(typeToPlay);
+                if (scrollResetTimer) clearTimeout(scrollResetTimer);
+                scrollResetTimer = setTimeout(function () {
+                    scrollOccurred = false;
+                }, 120);
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointerdown', function (e) {
+                if (!e.isTrusted) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+                clearPendingSound();
+                activePointerId = e.pointerId;
+                downX = e.clientX;
+                downY = e.clientY;
+
+                if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
+
+                const soundType = resolveSoundType(e.target);
+                if (!soundType) return;
+
+                pendingSoundType = soundType;
+                pendingTimer = setTimeout(function () {
+                    const typeToPlay = pendingSoundType;
+                    clearPendingSound();
+                    if (typeToPlay && !scrollOccurred && !isAtelierLoadingScreenVisible()) {
+                        playAtelierTouchSound(typeToPlay);
+                    }
+                }, SCROLL_CANCEL_DELAY_MS);
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointermove', function (e) {
+                if (!e.isTrusted) return;
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
+                if (!pendingTimer) return;
+
+                if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
+                    clearPendingSound();
                 }
-            }, SCROLL_CANCEL_DELAY_MS);
-        }, { passive: true, capture: true });
+            }, { passive: true, capture: true });
 
-        document.addEventListener('pointermove', function (e) {
-            if (!e.isTrusted) return;
-            if (activePointerId !== null && e.pointerId !== activePointerId) return;
-            if (!pendingTimer) return;
-
-            if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
+            document.addEventListener('pointercancel', function (e) {
+                if (activePointerId !== null && e.pointerId !== activePointerId) return;
                 clearPendingSound();
-            }
-        }, { passive: true, capture: true });
-
-        document.addEventListener('pointercancel', function (e) {
-            if (activePointerId !== null && e.pointerId !== activePointerId) return;
-            clearPendingSound();
-            activePointerId = null;
-        }, { passive: true, capture: true });
-        }) ();
+                activePointerId = null;
+            }, { passive: true, capture: true });
+        })();
 
         function openSecretCodeGateModal(basePayload, isQuick) {
             formatOrderSummaryForSecretModal(basePayload);
