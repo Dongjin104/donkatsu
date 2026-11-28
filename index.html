@@ -3947,7 +3947,7 @@
                             thanksEl.textContent = '소중한 의견 남겨주셔서 감사합니다. 삼촌이 꼭 확인하겠습니다!';
                             thanksEl.style.display = 'block';
                         }
-
+                        playAtelierTouchSound('success');
                         uncleFeedbackCloseTimer = setTimeout(() => {
                             closeUncleFeedbackCard();
                         }, 2400);
@@ -5591,94 +5591,61 @@
             }
         }
 
-        // [6-3단계] 아이 엄마 타겟용 따뜻하고 부드러운 사운드 (우드/물방울/차분한 차임)
-let __atelierAudioCtx = null;
+        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+        const __atelierSoundCache = {};
+        let __atelierSoundCtx = null;
 
-function playAtelierTouchSound(type = 'tap') {
-    try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
+        const ATELIER_SOUND_MAP = {
+            tap: './sound/tap.mp3',
+            drop: './sound/drop.mp3',
+            confirm: './sound/confirm.mp3',
+            success: './sound/success.mp3'
+        };
 
-        if (!__atelierAudioCtx) {
-            __atelierAudioCtx = new AudioCtx();
-        }
-        if (__atelierAudioCtx.state === 'suspended') {
-            __atelierAudioCtx.resume().catch(() => {});
-        }
+        function __getAtelierSound(type) {
+            const src = ATELIER_SOUND_MAP[type];
+            if (!src) return null;
 
-        const now = __atelierAudioCtx.currentTime;
-
-        if (type === 'confirm') {
-            // 따뜻하고 차분한 2음 차임 (C5 -> G5 느낌의 부드러운 삼각파)
-            const notes = [523.25, 783.99];
-            notes.forEach((freq, idx) => {
-                const startAt = now + idx * 0.065;
-                const osc = __atelierAudioCtx.createOscillator();
-                const gain = __atelierAudioCtx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, startAt);
-
-                gain.gain.setValueAtTime(0.0001, startAt);
-                gain.gain.linearRampToValueAtTime(0.05, startAt + 0.012);
-                gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.16);
-
-                osc.connect(gain);
-                gain.connect(__atelierAudioCtx.destination);
-
-                osc.start(startAt);
-                osc.stop(startAt + 0.17);
-            });
-            return;
+            if (!__atelierSoundCache[type]) {
+                const audio = new Audio(src);
+                audio.preload = 'auto';
+                if (type === 'success') {
+                    audio.volume = 0.5;
+                } else if (type === 'confirm') {
+                    audio.volume = 0.45;
+                } else {
+                    audio.volume = 0.35;
+                }
+                __atelierSoundCache[type] = audio;
+            }
+            return __atelierSoundCache[type];
         }
 
-        if (type === 'drop') {
-            // 맑고 둥근 물방울 톤
-            const osc = __atelierAudioCtx.createOscillator();
-            const gain = __atelierAudioCtx.createGain();
+        function playAtelierTouchSound(type = 'tap') {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    if (!__atelierSoundCtx) {
+                        __atelierSoundCtx = new AudioCtx();
+                    }
+                    if (__atelierSoundCtx.state === 'suspended') {
+                        __atelierSoundCtx.resume().catch(() => { });
+                    }
+                }
 
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(420, now);
-            osc.frequency.exponentialRampToValueAtTime(720, now + 0.075);
+                const base = __getAtelierSound(type);
+                if (!base) return;
 
-            gain.gain.setValueAtTime(0.0001, now);
-            gain.gain.linearRampToValueAtTime(0.045, now + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
-
-            osc.connect(gain);
-            gain.connect(__atelierAudioCtx.destination);
-
-            osc.start(now);
-            osc.stop(now + 0.09);
-            return;
+                const clip = base.cloneNode();
+                clip.volume = base.volume;
+                const p = clip.play();
+                if (p && typeof p.catch === 'function') {
+                    p.catch(() => { });
+                }
+            } catch (e) {
+                // 사운드 재생 실패 시에도 UI 동작은 유지
+            }
         }
-
-        // 기본 'tap': 날카롭지 않은 따뜻한 원목 톡 소리
-        const osc = __atelierAudioCtx.createOscillator();
-        const filter = __atelierAudioCtx.createBiquadFilter();
-        const gain = __atelierAudioCtx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(310, now);
-        osc.frequency.exponentialRampToValueAtTime(195, now + 0.055);
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(1100, now);
-
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(0.055, now + 0.006);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
-
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(__atelierAudioCtx.destination);
-
-        osc.start(now);
-        osc.stop(now + 0.07);
-    } catch (e) {
-        // 사운드 오류 시에도 UI 동작은 그대로 유지
-    }
-}
 
         // [6-3단계] 화면의 버튼·카드·팝업 조작 시 터치 사운드 연결
         (function bindAtelierTouchSounds() {
@@ -5689,20 +5656,29 @@ function playAtelierTouchSound(type = 'tap') {
                 const target = e.target;
                 if (!target || typeof target.closest !== 'function') return;
 
-                // 확인/접속/저장/제출/예약 확정 계열 버튼은 'confirm' 톤
-                const confirmBtn = target.closest(
+                // 확인/접속/저장/예약 신청 계열 버튼 -> confirm.mp3
+                const confirmEl = target.closest(
                     '.atelier-confirm-btn, button[type="submit"], [id*="confirm"], [id*="Confirm"], [id*="submit"], [id*="Submit"]'
                 );
-                if (confirmBtn && !confirmBtn.disabled) {
+                if (confirmEl && !confirmEl.disabled) {
                     playAtelierTouchSound('confirm');
                     return;
                 }
 
-                // 그 외 버튼, 수량 조절 버튼, 메뉴/소스 카드, 닫기/취소 버튼은 'tap' 톤
-                const interactiveEl = target.closest(
-                    'button, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, .modal-btn, .close-btn'
+                // 메뉴 카드·수량 버튼 -> drop.mp3
+                const dropEl = target.closest(
+                    '.qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
-                if (interactiveEl && !interactiveEl.disabled) {
+                if (dropEl && !dropEl.disabled) {
+                    playAtelierTouchSound('drop');
+                    return;
+                }
+
+                // 그 외 일반 버튼·모달 닫기/취소 -> tap.mp3
+                const tapEl = target.closest(
+                    'button, .modal-btn, .close-btn'
+                );
+                if (tapEl && !tapEl.disabled) {
                     playAtelierTouchSound('tap');
                 }
             }, { passive: true, capture: true });
@@ -9284,6 +9260,7 @@ function playAtelierTouchSound(type = 'tap') {
                         if (data.isWinner) {
                             openEventWinModal(cachedEventMenuList);
                         } else {
+                            playAtelierTouchSound('success');
                             showModal('eventFailModal');
                         }
                     } else {
@@ -10254,6 +10231,7 @@ function playAtelierTouchSound(type = 'tap') {
                     localOptimisticLockUntil = Date.now() + 3000;
                     lastLiveSnapshotSignature = "";
                     hideModal('searchModal');
+                    playAtelierTouchSound('success');
                     populateUpdateSuccessModalDetails(updatedObj);
                     showModal('updateSuccessModal');
 
