@@ -4259,7 +4259,7 @@
                         </div>
                     </div>
 
-                    <div class="quick-price-summary-box">
+                    <div class="quick-price-summary-box" id="quickPriceSummaryBox" style="display: none;">
                         <span>재주문 결제 예정 금액</span>
                         <strong id="quickFinalPriceText">0원</strong>
                     </div>
@@ -9283,12 +9283,14 @@
             }
             const checkbox = document.getElementById('quickUseCouponCheckbox');
             const controls = document.getElementById('quickCouponControls');
+            const priceBoxEl = document.getElementById('quickPriceSummaryBox');
             const previewEl = document.getElementById('quickCouponDiscountPreview');
             const statusEl = document.getElementById('quickCouponStatus');
             const finalPriceEl = document.getElementById('quickFinalPriceText');
 
             const useCoupon = !!(checkbox && checkbox.checked);
             if (controls) controls.style.display = useCoupon ? 'block' : 'none';
+            if (priceBoxEl) priceBoxEl.style.display = useCoupon ? 'flex' : 'none';
 
             if (!useCoupon) {
                 if (previewEl) previewEl.textContent = '쿠폰 미사용';
@@ -9332,12 +9334,23 @@
 
         function toggleQuickCouponUsage() {
             const checkbox = document.getElementById('quickUseCouponCheckbox');
+            const controlsEl = document.getElementById('quickCouponControls');
+            const priceBoxEl = document.getElementById('quickPriceSummaryBox');
             const useCoupon = !!(checkbox && checkbox.checked);
+
+            if (controlsEl) {
+                controlsEl.style.display = useCoupon ? 'block' : 'none';
+            }
+            if (priceBoxEl) {
+                priceBoxEl.style.display = useCoupon ? 'flex' : 'none';
+            }
+
             if (!useCoupon) {
                 appliedQuickCoupon = null;
             } else if (!appliedQuickCoupon && appliedMainCoupon) {
                 appliedQuickCoupon = Object.assign({}, appliedMainCoupon);
             }
+
             refreshQuickCouponSummary();
         }
 
