@@ -7820,6 +7820,7 @@
                 } catch (err) { }
             }
         }
+        
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
@@ -11992,6 +11993,11 @@
             const keptY = captureScrollPos();
             const restoreScrollIfSafe = () => {
                 if (typeof __userScrolledSinceInit !== 'undefined' && __userScrolledSinceInit) {
+                    return;
+                }
+                const quickBox = document.getElementById('quickReorderBox');
+                const isQuickReorderVisible = quickBox && window.getComputedStyle(quickBox).display !== 'none';
+                if (isQuickReorderVisible) {
                     return;
                 }
                 preserveScrollPos(keptY);
