@@ -5755,7 +5755,7 @@
             }
         }
 
-// [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundPools = {};
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
@@ -5916,56 +5916,6 @@
 
                 return null;
             }
-
-            window.addEventListener('scroll', function () {
-                scrollOccurred = true;
-                clearPendingSound();
-                if (scrollResetTimer) clearTimeout(scrollResetTimer);
-                scrollResetTimer = setTimeout(function () {
-                    scrollOccurred = false;
-                }, 120);
-            }, { passive: true, capture: true });
-
-            document.addEventListener('pointerdown', function (e) {
-                if (!e.isTrusted) return;
-                if (e.pointerType === 'mouse' && e.button !== 0) return;
-
-                clearPendingSound();
-                activePointerId = e.pointerId;
-                downX = e.clientX;
-                downY = e.clientY;
-
-                if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
-
-                const soundType = resolveSoundType(e.target);
-                if (!soundType) return;
-
-                pendingSoundType = soundType;
-                pendingTimer = setTimeout(function () {
-                    const typeToPlay = pendingSoundType;
-                    clearPendingSound();
-                    if (typeToPlay && !scrollOccurred && !isAtelierLoadingScreenVisible()) {
-                        playAtelierTouchSound(typeToPlay);
-                    }
-                }, SCROLL_CANCEL_DELAY_MS);
-            }, { passive: true, capture: true });
-
-            document.addEventListener('pointermove', function (e) {
-                if (!e.isTrusted) return;
-                if (activePointerId !== null && e.pointerId !== activePointerId) return;
-                if (!pendingTimer) return;
-
-                if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
-                    clearPendingSound();
-                }
-            }, { passive: true, capture: true });
-
-            document.addEventListener('pointercancel', function (e) {
-                if (activePointerId !== null && e.pointerId !== activePointerId) return;
-                clearPendingSound();
-                activePointerId = null;
-            }, { passive: true, capture: true });
-        })();
 
             window.addEventListener('scroll', function () {
                 scrollOccurred = true;
