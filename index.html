@@ -6997,7 +6997,6 @@
                             document.getElementById('quickReorderBox').style.display = 'none';
                             document.getElementById('closedNotice').style.display = 'none';
                             setLoadingSkeletonVisible(false);
-                            showAtelierPrivacyCurtainOnce();
                             return;
                         }
 
@@ -7083,7 +7082,6 @@
                             }
                         }
                         setLoadingSkeletonVisible(false);
-                        showAtelierPrivacyCurtainOnce();
                     }
                 }
             } catch (e) {
@@ -7534,7 +7532,6 @@
             document.getElementById('quickReorderBox').style.display = 'none';
             document.getElementById('closedNotice').style.display = 'none';
             preserveScrollPos(keptY);
-            showAtelierPrivacyCurtainOnce();
 
             const newlyIssued = (resData && (resData.issuedCoupon || resData.newCoupon || resData.rewardCoupon)) || null;
             let rewardShown = false;
@@ -8448,7 +8445,6 @@
                 }
             }
             preserveScrollPos(keptY);
-            showAtelierPrivacyCurtainOnce();
         }
 
         function openNoticeModal() {
@@ -8939,7 +8935,6 @@
                 handleTimeChange(qSel, 'quickBusyInfoBox');
             }
             refreshQuickCouponSummary(summaryObj);
-            showAtelierPrivacyCurtainOnce();
         }
 
         let isManualFormEditing = false;
@@ -10552,19 +10547,6 @@
                 preserveScrollPos(keptY);
             };
 
-            const showDbg = (msg) => {
-                try {
-                    let el = document.getElementById('__syncDbg');
-                    if (!el) {
-                        el = document.createElement('div');
-                        el.id = '__syncDbg';
-                        el.style.cssText = 'position:fixed;left:6px;right:6px;bottom:6px;z-index:99999;background:rgba(0,0,0,0.88);color:#00ff88;font-size:11px;line-height:1.35;padding:8px;border-radius:6px;word-break:break-all;';
-                        document.body.appendChild(el);
-                    }
-                    el.textContent = msg;
-                } catch (e) {}
-            };
-
             const isDismissedCompletedForReorder = () => {
                 if (typeof userDismissedCompletedNotice !== 'undefined' && userDismissedCompletedNotice) {
                     return true;
@@ -10668,8 +10650,6 @@
                 }
 
                 const cachedState = loadCustomerStateCache();
-                showDbg('1.캐시=' + (cachedState ? cachedState.type : 'none') + ' / 서버조회중...');
-
                 if (cachedSettings && cachedState) {
                     if (cachedSettings.isClosed) {
                         showClosedNoticeScreen();
@@ -10730,7 +10710,6 @@
                 setLoadingSkeletonVisible(false);
 
                 if (!data) {
-                    showDbg('2.응답파싱실패 / raw=' + String(text || '').slice(0, 80));
                     if (!cachedSettings) {
                         applySettingsObject({});
                     }
@@ -10761,8 +10740,6 @@
                 }
 
                 const reservationData = data.reservation ? data.reservation : (data.result ? data : null);
-                showDbg('2.서버결과=' + (reservationData ? reservationData.result : 'null') + ' / 상태=' + (reservationData ? reservationData.status : '-') + ' / isClosed=' + Boolean(mergedSettings.isClosed));
-
                 if (reservationData && reservationData.result === "blocked") {
                     enforceBlockedOverlay(reservationData.message);
                     restoreScrollIfSafe();
@@ -10842,7 +10819,6 @@
                 startLiveCustomerSync();
                 restoreScrollIfSafe();
             } catch (err) {
-                showDbg('ERR:' + (err && err.message ? err.message : String(err)));
                 window.isLoadingCoupons = false;
                 setLoadingSkeletonVisible(false);
                 if (!loadSettingsCache()) {
