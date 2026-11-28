@@ -7392,9 +7392,40 @@
             const savedNick = sess.identifier || localStorage.getItem('savedNickname') || (typeof TripleStorage !== 'undefined' && typeof TripleStorage.getCookie === 'function' ? TripleStorage.getCookie('savedNickname') : '') || globalUserNickname || "";
 
             isLiveSyncRequest = true;
+
+            // 요청이 0.8초 이상 길어질 때만 '동기화 중'으로 표시해 평상시 깜빡임을 줄임
+            let slowSyncTimer = null;
+            let didShowSlowSync = false;
             if (typeof setCustomerNetStatus === 'function') {
-                setCustomerNetStatus('sync', '동기화 중');
+                slowSyncTimer = setTimeout(() => {
+                    if (isLiveSyncRequest) {
+                        didShowSlowSync = true;
+                        setCustomerNetStatus('sync', '동기화 중');
+                    }
+                }, 800);
             }
+
+            const clearSlowSyncTimer = () => {
+                if (slowSyncTimer) {
+                    clearTimeout(slowSyncTimer);
+                    slowSyncTimer = null;
+                }
+            };
+
+            const markOkQuietly = () => {
+                clearSlowSyncTimer();
+                if (typeof setCustomerNetStatus === 'function') {
+                    setCustomerNetStatus('ok', didShowSlowSync ? '방금 반영됨' : '실시간 연결됨');
+                }
+            };
+
+            const markWarn = () => {
+                clearSlowSyncTimer();
+                if (typeof setCustomerNetStatus === 'function') {
+                    setCustomerNetStatus('warn', '연결 불안정');
+                }
+            };
+
             try {
                 const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
@@ -7413,15 +7444,11 @@
                 const text = await res.text();
                 let data = null;
                 try { data = JSON.parse(text); } catch (e) {
-                    if (typeof setCustomerNetStatus === 'function') {
-                        setCustomerNetStatus('warn', '연결 불안정');
-                    }
+                    markWarn();
                     return;
                 }
                 if (!data) {
-                    if (typeof setCustomerNetStatus === 'function') {
-                        setCustomerNetStatus('warn', '연결 불안정');
-                    }
+                    markWarn();
                     return;
                 }
 
@@ -7440,15 +7467,11 @@
                 }
 
                 if (!forceApply && isPageSkeletonLoadingActive()) {
-                    if (typeof setCustomerNetStatus === 'function') {
-                        setCustomerNetStatus('ok', '방금 반영됨');
-                    }
+                    markOkQuietly();
                     return;
                 }
                 if (!forceApply && Date.now() < localOptimisticLockUntil) {
-                    if (typeof setCustomerNetStatus === 'function') {
-                        setCustomerNetStatus('ok', '방금 반영됨');
-                    }
+                    markOkQuietly();
                     return;
                 }
 
@@ -7479,9 +7502,7 @@
                     if (closedByTimeOrFlagNow && !isAdminTest) {
                         if (typeof showClosedNoticeScreen === 'function') showClosedNoticeScreen();
                     }
-                    if (typeof setCustomerNetStatus === 'function') {
-                        setCustomerNetStatus('ok', '방금 반영됨');
-                    }
+                    markOkQuietly();
                     return;
                 }
                 lastLiveSnapshotSignature = nextSig;
@@ -7490,9 +7511,7 @@
                     saveSettingsCache(mergedSettings);
                     applySettingsObject(mergedSettings);
                     if (mergedSettings.isBlocked) {
-                        if (typeof setCustomerNetStatus === 'function') {
-                            setCustomerNetStatus('ok', '방금 반영됨');
-                        }
+                        markOkQuietly();
                         return;
                     }
                 }
@@ -7502,9 +7521,7 @@
                     if (typeof showClosedNoticeScreen === 'function') {
                         showClosedNoticeScreen();
                     }
-                    if (typeof setCustomerNetStatus === 'function') {
-                        setCustomerNetStatus('ok', '방금 반영됨');
-                    }
+                    markOkQuietly();
                     return;
                 }
 
@@ -7512,9 +7529,7 @@
                 if (reservationData) {
                     if (reservationData.result === "blocked") {
                         enforceBlockedOverlay(reservationData.message);
-                        if (typeof setCustomerNetStatus === 'function') {
-                            setCustomerNetStatus('ok', '방금 반영됨');
-                        }
+                        markOkQuietly();
                         return;
                     }
 
@@ -7525,9 +7540,7 @@
                             const dismissedCompleted = isDismissedCompletedForReorder();
                             if (dismissedCompleted || isOrderFormEditingActive()) {
                                 showNewOrQuickReorderScreen();
-                                if (typeof setCustomerNetStatus === 'function') {
-                                    setCustomerNetStatus('ok', '방금 반영됨');
-                                }
+                                markOkQuietly();
                                 return;
                             }
 
@@ -7539,9 +7552,7 @@
                             document.getElementById('quickReorderBox').style.display = 'none';
                             document.getElementById('closedNotice').style.display = 'none';
                             setLoadingSkeletonVisible(false);
-                            if (typeof setCustomerNetStatus === 'function') {
-                                setCustomerNetStatus('ok', '방금 반영됨');
-                            }
+                            markOkQuietly();
                             return;
                         }
 
@@ -7564,9 +7575,7 @@
                         if ((typeof isAlreadyOrderedScreenVisible === 'function' && isAlreadyOrderedScreenVisible()) || !isOrderFormEditingActive()) {
                             renderActiveReservationNotice(reservationData);
                         }
-                        if (typeof setCustomerNetStatus === 'function') {
-                            setCustomerNetStatus('ok', '방금 반영됨');
-                        }
+                        markOkQuietly();
                         return;
                     }
 
@@ -7578,14 +7587,11 @@
                     }
                 }
 
-                if (typeof setCustomerNetStatus === 'function') {
-                    setCustomerNetStatus('ok', '방금 반영됨');
-                }
+                markOkQuietly();
             } catch (e) {
-                if (typeof setCustomerNetStatus === 'function') {
-                    setCustomerNetStatus('warn', '연결 불안정');
-                }
+                markWarn();
             } finally {
+                clearSlowSyncTimer();
                 isLiveSyncRequest = false;
                 try {
                     if (!isSubmitting && !isQuickSubmitting && !isUpdatingReservation && typeof checkClosedStatus === 'function') {
