@@ -8097,63 +8097,45 @@
                 return;
             }
 
-            const codeStr = String(couponInfo.code || couponInfo.couponCode || couponInfo.couponId || '').trim().toUpperCase();
-            const nameStr = String(couponInfo.name || couponInfo.couponName || '').trim();
-            const popupKey = `${codeStr || nameStr}_${disc}`;
-
-            let isUpdatingOrJustUpdated = false;
-            let alreadyShownInSession = false;
-
+            let isUpdatingNow = false;
             try {
-                isUpdatingOrJustUpdated = Boolean(
-                    window.isEditingReservation ||
-                    (typeof isUpdatingReservation !== 'undefined' && isUpdatingReservation) ||
+                const hasJustUpdatedFlag = Boolean(
                     sessionStorage.getItem('donkatsu_just_updated_reservation') ||
                     localStorage.getItem('donkatsu_just_updated_reservation')
                 );
-                if (sessionStorage.getItem('donkatsu_just_updated_reservation')) {
+                isUpdatingNow = Boolean(
+                    window.isEditingReservation ||
+                    (typeof isUpdatingReservation !== 'undefined' && isUpdatingReservation) ||
+                    hasJustUpdatedFlag
+                );
+                if (hasJustUpdatedFlag) {
                     sessionStorage.removeItem('donkatsu_just_updated_reservation');
-                }
-                if (localStorage.getItem('donkatsu_just_updated_reservation')) {
                     localStorage.removeItem('donkatsu_just_updated_reservation');
                 }
             } catch (e) { }
 
-            try {
-                if (!window.__shownCouponAppliedPopups) {
-                    window.__shownCouponAppliedPopups = new Set();
-                }
-                const storageKey = `donkatsu_applied_popup_shown_${popupKey}`;
-                alreadyShownInSession = Boolean(
-                    window.__shownCouponAppliedPopups.has(popupKey) ||
-                    sessionStorage.getItem(storageKey) ||
-                    localStorage.getItem(storageKey)
-                );
-            } catch (e) { }
-
-            if (isUpdatingOrJustUpdated || alreadyShownInSession) {
-                try {
-                    if (!window.__shownCouponAppliedPopups) {
-                        window.__shownCouponAppliedPopups = new Set();
-                    }
-                    window.__shownCouponAppliedPopups.add(popupKey);
-                    const storageKey = `donkatsu_applied_popup_shown_${popupKey}`;
-                    sessionStorage.setItem(storageKey, '1');
-                    localStorage.setItem(storageKey, '1');
-                } catch (e) { }
-
+            if (isUpdatingNow) {
                 if (typeof onClose === 'function') onClose();
                 return;
             }
 
+            const codeStr = String(couponInfo.code || couponInfo.couponCode || couponInfo.couponId || '').trim().toUpperCase();
+            const nameStr = String(couponInfo.name || couponInfo.couponName || '').trim();
+            const burstKey = `${codeStr || nameStr}_${disc}`;
+            const nowTs = Date.now();
+
             try {
-                if (!window.__shownCouponAppliedPopups) {
-                    window.__shownCouponAppliedPopups = new Set();
+                if (!window.__lastCouponAppliedPopupMeta) {
+                    window.__lastCouponAppliedPopupMeta = { key: '', ts: 0 };
                 }
-                window.__shownCouponAppliedPopups.add(popupKey);
-                const storageKey = `donkatsu_applied_popup_shown_${popupKey}`;
-                sessionStorage.setItem(storageKey, '1');
-                localStorage.setItem(storageKey, '1');
+                if (
+                    window.__lastCouponAppliedPopupMeta.key === burstKey &&
+                    (nowTs - window.__lastCouponAppliedPopupMeta.ts) < 1500
+                ) {
+                    if (typeof onClose === 'function') onClose();
+                    return;
+                }
+                window.__lastCouponAppliedPopupMeta = { key: burstKey, ts: nowTs };
             } catch (e) { }
 
             let orig = Math.max(0, Number(originalPrice || 0));
@@ -8207,7 +8189,7 @@
                 buttonText: '예약 내역 확인하기'
             }, onClose);
         }
-
+        
         let appliedMainCoupon = null;
         let appliedEditCoupon = null;
         let appliedQuickCoupon = null;
