@@ -10801,6 +10801,12 @@
             const nick = (sess.identifier || document.getElementById('nickname')?.value || globalUserNickname || '').trim();
             if (!nick) return;
 
+            const prevCouponCode = String(
+                (window.__lastAppliedCoupon && (window.__lastAppliedCoupon.code || window.__lastAppliedCoupon.couponCode || window.__lastAppliedCoupon.couponId)) ||
+                (window.currentReservationData && (window.currentReservationData.couponCode || window.currentReservationData.coupon_code)) ||
+                ''
+            ).trim().toUpperCase();
+
             const menuParts = [];
             Object.keys(editOrderItems).forEach(k => {
                 if ((editOrderItems[k] || 0) > 0) menuParts.push(`${k} ${editOrderItems[k]}개`);
@@ -10975,6 +10981,7 @@
                         status: currentRenderedStatus || '미확인',
                         eventPrize: document.getElementById('displayEventPrize')?.innerText || ''
                     };
+                    window.currentReservationData = updatedObj;
                     saveCustomerStateCache({ type: 'active_order', reservation: updatedObj });
                     renderActiveReservationNotice(updatedObj);
                     localOptimisticLockUntil = Date.now() + 3000;
@@ -10983,6 +10990,32 @@
                     playAtelierTouchSound('success');
                     populateUpdateSuccessModalDetails(updatedObj);
                     showModal('updateSuccessModal');
+
+                    const normalizedFinalCode = finalCouponCode.toUpperCase();
+                    const isCouponChanged = Boolean(normalizedFinalCode && normalizedFinalCode !== prevCouponCode);
+
+                    if (isCouponChanged && finalCouponDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
+                        window.__suppressCouponPopupUntil = 0;
+                        try {
+                            sessionStorage.removeItem('donkatsu_just_updated_reservation');
+                            localStorage.removeItem('donkatsu_just_updated_reservation');
+                        } catch (e) { }
+
+                        const origAmt = totalPriceNum;
+                        const finalAmt = Math.max(0, totalPriceNum - finalCouponDiscount);
+                        setTimeout(() => {
+                            showCouponAppliedPopup(
+                                {
+                                    code: finalCouponCode,
+                                    name: finalCouponName || `${finalCouponDiscount.toLocaleString()}원 할인쿠폰`
+                                },
+                                origAmt,
+                                finalCouponDiscount,
+                                finalAmt
+                            );
+                        }, 220);
+                    }
+
                     preserveScrollPos(keptY);
                 } else {
                     showCustomAlert("수정 안내", data.message || "예약 수정에 실패했습니다.");
@@ -10995,7 +11028,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-
+        
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
