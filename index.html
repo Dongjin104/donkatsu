@@ -9334,6 +9334,36 @@
             return false;
         }
 
+        function resetModalScrollToTop(modalEl) {
+            if (!modalEl) return;
+            if (typeof modalEl.scrollTop === 'number') modalEl.scrollTop = 0;
+            modalEl.querySelectorAll('*').forEach((el) => {
+                if (typeof el.scrollTop === 'number' && el.scrollTop > 0) {
+                    el.scrollTop = 0;
+                }
+            });
+        }
+
+        function forcePageAndModalTop(modalId) {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (e) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                if (modalId) {
+                    resetModalScrollToTop(document.getElementById(modalId));
+                }
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         function showModal(id) {
             const modal = document.getElementById(id);
             if (!modal) return;
@@ -9342,18 +9372,26 @@
             }
             modal.classList.add('active');
             modal.style.display = 'flex';
+            resetModalScrollToTop(modal);
+
             if (id !== 'customAlertModal' && id !== 'confirmReduceModal' && id !== 'luxurySoldOutModal') {
-                scrollPosition = __bgSavedScrollY;
+                scrollPosition = 0;
+                if (typeof __bgSavedScrollY !== 'undefined') {
+                    __bgSavedScrollY = 0;
+                }
+                forcePageAndModalTop(id);
             }
         }
 
         function hideModal(id) {
             const modal = document.getElementById(id);
             if (!modal) return;
+            resetModalScrollToTop(modal);
             modal.classList.remove('active');
             modal.style.display = 'none';
             if (!hasAnyActiveModalOpen(id)) {
-                unlockBackgroundScroll(true);
+                unlockBackgroundScroll(false);
+                forcePageAndModalTop();
             }
         }
 
