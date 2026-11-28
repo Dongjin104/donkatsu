@@ -5898,60 +5898,6 @@
             }, { passive: true, capture: true });
         })();
 
-        let __atelierPrivacyCurtainShownOnce = false;
-
-        function dismissAtelierPrivacyCurtain() {
-            const curtain = document.getElementById('atelierPrivacyCurtain');
-            if (curtain) {
-                curtain.style.display = 'none';
-            }
-        }
-
-        // 화면 보호 가림막
-        // function showAtelierPrivacyCurtainOnce() {
-        //     if (__atelierPrivacyCurtainShownOnce) return;
-        //     const curtain = document.getElementById('atelierPrivacyCurtain');
-        //     if (!curtain) return;
-        //     __atelierPrivacyCurtainShownOnce = true;
-        //     curtain.style.display = 'flex';
-        // }
-
-        (function bindAtelierPrivacyCurtainEvents() {
-            const curtain = document.getElementById('atelierPrivacyCurtain');
-            if (!curtain) return;
-            curtain.addEventListener('pointerup', function (e) {
-                e.preventDefault();
-                dismissAtelierPrivacyCurtain();
-            }, { passive: false });
-        })();
-
-        function unlockAndDismissPrivacyCurtain() {
-            const curtainEl = document.getElementById('atelierPrivacyCurtain');
-            if (!curtainEl) return;
-
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    if (typeof __atelierSoundCtx !== 'undefined' && __atelierSoundCtx && __atelierSoundCtx.state === 'suspended') {
-                        __atelierSoundCtx.resume().catch(() => { });
-                    }
-                }
-                if (typeof ATELIER_SOUND_MAP !== 'undefined' && typeof __getAtelierSound === 'function') {
-                    Object.keys(ATELIER_SOUND_MAP).forEach((key) => {
-                        const base = __getAtelierSound(key);
-                        if (base && typeof base.load === 'function') {
-                            base.load();
-                        }
-                    });
-                }
-            } catch (e) { }
-
-            if (typeof playAtelierTouchSound === 'function') {
-                playAtelierTouchSound('tap');
-            }
-            hideModal('atelierPrivacyCurtain');
-        }
-
         function openSecretCodeGateModal(basePayload, isQuick) {
             formatOrderSummaryForSecretModal(basePayload);
             pendingSecretGatePayload = basePayload;
