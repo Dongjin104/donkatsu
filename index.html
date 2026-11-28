@@ -4765,16 +4765,20 @@
                     if (couponRow) couponRow.style.display = 'none';
                 }
 
-                // 기준 금액(원가)을 한 번만 기록해서 120ms / 450ms / MutationObserver 재실행 시 중복 차감 방지
-                var editTotalEl = document.getElementById('editTotalPrice');
-                var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
-                var currentModalPrice = parseWonAmount(priceEl.textContent);
+                // 순수 메뉴 원가(할인 미포함)를 기준으로 한 번만 계산
+                var menuSubtotal = (typeof calculateCurrentTotalPrice === 'function' && typeof editOrderItems !== 'undefined' && typeof editSauceItems !== 'undefined')
+                    ? parseWonAmount(calculateCurrentTotalPrice(editOrderItems, editSauceItems))
+                    : 0;
 
                 var rawBasePrice = parseWonAmount(priceEl.dataset.rawBasePrice);
-                if (editLivePrice > 0) {
-                    rawBasePrice = editLivePrice;
-                } else if (!rawBasePrice && currentModalPrice > 0) {
-                    rawBasePrice = currentModalPrice;
+                if (menuSubtotal > 0) {
+                    rawBasePrice = menuSubtotal;
+                } else if (!rawBasePrice) {
+                    var currentModalPrice = parseWonAmount(priceEl.textContent);
+                    var editTotalEl = document.getElementById('editTotalPrice');
+                    var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
+                    // editLivePrice는 이미 할인이 빠졌을 수 있으므로, 할인액이 있으면 복원해서 원가로 잡음
+                    rawBasePrice = (editLivePrice > 0 ? editLivePrice : currentModalPrice) + discountAmt;
                 }
 
                 if (rawBasePrice > 0) {
@@ -6347,30 +6351,27 @@
             if (timeEl) timeEl.textContent = (updatedObj && updatedObj.pickupTime) ? normalizeKoreanTimeLabel(updatedObj.pickupTime) : '-';
 
             if (priceEl) {
+                const menuSubtotal = (typeof calculateCurrentTotalPrice === 'function' && typeof editOrderItems !== 'undefined' && typeof editSauceItems !== 'undefined')
+                    ? (parseInt(String(calculateCurrentTotalPrice(editOrderItems, editSauceItems) || '0').replace(/[^0-9]/g, ''), 10) || 0)
+                    : 0;
+
                 const rawPriceNum = parseInt(String((updatedObj && updatedObj.totalPrice) || '0').replace(/[^0-9]/g, ''), 10) || 0;
                 const discNum = parseInt(String(
                     (updatedObj && (updatedObj.couponDiscount ?? updatedObj.discountAmount ?? updatedObj.discount)) || '0'
                 ).replace(/[^0-9]/g, ''), 10) || 0;
 
-                const menuSubtotal = (typeof calculateCurrentTotalPrice === 'function' && typeof editOrderItems !== 'undefined' && typeof editSauceItems !== 'undefined')
-                    ? (parseInt(String(calculateCurrentTotalPrice(editOrderItems, editSauceItems) || '0').replace(/[^0-9]/g, ''), 10) || 0)
-                    : 0;
-
                 let displayNum = rawPriceNum;
-                if (discNum > 0) {
-                    if (menuSubtotal > 0 && rawPriceNum === menuSubtotal) {
-                        displayNum = Math.max(0, menuSubtotal - discNum);
-                    } else if (rawPriceNum <= 0 && menuSubtotal > 0) {
-                        displayNum = Math.max(0, menuSubtotal - discNum);
-                    }
-                } else if (rawPriceNum <= 0 && menuSubtotal > 0) {
-                    displayNum = menuSubtotal;
+                if (menuSubtotal > 0) {
+                    displayNum = Math.max(0, menuSubtotal - discNum);
+                    priceEl.dataset.rawBasePrice = String(menuSubtotal);
+                } else if (rawPriceNum <= 0) {
+                    displayNum = 0;
                 }
 
                 priceEl.textContent = displayNum.toLocaleString() + '원';
             }
         }
-
+        
         function reloadAfterUpdateSuccess() {
             const keptY = captureScrollPos();
             hideModal('updateSuccessModal');
@@ -11110,7 +11111,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-        
+
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
