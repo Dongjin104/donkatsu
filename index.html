@@ -6047,6 +6047,7 @@
             let pendingSoundType = null;
             let scrollOccurred = false;
             let scrollResetTimer = null;
+            let lastChangeSoundAt = 0;
 
             function clearPendingSound() {
                 if (pendingTimer) {
@@ -6100,17 +6101,19 @@
                     return 'confirm';
                 }
 
+                // select는 여는 순간(pointerdown)이 아니라 실제 값 변경(change) 시 1회 재생
                 const dropEl = target.closest(
-                    'select, [role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
+                    '[role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
                 if (dropEl && !dropEl.disabled) {
                     return 'drop';
                 }
 
+                // 체크박스는 상태가 실제 토글될 때(change) 1회만 재생해 2중 소리 방지
                 const switchEl = target.closest(
-                    'input[type="checkbox"], [role="switch"], label[for*="Coupon" i], label[for*="Switch" i], label[for*="Toggle" i], [class*="switch" i], [class*="toggle" i]'
+                    '[role="switch"], label[for*="Switch" i], label[for*="Toggle" i], [class*="switch" i], [class*="toggle" i]'
                 );
-                if (switchEl && !switchEl.disabled) {
+                if (switchEl && !switchEl.disabled && !switchEl.querySelector('input[type="checkbox"]')) {
                     return 'tap';
                 }
 
@@ -6161,15 +6164,17 @@
                 if (!e.isTrusted) return;
                 const el = e.target;
                 if (!el || el.disabled) return;
+                if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
+
+                const now = Date.now();
+                if (now - lastChangeSoundAt < 80) return;
 
                 if (el.tagName === 'SELECT') {
-                    if (!scrollOccurred && !isAtelierLoadingScreenVisible()) {
-                        playAtelierTouchSound('drop');
-                    }
+                    lastChangeSoundAt = now;
+                    playAtelierTouchSound('drop');
                 } else if (el.type === 'checkbox') {
-                    if (!scrollOccurred && !isAtelierLoadingScreenVisible()) {
-                        playAtelierTouchSound('tap');
-                    }
+                    lastChangeSoundAt = now;
+                    playAtelierTouchSound('tap');
                 }
             }, { passive: true, capture: true });
 
