@@ -8318,7 +8318,6 @@
                 const code = String(
                     forceCode ||
                     c.code ||
-                    c.couponCode ||
                     c.couponId ||
                     c.id ||
                     ''
@@ -8361,6 +8360,22 @@
 
             function findMatchedCouponInfo(code) {
                 if (!code) return null;
+
+                if (code === '__APPLIED__') {
+                    const extraApplied = [
+                        (selectId === 'editCouponSelect' && typeof appliedEditCoupon !== 'undefined' ? appliedEditCoupon : null),
+                        (selectId === 'editCouponSelect' ? window.__initialEditCoupon : null),
+                        window.currentReservationData,
+                        window.lastReservationData
+                    ];
+                    for (let k = 0; k < extraApplied.length; k++) {
+                        const obj = extraApplied[k];
+                        if (!obj || typeof obj !== 'object') continue;
+                        const norm = normalizeCouponItem(obj, '__APPLIED__');
+                        if (norm && (norm.value > 0 || norm.name !== '할인쿠폰')) return norm;
+                    }
+                    return null;
+                }
 
                 const candidateArrays = [
                     list,
@@ -8412,7 +8427,6 @@
 
             const mergedList = [];
             const seenCodes = new Set();
-            const seenKeys = new Set();
 
             function pushUniqueCoupon(rawItem, forceCode) {
                 const norm = normalizeCouponItem(rawItem, forceCode);
@@ -8420,12 +8434,7 @@
 
                 const code = String(norm.code || '').trim().toUpperCase();
                 if (code && seenCodes.has(code)) return;
-
-                const fallbackKey = `${norm.name || code}__${norm.value}`;
-                if (!code && seenKeys.has(fallbackKey)) return;
-
                 if (code) seenCodes.add(code);
-                seenKeys.add(fallbackKey);
 
                 mergedList.push({
                     code: code || '__APPLIED__',
@@ -8436,7 +8445,7 @@
                 });
             }
 
-            // 1. 현재 선택/적용 중인 쿠폰이 있으면 먼저 기준으로 반영(시트에서 사용완료 처리된 현재 적용 쿠폰도 드롭박스에 유지)
+            // 1. 현재 적용 중인 쿠폰 먼저 삽입(고유 CPN 코드 기준 또는 __APPLIED__)
             if (currentCode) {
                 const matchedCurrent = findMatchedCouponInfo(currentCode);
                 if (matchedCurrent) {
@@ -8452,11 +8461,11 @@
                 }
             }
 
-            // 2. 시트 기준 사용 가능 쿠폰 목록 반영(이미 현재 선택 쿠폰으로 들어간 코드는 중복 제외)
+            // 2. 시트 기준 사용가능 쿠폰 전체 반영(동일 이름/금액이어도 다른 CPN 코드면 모두 표시)
             if (Array.isArray(list)) {
                 list.forEach(c => {
                     const cCode = String((c && (c.code || c.couponCode || c.couponId || c.id)) || '').trim().toUpperCase();
-                    if (currentCode && cCode && cCode === currentCode) return;
+                    if (currentCode && currentCode !== '__APPLIED__' && cCode && cCode === currentCode) return;
                     pushUniqueCoupon(c);
                 });
             }
@@ -10491,42 +10500,34 @@
                     if (wonMatch) savedDiscountNum = parseInt(wonMatch[1].replace(/[^0-9]/g, ''), 10) || 0;
                 }
 
-                const availList = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
-                const matchedSavedCoupon =
-                    (existingCouponCode && typeof findCouponByCode === 'function' ? findCouponByCode(existingCouponCode) : null) ||
-                    (Array.isArray(availList) ? availList.find(c => {
-                        const cCode = String(c.code || c.couponId || c.id || '').trim().toUpperCase();
-                        const cName = String(c.name || c.couponName || '').trim();
-                        const cAmt = Number(c.value ?? c.discountAmount ?? c.discount ?? 0) || 0;
-                        return (existingCouponCode && cCode === existingCouponCode) ||
-                            (rawSavedCouponName && cName && (rawSavedCouponName.indexOf(cName) === 0 || cName === rawSavedCouponName)) ||
-                            (savedDiscountNum > 0 && cAmt === savedDiscountNum);
-                    }) : null);
+                // 기존 예약에 적용된 쿠폰 코드가 있을 때만 동일 코드로 메타 정보를 조회(다른 사용가능 쿠폰의 ID를 훔쳐오지 않음)
+                const matchedByExactCode = existingCouponCode
+                    ? ((typeof findCouponByCode === 'function' ? findCouponByCode(existingCouponCode) : null) ||
+                        (Array.isArray(window.globalMyCoupons)
+                            ? window.globalMyCoupons.find(c => String(c.code || c.couponId || c.id || '').trim().toUpperCase() === existingCouponCode)
+                            : null))
+                    : null;
 
                 const cleanSavedName = (rawSavedCouponName && !/^CPN-/i.test(rawSavedCouponName) && (!existingCouponCode || rawSavedCouponName.toUpperCase() !== existingCouponCode))
                     ? rawSavedCouponName
-                    : ((matchedSavedCoupon && (matchedSavedCoupon.name || matchedSavedCoupon.couponName) && !/^CPN-/i.test(matchedSavedCoupon.name || matchedSavedCoupon.couponName))
-                        ? (matchedSavedCoupon.name || matchedSavedCoupon.couponName)
+                    : ((matchedByExactCode && (matchedByExactCode.name || matchedByExactCode.couponName) && !/^CPN-/i.test(matchedByExactCode.name || matchedByExactCode.couponName))
+                        ? (matchedByExactCode.name || matchedByExactCode.couponName)
                         : '');
 
-                const finalDiscVal = savedDiscountNum || (matchedSavedCoupon && Number(matchedSavedCoupon.value ?? matchedSavedCoupon.discountAmount ?? matchedSavedCoupon.discount)) || 0;
-                const resolvedCode = String(
-                    (matchedSavedCoupon && (matchedSavedCoupon.code || matchedSavedCoupon.couponId || matchedSavedCoupon.id)) ||
-                    existingCouponCode ||
-                    ''
-                ).trim().toUpperCase();
-                const hasExistingCoupon = Boolean(finalDiscVal > 0 && (resolvedCode || cleanSavedName || matchedSavedCoupon));
+                const finalDiscVal = savedDiscountNum || (matchedByExactCode && Number(matchedByExactCode.value ?? matchedByExactCode.discountAmount ?? matchedByExactCode.discount)) || 0;
+                const resolvedCode = existingCouponCode || '';
+                const hasExistingCoupon = Boolean(finalDiscVal > 0 && (resolvedCode || cleanSavedName));
 
                 appliedEditCoupon = hasExistingCoupon
                     ? Object.assign(
                         {
                             code: resolvedCode || '__APPLIED__',
                             name: cleanSavedName || `${finalDiscVal.toLocaleString()}원 할인쿠폰`,
-                            discountType: (matchedSavedCoupon && matchedSavedCoupon.discountType) || 'amount',
+                            discountType: (matchedByExactCode && matchedByExactCode.discountType) || 'amount',
                             value: finalDiscVal,
-                            minOrder: (matchedSavedCoupon && Number(matchedSavedCoupon.minOrder)) || 0
+                            minOrder: (matchedByExactCode && Number(matchedByExactCode.minOrder)) || 0
                         },
-                        matchedSavedCoupon || {},
+                        matchedByExactCode || {},
                         {
                             code: resolvedCode || '__APPLIED__',
                             name: cleanSavedName || `${finalDiscVal.toLocaleString()}원 할인쿠폰`,
@@ -10555,7 +10556,7 @@
                             const oVal = String(o.value || '').toUpperCase();
                             const oTxt = String(o.textContent || '');
                             return (targetCodeUpper && oVal === targetCodeUpper) ||
-                                (targetNameTrim && oTxt.indexOf(targetNameTrim) === 0);
+                                (targetCodeUpper === '__APPLIED__' && targetNameTrim && oTxt.indexOf(targetNameTrim) === 0);
                         });
                         if (existingOpt) {
                             existingOpt.dataset.discount = String(finalDiscVal);
