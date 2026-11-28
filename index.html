@@ -5656,6 +5656,13 @@
                 const target = e.target;
                 if (!target || typeof target.closest !== 'function') return;
 
+                // 변경 완료 팝업(#updateSuccessModal) 내부 버튼은 가벼운 tap.mp3로 처리
+                const inUpdateSuccessModal = target.closest('#updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn');
+                if (inUpdateSuccessModal && !inUpdateSuccessModal.disabled) {
+                    playAtelierTouchSound('tap');
+                    return;
+                }
+
                 // 확인/접속/저장/예약 신청 계열 버튼 -> confirm.mp3
                 const confirmEl = target.closest(
                     '.atelier-confirm-btn, button[type="submit"], [id*="confirm"], [id*="Confirm"], [id*="submit"], [id*="Submit"]'
