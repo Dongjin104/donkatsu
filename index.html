@@ -6994,8 +6994,14 @@
                 if (Array.isArray(data.pickupTimesList)) {
                     mergedSettings.pickupTimesList = data.pickupTimesList;
                 }
-                if (Array.isArray(data.fortuneList)) {
-                    mergedSettings.fortuneList = data.fortuneList;
+                if (Array.isArray(data.pickupTimesList)) {
+                    mergedSettings.pickupTimesList = data.pickupTimesList;
+                }
+                const fortuneArr = Array.isArray(data.fortuneList)
+                    ? data.fortuneList
+                    : (data.settings && Array.isArray(data.settings.fortuneList) ? data.settings.fortuneList : null);
+                if (fortuneArr) {
+                    mergedSettings.fortuneList = fortuneArr;
                 }
 
                 const nextSig = buildLiveSnapshotSignature({
@@ -9913,8 +9919,14 @@
                     if (Array.isArray(rawData.pickupTimesList)) {
                         mergedSettings.pickupTimesList = rawData.pickupTimesList;
                     }
-                    if (Array.isArray(data.fortuneList)) {
-                        mergedSettings.fortuneList = data.fortuneList;
+                    if (Array.isArray(data.pickupTimesList)) {
+                        mergedSettings.pickupTimesList = data.pickupTimesList;
+                    }
+                    const fortuneArr = Array.isArray(data.fortuneList)
+                        ? data.fortuneList
+                        : (data.settings && Array.isArray(data.settings.fortuneList) ? data.settings.fortuneList : null);
+                    if (fortuneArr) {
+                        mergedSettings.fortuneList = fortuneArr;
                     }
                     saveSettingsCache(mergedSettings);
                     applySettingsObject(mergedSettings);
@@ -10794,8 +10806,14 @@
                 if (Array.isArray(data.pickupTimesList)) {
                     mergedSettings.pickupTimesList = data.pickupTimesList;
                 }
-                if (Array.isArray(data.fortuneList)) {
-                    mergedSettings.fortuneList = data.fortuneList;
+                if (Array.isArray(data.pickupTimesList)) {
+                    mergedSettings.pickupTimesList = data.pickupTimesList;
+                }
+                const fortuneArr = Array.isArray(data.fortuneList)
+                    ? data.fortuneList
+                    : (data.settings && Array.isArray(data.settings.fortuneList) ? data.settings.fortuneList : null);
+                if (fortuneArr) {
+                    mergedSettings.fortuneList = fortuneArr;
                 }
                 if (data.settings || Array.isArray(data.pickupTimesList)) {
                     saveSettingsCache(mergedSettings);
