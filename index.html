@@ -3632,7 +3632,13 @@
 
                     const message = input.value.trim();
                     if (!message) {
-                        alert('남겨주실 의견을 한 줄이라도 적어주세요.');
+                        if (thanksEl) {
+                            thanksEl.style.background = '#FFF6F7';
+                            thanksEl.style.borderColor = '#FECDD3';
+                            thanksEl.style.color = '#9F1239';
+                            thanksEl.textContent = '남겨주실 의견을 한 줄이라도 적어주세요.';
+                            thanksEl.style.display = 'block';
+                        }
                         input.focus();
                         return;
                     }
@@ -3662,6 +3668,9 @@
                         updateUncleFeedbackCounter();
 
                         if (thanksEl) {
+                            thanksEl.style.background = '#F3F7F1';
+                            thanksEl.style.borderColor = '#CFE1C7';
+                            thanksEl.style.color = '#274721';
                             thanksEl.textContent = '소중한 의견 남겨주셔서 감사합니다. 삼촌이 꼭 확인하겠습니다!';
                             thanksEl.style.display = 'block';
                         }
@@ -3670,7 +3679,13 @@
                             closeUncleFeedbackCard();
                         }, 2400);
                     } catch (err) {
-                        alert('전송 중 잠시 문제가 생겼어요. 한 번만 다시 눌러주세요.');
+                        if (thanksEl) {
+                            thanksEl.style.background = '#FFF6F7';
+                            thanksEl.style.borderColor = '#FECDD3';
+                            thanksEl.style.color = '#9F1239';
+                            thanksEl.textContent = '전송 중 잠시 문제가 생겼어요. 한 번만 다시 눌러주세요.';
+                            thanksEl.style.display = 'block';
+                        }
                     } finally {
                         isSubmittingUncleFeedback = false;
                         if (submitBtn) {
@@ -9389,7 +9404,7 @@
                 preserveScrollPos(keptY);
             }
         }
-        
+
         function closeSearchModal() {
             const keptY = captureScrollPos();
             hideModal('searchModal');
