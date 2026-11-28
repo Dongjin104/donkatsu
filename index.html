@@ -5837,8 +5837,9 @@
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
 
-        // UI 조작 효과음 전체 볼륨 배율 (0.0 ~ 1.0, 값이 낮을수록 작게 들림)
-        const ATELIER_TOUCH_VOLUME_SCALE = 0.45;
+        // 설정 시트 J10 기본값 (0.0 ~ 1.0)
+        const DEFAULT_ATELIER_TOUCH_VOLUME_SCALE = 0.45;
+        let ATELIER_TOUCH_VOLUME_SCALE = DEFAULT_ATELIER_TOUCH_VOLUME_SCALE;
 
         const ATELIER_SOUND_MAP = {
             tap: './sound/tap.mp3',
@@ -5846,6 +5847,63 @@
             confirm: './sound/confirm.mp3',
             success: './sound/success.mp3'
         };
+
+        function __normalizeVolumeScale(rawVal) {
+            if (rawVal === null || rawVal === undefined || rawVal === '') {
+                return DEFAULT_ATELIER_TOUCH_VOLUME_SCALE;
+            }
+            const cleaned = String(rawVal).replace(/[^0-9.]/g, '').trim();
+            const num = parseFloat(cleaned);
+            if (isNaN(num) || num < 0) {
+                return DEFAULT_ATELIER_TOUCH_VOLUME_SCALE;
+            }
+            const ratio = num > 1 ? (num / 100) : num;
+            return Math.max(0, Math.min(1, Number(ratio.toFixed(3))));
+        }
+
+        function __refreshAllAtelierPoolVolumes() {
+            Object.keys(__atelierSoundPools).forEach((type) => {
+                const vol = __getAtelierSoundVolume(type);
+                const pool = __atelierSoundPools[type] || [];
+                pool.forEach((audio) => {
+                    try {
+                        audio.volume = vol;
+                    } catch (e) { }
+                });
+            });
+        }
+
+        window.setAtelierTouchVolumeFromSheet = function (rawValue) {
+            ATELIER_TOUCH_VOLUME_SCALE = __normalizeVolumeScale(rawValue);
+            __refreshAllAtelierPoolVolumes();
+            return ATELIER_TOUCH_VOLUME_SCALE;
+        };
+
+        function __tryReadVolumeFromGlobalConfig() {
+            const candidates = [
+                window.siteSettings,
+                window.appConfig,
+                window.currentSettings,
+                window.shopSettings,
+                window.config
+            ];
+            for (let i = 0; i < candidates.length; i++) {
+                const cfg = candidates[i];
+                if (!cfg || typeof cfg !== 'object') continue;
+                const val =
+                    cfg.touchVolumeScale ??
+                    cfg.soundVolumeScale ??
+                    cfg.effectVolume ??
+                    cfg.J10 ??
+                    cfg.j10 ??
+                    (cfg.settings && (cfg.settings.touchVolumeScale ?? cfg.settings.J10));
+                if (val !== undefined && val !== null && String(val).trim() !== '') {
+                    window.setAtelierTouchVolumeFromSheet(val);
+                    return true;
+                }
+            }
+            return false;
+        }
 
         function __getAtelierSoundVolume(type) {
             let baseVol = 0.35;
@@ -5880,6 +5938,7 @@
         }
 
         function __preloadAllAtelierSounds() {
+            __tryReadVolumeFromGlobalConfig();
             Object.keys(ATELIER_SOUND_MAP).forEach((type) => {
                 __ensureAtelierSoundPool(type);
             });
@@ -5893,6 +5952,7 @@
 
         function playAtelierTouchSound(type = 'tap') {
             try {
+                __tryReadVolumeFromGlobalConfig();
                 const pool = __ensureAtelierSoundPool(type);
                 if (!pool || pool.length === 0) return;
 
@@ -5900,6 +5960,7 @@
                 __atelierSoundCursor[type] = (idx + 1) % pool.length;
 
                 const audio = pool[idx];
+                audio.muted = false;
                 audio.volume = __getAtelierSoundVolume(type);
                 try {
                     audio.currentTime = 0;
@@ -5966,7 +6027,6 @@
             function resolveSoundType(target) {
                 if (!target || typeof target.closest !== 'function') return null;
 
-                // 예약 완료(#successModal) · 변경 완료(#updateSuccessModal) 팝업 내부 버튼은 가벼운 tap.mp3
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
@@ -5974,7 +6034,6 @@
                     return 'tap';
                 }
 
-                // 확인/접속/저장/예약 신청 계열 버튼 -> confirm.mp3
                 const confirmEl = target.closest(
                     '.atelier-confirm-btn, button[type="submit"], [id*="confirm"], [id*="Confirm"], [id*="submit"], [id*="Submit"]'
                 );
@@ -5982,7 +6041,6 @@
                     return 'confirm';
                 }
 
-                // 드롭박스(select) 및 커스텀 드롭다운/메뉴 카드·수량(+/-) 버튼 -> drop.mp3
                 const dropEl = target.closest(
                     'select, [role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
@@ -5990,7 +6048,6 @@
                     return 'drop';
                 }
 
-                // 토글 스위치(ON/OFF) -> tap.mp3 (필요 시 'confirm' 또는 'drop'으로 변경 가능)
                 const switchEl = target.closest(
                     'input[type="checkbox"], [role="switch"], label[for*="Coupon" i], label[for*="Switch" i], label[for*="Toggle" i], [class*="switch" i], [class*="toggle" i]'
                 );
@@ -5998,7 +6055,6 @@
                     return 'tap';
                 }
 
-                // 그 외 일반 버튼·모달 닫기/취소 -> tap.mp3
                 const tapEl = target.closest(
                     'button, .modal-btn, .close-btn'
                 );
@@ -6042,7 +6098,6 @@
                 }, SCROLL_CANCEL_DELAY_MS);
             }, { passive: true, capture: true });
 
-            // 드롭박스(select)는 PC/모바일에서 항목을 고를 때 change 이벤트가 확실히 울리도록 보완
             document.addEventListener('change', function (e) {
                 if (!e.isTrusted) return;
                 const el = e.target;
@@ -6074,6 +6129,19 @@
                 clearPendingSound();
                 activePointerId = null;
             }, { passive: true, capture: true });
+
+            // siteSettings에 볼륨 값이 들어올 때마다 자동 반영
+            let lastVolRaw = '';
+            setInterval(function () {
+                const s = window.siteSettings;
+                if (!s || typeof s !== 'object') return;
+                const v = s.touchVolumeScale ?? s.soundVolumeScale ?? s.effectVolume ?? s.J10 ?? s.j10;
+                const sv = (v === undefined || v === null) ? '' : String(v).trim();
+                if (sv !== '' && sv !== lastVolRaw) {
+                    lastVolRaw = sv;
+                    window.setAtelierTouchVolumeFromSheet(sv);
+                }
+            }, 500);
         })();
 
         function openSecretCodeGateModal(basePayload, isQuick) {
