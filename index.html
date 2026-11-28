@@ -10887,8 +10887,11 @@
 
             const cookEl = document.querySelector('input[name="editCookType"]:checked');
             const newCookType = cookEl ? cookEl.value : '🍗 튀겨서 포장';
-            const totalPriceNum = calculateCurrentTotalPrice(editOrderItems, editSauceItems);
-            const totalPriceStr = totalPriceNum.toLocaleString() + '원';
+
+            // 메뉴+소스 순수 원가(할인 미포함)
+            const baseSubtotalNum = parseInt(String(
+                calculateCurrentTotalPrice(editOrderItems, editSauceItems) || '0'
+            ).replace(/[^0-9]/g, ''), 10) || 0;
 
             const couponSelEl = document.getElementById('editCouponSelect');
             const rawSelCode = couponSelEl ? String(couponSelEl.value || '').trim() : '';
@@ -10921,6 +10924,12 @@
                 }
             }
 
+            // 서버에는 원가 기준 금액과 선택 쿠폰 정보를 전송
+            const payloadFinalNum = selectedCouponDiscount > 0
+                ? Math.max(0, baseSubtotalNum - selectedCouponDiscount)
+                : baseSubtotalNum;
+            const payloadPriceStr = payloadFinalNum.toLocaleString() + '원';
+
             isUpdatingReservation = true;
             window.__suppressCouponPopupUntil = Date.now() + 5000;
             try {
@@ -10946,7 +10955,7 @@
                         menu: menuSummary,
                         sauce: sauceSummary,
                         pickupTime: newTime,
-                        totalPrice: totalPriceStr,
+                        totalPrice: payloadPriceStr,
                         couponCode: selectedCouponCode,
                         couponId: selectedCouponCode,
                         couponName: selectedCouponName,
@@ -10983,10 +10992,10 @@
                         data.couponDiscount !== undefined ? data.couponDiscount : selectedCouponDiscount
                     ).replace(/[^0-9]/g, ''), 10) || 0;
 
-                    // 원가(totalPriceNum)에서 최종 쿠폰 할인을 딱 1회만 차감
+                    // 중복 차감 방지: 항상 순수 메뉴원가(baseSubtotalNum)에서 최종 쿠폰할인을 1회만 차감
                     const finalPayNum = finalCouponDiscount > 0
-                        ? Math.max(0, totalPriceNum - finalCouponDiscount)
-                        : totalPriceNum;
+                        ? Math.max(0, baseSubtotalNum - finalCouponDiscount)
+                        : baseSubtotalNum;
                     const finalTotalPriceStr = finalPayNum.toLocaleString() + '원';
 
                     const cleanNick = String(nick || '').trim();
@@ -11073,7 +11082,7 @@
                             localStorage.removeItem('donkatsu_just_updated_reservation');
                         } catch (e) { }
 
-                        const origAmt = totalPriceNum;
+                        const origAmt = baseSubtotalNum;
                         const finalAmt = finalPayNum;
                         setTimeout(() => {
                             showCouponAppliedPopup(
