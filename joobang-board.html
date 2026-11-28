@@ -559,13 +559,133 @@
     <script>
         const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyKvuhElltd2F0V2SdH615cQr5Ax5qA0Dt5ShOpcjNstoCzfQydnUGrqZ9gX1DmlPRoNw/exec";
         const KAKAO_JS_KEY = "db06049bca3d739bbf1d8d9d0cad1b5b";
-        let previousTotalCount = 0;
         let isInitialLoad = true;
         let lastOrderSignature = "";
         let lastActiveUsersSignature = "";
         let isFetchingOrders = false;
         let isFetchingActiveUsers = false;
         let isAdminAuthenticated = false;
+        let prevKitchenOrderMap = null;
+
+        // ===== 주방 MP3 알림음 플레이어 (신규예약 / 변경예약) =====
+        const KITCHEN_SOUND_MAP = {
+            newOrder: './sound/new-order.mp3',
+            changeOrder: './sound/change-order.mp3'
+        };
+        const KITCHEN_SOUND_POOL_SIZE = 3;
+        const __kitchenSoundPools = {};
+        const __kitchenSoundCursor = {};
+
+        function __ensureKitchenSoundPool(key) {
+            const src = KITCHEN_SOUND_MAP[key];
+            if (!src) return null;
+            if (!__kitchenSoundPools[key]) {
+                const pool = [];
+                for (let i = 0; i < KITCHEN_SOUND_POOL_SIZE; i++) {
+                    const audio = new Audio(src);
+                    audio.preload = 'auto';
+                    audio.volume = 0.85;
+                    try { audio.load(); } catch (e) {}
+                    pool.push(audio);
+                }
+                __kitchenSoundPools[key] = pool;
+                __kitchenSoundCursor[key] = 0;
+            }
+            return __kitchenSoundPools[key];
+        }
+
+        function __preloadKitchenSounds() {
+            Object.keys(KITCHEN_SOUND_MAP).forEach((key) => {
+                __ensureKitchenSoundPool(key);
+            });
+        }
+
+        function playKitchenMp3(key) {
+            try {
+                const pool = __ensureKitchenSoundPool(key);
+                if (!pool || pool.length === 0) return;
+                const idx = (__kitchenSoundCursor[key] || 0) % pool.length;
+                __kitchenSoundCursor[key] = (idx + 1) % pool.length;
+                const audio = pool[idx];
+                audio.muted = false;
+                audio.volume = 0.85;
+                try { audio.currentTime = 0; } catch (e) {}
+                const p = audio.play();
+                if (p && typeof p.catch === 'function') {
+                    p.catch(() => {});
+                }
+            } catch (e) {}
+        }
+
+        function playNewOrderSound() {
+            playKitchenMp3('newOrder');
+        }
+
+        function playChangedOrderSound() {
+            playKitchenMp3('changeOrder');
+        }
+
+        function getKitchenOrderKey(order, idx) {
+            if (order && typeof order === 'object') {
+                if (order.rowIndex !== undefined && order.rowIndex !== null && String(order.rowIndex).trim() !== '') {
+                    return 'row_' + String(order.rowIndex).trim();
+                }
+                const fallbackId = String(order.id ?? order.orderId ?? order.reservationId ?? '').trim();
+                if (fallbackId) return 'id_' + fallbackId;
+            }
+            return 'idx_' + idx;
+        }
+
+        function getKitchenOrderContentSignature(order) {
+            if (!order || typeof order !== 'object') return '';
+            return JSON.stringify({
+                t: order.pickupTime ?? '',
+                c: order.cooking ?? '',
+                m: order.menu ?? '',
+                es: order.extraSauce ?? '',
+                n: order.nickname ?? '',
+                p: order.totalPrice ?? '',
+                ep: order.eventPrize || order.eventWinner || order.event || '',
+                uc: order.usedCoupon || '',
+                cd: Number(order.couponDiscount) || 0,
+                k: normalizeKakaoId(order.kakaoId)
+            });
+        }
+
+        function detectAndPlayOrderAlerts(ordersList) {
+            if (!Array.isArray(ordersList)) return;
+
+            const nextMap = new Map();
+            ordersList.forEach((item, idx) => {
+                const key = getKitchenOrderKey(item, idx);
+                nextMap.set(key, getKitchenOrderContentSignature(item));
+            });
+
+            // 최초 진입 시에는 기준점만 저장하고 소리는 울리지 않음
+            if (prevKitchenOrderMap === null) {
+                prevKitchenOrderMap = nextMap;
+                return;
+            }
+
+            let hasNewOrder = false;
+            let hasChangedOrder = false;
+
+            nextMap.forEach((sig, key) => {
+                if (!prevKitchenOrderMap.has(key)) {
+                    hasNewOrder = true;
+                } else if (prevKitchenOrderMap.get(key) !== sig) {
+                    hasChangedOrder = true;
+                }
+            });
+
+            prevKitchenOrderMap = nextMap;
+
+            if (hasNewOrder) {
+                playNewOrderSound();
+            } else if (hasChangedOrder) {
+                playChangedOrderSound();
+            }
+        }
 
         function escapeHtml(str) {
             return String(str === null || str === undefined ? '' : str)
@@ -626,20 +746,6 @@
             }
         }
 
-        let audioCtx = null;
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioContextClass) {
-                    audioCtx = new AudioContextClass();
-                }
-            }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume().catch(() => {});
-            }
-            return audioCtx;
-        }
-
         function hideBlurOverlay() {
             const overlay = document.getElementById('blurOverlay');
             if (overlay) {
@@ -652,7 +758,7 @@
         }
 
         function startDashboard() {
-            getAudioContext();
+            __preloadKitchenSounds();
             ensureAdminAuth(function () {
                 hideBlurOverlay();
                 lastOrderSignature = "";
@@ -757,37 +863,12 @@
             });
         }
 
-        function playNewOrderSound() {
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const now = ctx.currentTime;
-
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-                osc1.frequency.setValueAtTime(523.25, now);
-                gain1.gain.setValueAtTime(0.3, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                osc1.connect(gain1); gain1.connect(ctx.destination);
-                osc1.start(now); osc1.stop(now + 0.3);
-
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.frequency.setValueAtTime(659.25, now + 0.15);
-                gain2.gain.setValueAtTime(0.3, now + 0.15);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-                osc2.connect(gain2); gain2.connect(ctx.destination);
-                osc2.start(now + 0.15); osc2.stop(now + 0.45);
-            } catch (e) { }
-        }
-
         function callGasAPI(action, params = {}, callback, skipAuthCheck = false) {
             const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(2, 9);
             let settled = false;
             const script = document.createElement('script');
 
             const cleanup = () => {
-                // 늦게 도착한 응답이 호출되어도 ReferenceError가 나지 않도록 빈 함수로 유지
                 window[callbackName] = function () {};
                 if (script.parentNode) {
                     try { script.parentNode.removeChild(script); } catch (e) {}
@@ -858,6 +939,7 @@
                     ? data
                     : (data && Array.isArray(data.orders) ? data.orders : null);
                 if (!ordersList) return;
+                detectAndPlayOrderAlerts(ordersList);
                 renderOrders(ordersList);
             });
         }
@@ -893,16 +975,10 @@
                 container.innerHTML = '<div style="text-align:center; padding: 25px; color:var(--text-sub);">접수된 대기 예약이 없습니다.</div>';
                 document.getElementById('unconfirmedCount').innerText = 0;
                 document.getElementById('totalCount').innerText = 0;
-                previousTotalCount = 0;
                 isInitialLoad = false;
                 return;
             }
 
-            if (!isInitialLoad && orders.length > previousTotalCount) {
-                playNewOrderSound();
-            }
-
-            previousTotalCount = orders.length;
             isInitialLoad = false;
 
             let unconfirmedCnt = 0;
@@ -1017,7 +1093,7 @@
 
         function toggleStatus(rowIndex, currentStatus) {
             if (!isAdminAuthenticated) return;
-            getAudioContext();
+            __preloadKitchenSounds();
             const nextStatus = (currentStatus === '미확인') ? '확인' : '미확인';
             callGasAPI('updateOrderStatus', { rowIndex: String(rowIndex), status: nextStatus }, function (res) {
                 if (res && res.result === 'error') {
@@ -1031,7 +1107,7 @@
 
         function completeOrder(rowIndex) {
             if (!isAdminAuthenticated) return;
-            getAudioContext();
+            __preloadKitchenSounds();
             const modal = document.getElementById('custom-modal');
             const confirmBtn = document.getElementById('modal-confirm-btn');
             const cancelBtn = document.getElementById('modal-cancel-btn');
