@@ -3117,6 +3117,65 @@
             color: #7D6D52;
             box-shadow: none;
         }
+
+        /* [6-2단계] 메뉴 카드 · 수량 조절 버튼 · 선택 강조 고급 마감 */
+        .menu-card,
+        .menu-item,
+        .option-card,
+        .sauce-card {
+            border-radius: 16px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .menu-card.selected,
+        .menu-item.selected,
+        .menu-card.active,
+        .menu-item.active,
+        .option-card.selected,
+        .option-card.active,
+        .sauce-card.selected,
+        .sauce-card.active {
+            border-color: #B68936 !important;
+            background: linear-gradient(180deg, #FFFDF7 0%, #FBF3E1 100%) !important;
+            box-shadow: 0 8px 22px rgba(154, 107, 22, 0.14), 0 0 0 1.5px rgba(197, 160, 89, 0.45) !important;
+            transform: translateY(-1px);
+        }
+
+        .qty-btn,
+        .btn-qty,
+        .count-btn,
+        button[class*="qty"],
+        button[class*="plus"],
+        button[class*="minus"] {
+            border-radius: 10px;
+            border: 1.5px solid #DFC793;
+            background: #FAF6EE;
+            color: #3E2F14;
+            font-weight: 700;
+            transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 2px 6px rgba(28, 27, 24, 0.05);
+        }
+
+        .qty-btn:hover,
+        .btn-qty:hover,
+        .count-btn:hover,
+        button[class*="qty"]:hover,
+        button[class*="plus"]:hover,
+        button[class*="minus"]:hover {
+            background: #2C2419;
+            color: #F6E2B3;
+            border-color: #C5A059;
+            transform: translateY(-1px);
+        }
+
+        .qty-btn:active,
+        .btn-qty:active,
+        .count-btn:active,
+        button[class*="qty"]:active,
+        button[class*="plus"]:active,
+        button[class*="minus"]:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 
