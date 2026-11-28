@@ -5880,6 +5880,7 @@
                 badgeEl.textContent = isQuick ? '✦ 3-SECOND REORDER CONFIRMED' : '✦ RESERVATION CONFIRMED';
             }
             if (titleEl) {
+                playAtelierTouchSound('success');
                 titleEl.textContent = isQuick
                     ? '직전 메뉴 예약이 완료되었습니다'
                     : '예약이 정성스럽게 접수되었습니다';
