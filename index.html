@@ -7275,7 +7275,7 @@
                 } catch (err) { }
             }
         }
-        
+
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
@@ -7814,7 +7814,9 @@
                 try {
                     isJustUpdated = Boolean(
                         sessionStorage.getItem('donkatsu_just_updated_reservation') ||
-                        localStorage.getItem('donkatsu_just_updated_reservation')
+                        localStorage.getItem('donkatsu_just_updated_reservation') ||
+                        window.isEditingReservation ||
+                        (typeof isUpdatingReservation !== 'undefined' && isUpdatingReservation)
                     );
                     if (isJustUpdated) {
                         sessionStorage.removeItem('donkatsu_just_updated_reservation');
@@ -7822,8 +7824,8 @@
                     }
                 } catch (e) { }
 
-                const appliedKey = `${String(resData.rowIndex || savedNick || '')}_${rawCode}_${appliedDiscount}`;
-                const storageShownKey = `donkatsu_shown_applied_popup_${appliedKey}`;
+                const couponSessionKey = `${String(savedNick || '').trim()}_${rawCode}_${appliedDiscount}`;
+                const storageShownKey = `donkatsu_shown_applied_popup_${couponSessionKey}`;
                 let alreadyShownPersisted = false;
                 try {
                     alreadyShownPersisted = Boolean(
@@ -7833,13 +7835,13 @@
                 } catch (e) { }
 
                 if (isJustUpdated) {
-                    __shownAppliedCouponKeys.add(appliedKey);
+                    __shownAppliedCouponKeys.add(couponSessionKey);
                     try {
                         localStorage.setItem(storageShownKey, '1');
                         sessionStorage.setItem(storageShownKey, '1');
                     } catch (e) { }
-                } else if (!__shownAppliedCouponKeys.has(appliedKey) && !alreadyShownPersisted) {
-                    __shownAppliedCouponKeys.add(appliedKey);
+                } else if (!__shownAppliedCouponKeys.has(couponSessionKey) && !alreadyShownPersisted) {
+                    __shownAppliedCouponKeys.add(couponSessionKey);
                     try {
                         localStorage.setItem(storageShownKey, '1');
                         sessionStorage.setItem(storageShownKey, '1');
@@ -7856,7 +7858,7 @@
                 }
             }
         }
-
+        
         const STORAGE_CACHE_KEYS = {
             SETTINGS: 'donkatsu_cached_settings_v2_kst',
             CUSTOMER_STATE: 'donkatsu_cached_customer_state_v2_kst'
