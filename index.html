@@ -10254,7 +10254,6 @@
 
         function checkClosedStatus() {
             const nowKst = getKoreanNowDate();
-            const day = nowKst.getDay();
             const curMins = nowKst.getHours() * 60 + nowKst.getMinutes();
 
             const openH = Number(typeof globalOpenHour !== 'undefined' ? globalOpenHour : 0);
@@ -10270,10 +10269,8 @@
                 return true;
             }
 
-            if (day === 0 || day === 6) return true;
-
             if (openMins <= closeMins) {
-                // 예: 00:00 ~ 06:00 -> 이 범위 안에 있을 때만 운영중, 밖이면 마감(true)
+                // 예: 09:00 ~ 11:59 -> 이 범위 안에 있을 때만 운영중, 밖이면 마감(true)
                 if (curMins < openMins || curMins > closeMins) return true;
             } else {
                 // 예: 22:00 ~ 06:00 (자정 걸침) -> 22:00 이상이거나 06:00 이하일 때만 운영중
