@@ -5755,8 +5755,37 @@
             if (window.__atelierTouchSoundBound) return;
             window.__atelierTouchSoundBound = true;
 
+            function isAtelierLoadingScreenVisible() {
+                const candidates = document.querySelectorAll(
+                    '[id*="loading" i], [id*="Loading"], [class*="loading" i], [class*="Loading"], [id*="submitting" i], [class*="submitting" i], [id*="progress" i], [class*="spinner" i]'
+                );
+                for (const el of candidates) {
+                    if (!(el instanceof HTMLElement)) continue;
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+                        continue;
+                    }
+                    const rect = el.getBoundingClientRect();
+                    if (rect.width > 120 && rect.height > 120) {
+                        const txt = (el.innerText || '').trim();
+                        if (
+                            txt.includes('접수하고 있습니다') ||
+                            txt.includes('잠시만 기다려 주세요') ||
+                            txt.includes('RESERVING NOW') ||
+                            txt.includes('로딩') ||
+                            txt.includes('불러오는 중')
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
             document.addEventListener('click', function (e) {
                 if (!e.isTrusted) return;
+                if (isAtelierLoadingScreenVisible()) return;
+
                 const target = e.target;
                 if (!target || typeof target.closest !== 'function') return;
 
