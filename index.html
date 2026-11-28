@@ -4027,6 +4027,31 @@
                     word-break: keep-all;
                     text-align: left;
                 }
+
+                #editPickupTimeAlert.pickup-inline-alert {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 12px 14px;
+                    line-height: 1.45;
+                    word-break: keep-all;
+                    overflow-wrap: break-word;
+                }
+
+                #editPickupTimeAlert .pickup-inline-alert-badge {
+                    flex-shrink: 0;
+                    white-space: nowrap;
+                }
+
+                #editPickupTimeAlertText {
+                    flex: 1;
+                    min-width: 0;
+                    font-size: 13.5px;
+                    font-weight: 600;
+                    word-break: keep-all;
+                    overflow-wrap: break-word;
+                    text-align: left;
+                }
             </style>
 
             <script>
@@ -5494,7 +5519,8 @@
                         픽업 시간 선택</span>
                     <select id="newPickupTime" style="padding:11px; font-size:14px;"
                         onchange="handleEditTimeSelectChange(this)"></select>
-                    <div id="editPickupTimeAlert" class="pickup-inline-alert" role="alert" aria-live="polite" style="display: none;">
+                    <div id="editPickupTimeAlert" class="pickup-inline-alert" role="alert" aria-live="polite"
+                        style="display: none;">
                         <span class="pickup-inline-alert-badge">PICKUP</span>
                         <span id="editPickupTimeAlertText">원하시는 픽업 시간을 먼저 선택해 주세요.</span>
                     </div>
@@ -6303,7 +6329,7 @@
                 syncVolumeNow();
             });
         })();
-        
+
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
         }
@@ -11819,7 +11845,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-        
+
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
