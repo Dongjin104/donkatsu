@@ -7055,6 +7055,64 @@
                 }
             };
 
+            const showNewOrQuickReorderScreen = () => {
+                const alreadyEl = document.getElementById('alreadyOrderedNotice');
+                const pickupEl = document.getElementById('pickupCompletedNotice');
+                const closedEl = document.getElementById('closedNotice');
+                const topNoticeEl = document.getElementById('topNoticeBox');
+                const quickBoxEl = document.getElementById('quickReorderBox');
+                const orderFormEl = document.getElementById('orderForm');
+
+                if (alreadyEl) alreadyEl.style.display = 'none';
+                if (pickupEl) pickupEl.style.display = 'none';
+                if (closedEl) closedEl.style.display = 'none';
+                if (topNoticeEl) topNoticeEl.style.display = 'block';
+
+                const isEditingNow =
+                    (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
+                    !!window.isEditingReservation;
+
+                if (isEditingNow && orderFormEl && orderFormEl.style.display === 'block') {
+                    if (quickBoxEl) quickBoxEl.style.display = 'none';
+                    setLoadingSkeletonVisible(false);
+                    return;
+                }
+
+                const hasRealLastOrder = (typeof hasValidLastOrderSummary === 'function')
+                    ? hasValidLastOrderSummary()
+                    : (() => {
+                        try {
+                            const raw = localStorage.getItem('lastOrderSummary') || '';
+                            if (!raw) return false;
+                            const obj = JSON.parse(raw);
+                            return !!(obj && (String(obj.menu || '').trim() || Number(obj.totalPrice || 0) > 0));
+                        } catch (err) {
+                            return false;
+                        }
+                    })();
+
+                if (hasRealLastOrder) {
+                    saveCustomerStateCache({ type: 'quick_reorder' });
+                    if (quickBoxEl) quickBoxEl.style.display = 'block';
+                    if (orderFormEl) orderFormEl.style.display = 'none';
+                    if (typeof renderQuickReorderBox === 'function') {
+                        renderQuickReorderBox();
+                    }
+                } else {
+                    saveCustomerStateCache({ type: 'new' });
+                    if (quickBoxEl) quickBoxEl.style.display = 'none';
+                    if (orderFormEl) {
+                        orderFormEl.style.display = 'block';
+                        if (!isEditingNow) {
+                            if (typeof renderMenuAndSauceCards === 'function') renderMenuAndSauceCards();
+                            if (typeof populateTimeSelect === 'function') populateTimeSelect('pickupTime', '', false);
+                            if (typeof handleMainCookTypeChange === 'function') handleMainCookTypeChange();
+                        }
+                    }
+                }
+                setLoadingSkeletonVisible(false);
+            };
+
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (!sess.kakaoId) return;
@@ -7113,9 +7171,6 @@
                 if (Array.isArray(data.pickupTimesList)) {
                     mergedSettings.pickupTimesList = data.pickupTimesList;
                 }
-                if (Array.isArray(data.pickupTimesList)) {
-                    mergedSettings.pickupTimesList = data.pickupTimesList;
-                }
                 const fortuneArr = Array.isArray(data.fortuneList)
                     ? data.fortuneList
                     : (data.settings && Array.isArray(data.settings.fortuneList) ? data.settings.fortuneList : null);
@@ -7161,17 +7216,9 @@
                         const st = String(reservationData.status || "").trim();
                         if (st === "완료") {
                             clearReservedSessionLock();
-                            const quickBox = document.getElementById('quickReorderBox');
-                            const orderFrm = document.getElementById('orderForm');
                             const dismissedCompleted = isDismissedCompletedForReorder();
-                            const isReorderingNow = !!(
-                                dismissedCompleted &&
-                                ((quickBox && quickBox.style.display !== 'none') || (orderFrm && orderFrm.style.display !== 'none'))
-                            );
-                            if (isReorderingNow || isOrderFormEditingActive()) {
-                                const hasPrevOrder = (typeof hasValidLastOrderSummary === 'function') ? hasValidLastOrderSummary() : false;
-                                saveCustomerStateCache({ type: hasPrevOrder ? 'quick_reorder' : 'new' });
-                                setLoadingSkeletonVisible(false);
+                            if (dismissedCompleted || isOrderFormEditingActive()) {
+                                showNewOrQuickReorderScreen();
                                 return;
                             }
 
@@ -7212,62 +7259,7 @@
                         clearReservedSessionLock();
                         if (typeof hideModal === 'function') hideModal('successModal');
                         try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
-
-                        const alreadyEl = document.getElementById('alreadyOrderedNotice');
-                        const pickupEl = document.getElementById('pickupCompletedNotice');
-                        const closedEl = document.getElementById('closedNotice');
-                        const topNoticeEl = document.getElementById('topNoticeBox');
-                        const quickBoxEl = document.getElementById('quickReorderBox');
-                        const orderFormEl = document.getElementById('orderForm');
-
-                        if (alreadyEl) alreadyEl.style.display = 'none';
-                        if (pickupEl) pickupEl.style.display = 'none';
-                        if (closedEl) closedEl.style.display = 'none';
-                        if (topNoticeEl) topNoticeEl.style.display = 'block';
-
-                        const isEditingNow =
-                            (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) ||
-                            !!window.isEditingReservation;
-
-                        if (isEditingNow && orderFormEl && orderFormEl.style.display === 'block') {
-                            if (quickBoxEl) quickBoxEl.style.display = 'none';
-                            setLoadingSkeletonVisible(false);
-                            return;
-                        }
-
-                        const hasRealLastOrder = (typeof hasValidLastOrderSummary === 'function')
-                            ? hasValidLastOrderSummary()
-                            : (() => {
-                                try {
-                                    const raw = localStorage.getItem('lastOrderSummary') || '';
-                                    if (!raw) return false;
-                                    const obj = JSON.parse(raw);
-                                    return !!(obj && (String(obj.menu || '').trim() || Number(obj.totalPrice || 0) > 0));
-                                } catch (err) {
-                                    return false;
-                                }
-                            })();
-
-                        if (hasRealLastOrder) {
-                            saveCustomerStateCache({ type: 'quick_reorder' });
-                            if (quickBoxEl) quickBoxEl.style.display = 'block';
-                            if (orderFormEl) orderFormEl.style.display = 'none';
-                            if (typeof renderQuickReorderBox === 'function') {
-                                renderQuickReorderBox();
-                            }
-                        } else {
-                            saveCustomerStateCache({ type: 'new' });
-                            if (quickBoxEl) quickBoxEl.style.display = 'none';
-                            if (orderFormEl) {
-                                orderFormEl.style.display = 'block';
-                                if (!isEditingNow) {
-                                    if (typeof renderMenuAndSauceCards === 'function') renderMenuAndSauceCards();
-                                    if (typeof populateTimeSelect === 'function') populateTimeSelect('pickupTime', '', false);
-                                    if (typeof handleMainCookTypeChange === 'function') handleMainCookTypeChange();
-                                }
-                            }
-                        }
-                        setLoadingSkeletonVisible(false);
+                        showNewOrQuickReorderScreen();
                     }
                 }
             } catch (e) {
@@ -7283,7 +7275,7 @@
                 } catch (err) { }
             }
         }
-
+        
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
