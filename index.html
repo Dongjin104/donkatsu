@@ -8190,7 +8190,7 @@
                 buttonText: '예약 내역 확인하기'
             }, onClose);
         }
-        
+
         let appliedMainCoupon = null;
         let appliedEditCoupon = null;
         let appliedQuickCoupon = null;
@@ -10340,6 +10340,7 @@
                 document.getElementById('modalLoadingBox').style.display = 'none';
 
                 if (!data || data.result !== 'found') {
+                    window.isEditingReservation = false;
                     hideModal('searchModal');
                     if (typeof hideModal === 'function') hideModal('successModal');
                     if (typeof clearReservedSessionLock === 'function') clearReservedSessionLock();
@@ -10399,6 +10400,7 @@
                 }
 
                 if (String(data.status || '').trim() === '확인') {
+                    window.isEditingReservation = false;
                     hideModal('searchModal');
                     renderActiveReservationNotice(data);
                     showModal('lockedModal');
@@ -10409,6 +10411,12 @@
                 currentFoundRowIndex = data.rowIndex;
                 editAlreadyReserved = true;
                 editGraceWarnedOnce = false;
+                window.isEditingReservation = true;
+                window.__suppressCouponPopupUntil = Date.now() + 8000;
+                try {
+                    sessionStorage.setItem('donkatsu_just_updated_reservation', '1');
+                    localStorage.setItem('donkatsu_just_updated_reservation', '1');
+                } catch (e) { }
 
                 const isRaw = String(data.cookType || '').includes('생고기') || String(data.cookType || '').includes('비튀김');
                 document.getElementById('editCook2').checked = isRaw;
@@ -10523,6 +10531,14 @@
                     : null;
 
                 window.__initialEditCoupon = appliedEditCoupon ? Object.assign({}, appliedEditCoupon) : null;
+                if (appliedEditCoupon && appliedEditCoupon.code) {
+                    window.__lastAppliedCoupon = {
+                        code: appliedEditCoupon.code,
+                        name: appliedEditCoupon.name,
+                        value: finalDiscVal,
+                        discountAmount: finalDiscVal
+                    };
+                }
 
                 populateCouponSelectBox('editCouponSelect', appliedEditCoupon ? appliedEditCoupon.code : '');
                 const editCouponSel = document.getElementById('editCouponSelect');
@@ -10576,13 +10592,14 @@
                 }
                 preserveScrollPos(keptY);
             } catch (e) {
+                window.isEditingReservation = false;
                 document.getElementById('modalLoadingBox').style.display = 'none';
                 hideModal('searchModal');
                 showCustomAlert("조회 오류", "예약 정보를 불러오는 중 오류가 발생했습니다.");
                 preserveScrollPos(keptY);
             }
         }
-
+        
         function closeSearchModal() {
             const keptY = captureScrollPos();
             hideModal('searchModal');
