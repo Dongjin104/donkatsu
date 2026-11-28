@@ -316,7 +316,13 @@
             select.disabled = true;
             select.innerHTML = '<option value="">메뉴 목록 불러오는 중...</option>';
             try {
-                const res = await fetch(WEB_APP_URL + "?action=getSettings&_ts=" + Date.now(), { method: 'GET' });
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'getSettings',
+                        _ts: Date.now()
+                    })
+                });
                 const text = await res.text();
                 const data = JSON.parse(text);
 
@@ -334,6 +340,7 @@
                     select.innerHTML = '<option value="">등록된 메뉴가 없습니다</option>';
                 }
             } catch (e) {
+                console.error('loadMenuList 에러:', e);
                 select.innerHTML = '<option value="">메뉴 목록 불러오기 실패</option>';
                 alert("메뉴 목록을 불러오지 못했습니다. 새로고침해 주세요.");
             }
