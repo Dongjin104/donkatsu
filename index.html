@@ -9284,7 +9284,7 @@
                 statusEl.textContent = `✓ ${coupon.name || coupon.code} 적용 (-${discount.toLocaleString()}원 → 최종 ${finalPrice.toLocaleString()}원)`;
             }
         }
-        
+
         function getQuickReorderSubtotal(summaryObj) {
             if (!summaryObj) return 0;
             const menuSummary = String(summaryObj.menu || '').trim();
@@ -9471,7 +9471,7 @@
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
 
-                ['orderForm', 'quickReorderBox', 'topNoticeBox'].forEach((id) => {
+                ['orderForm', 'topNoticeBox'].forEach((id) => {
                     const el = document.getElementById(id);
                     if (el && typeof el.scrollTop === 'number') {
                         el.scrollTop = 0;
