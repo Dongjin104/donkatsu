@@ -10349,7 +10349,17 @@
 
         function toggleQuickCouponUsage() {
             const checkbox = document.getElementById('quickUseCouponCheckbox');
+            const controlsEl = document.getElementById('quickCouponControls');
+            const priceBoxEl = document.getElementById('quickPriceSummaryBox') || document.querySelector('#quickCouponBox .quick-price-summary-box');
             const useCoupon = !!(checkbox && checkbox.checked);
+
+            if (controlsEl) {
+                controlsEl.style.display = useCoupon ? 'block' : 'none';
+            }
+            if (priceBoxEl) {
+                priceBoxEl.style.display = useCoupon ? 'flex' : 'none';
+            }
+
             if (!useCoupon) {
                 appliedQuickCoupon = null;
                 const input = document.getElementById('quickCouponCodeInput');
