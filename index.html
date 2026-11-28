@@ -8097,24 +8097,25 @@
                 return;
             }
 
-            let isUpdatingNow = false;
+            const allowChangedOnce = Boolean(window.__allowChangedCouponPopupOnce);
+            window.__allowChangedCouponPopupOnce = false;
+
+            let isEditOrJustUpdated = false;
             try {
+                const suppressUntil = Number(window.__suppressCouponPopupUntil || 0);
                 const hasJustUpdatedFlag = Boolean(
                     sessionStorage.getItem('donkatsu_just_updated_reservation') ||
                     localStorage.getItem('donkatsu_just_updated_reservation')
                 );
-                isUpdatingNow = Boolean(
+                isEditOrJustUpdated = Boolean(
                     window.isEditingReservation ||
                     (typeof isUpdatingReservation !== 'undefined' && isUpdatingReservation) ||
-                    hasJustUpdatedFlag
+                    hasJustUpdatedFlag ||
+                    (suppressUntil > 0 && Date.now() < suppressUntil)
                 );
-                if (hasJustUpdatedFlag) {
-                    sessionStorage.removeItem('donkatsu_just_updated_reservation');
-                    localStorage.removeItem('donkatsu_just_updated_reservation');
-                }
             } catch (e) { }
 
-            if (isUpdatingNow) {
+            if (isEditOrJustUpdated && !allowChangedOnce) {
                 if (typeof onClose === 'function') onClose();
                 return;
             }
@@ -8189,7 +8190,7 @@
                 buttonText: '예약 내역 확인하기'
             }, onClose);
         }
-
+        
         let appliedMainCoupon = null;
         let appliedEditCoupon = null;
         let appliedQuickCoupon = null;
@@ -11028,7 +11029,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-        
+
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
