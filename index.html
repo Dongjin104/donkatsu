@@ -5756,17 +5756,9 @@
         }
 
         // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
-        const __atelierSoundCache = {};
-        let __atelierSoundCtx = null;
-        let __atelierHasUserGesture = false;
-
-        window.addEventListener('pointerdown', function () {
-            __atelierHasUserGesture = true;
-        }, { passive: true, capture: true });
-
-        window.addEventListener('keydown', function () {
-            __atelierHasUserGesture = true;
-        }, { passive: true, capture: true });
+        const __atelierSoundPools = {};
+        const __atelierSoundCursor = {};
+        const ATELIER_SOUND_POOL_SIZE = 3;
 
         const ATELIER_SOUND_MAP = {
             tap: './sound/tap.mp3',
@@ -5775,57 +5767,77 @@
             success: './sound/success.mp3'
         };
 
-        function __getAtelierSound(type) {
+        function __getAtelierSoundVolume(type) {
+            if (type === 'success') return 0.5;
+            if (type === 'confirm') return 0.45;
+            return 0.35;
+        }
+
+        function __ensureAtelierSoundPool(type) {
             const src = ATELIER_SOUND_MAP[type];
             if (!src) return null;
 
-            if (!__atelierSoundCache[type]) {
-                const audio = new Audio(src);
-                audio.preload = 'auto';
-                if (type === 'success') {
-                    audio.volume = 0.5;
-                } else if (type === 'confirm') {
-                    audio.volume = 0.45;
-                } else {
-                    audio.volume = 0.35;
+            if (!__atelierSoundPools[type]) {
+                const vol = __getAtelierSoundVolume(type);
+                const pool = [];
+                for (let i = 0; i < ATELIER_SOUND_POOL_SIZE; i++) {
+                    const audio = new Audio(src);
+                    audio.preload = 'auto';
+                    audio.volume = vol;
+                    try {
+                        audio.load();
+                    } catch (e) { }
+                    pool.push(audio);
                 }
-                __atelierSoundCache[type] = audio;
+                __atelierSoundPools[type] = pool;
+                __atelierSoundCursor[type] = 0;
             }
-            return __atelierSoundCache[type];
+            return __atelierSoundPools[type];
+        }
+
+        function __preloadAllAtelierSounds() {
+            Object.keys(ATELIER_SOUND_MAP).forEach((type) => {
+                __ensureAtelierSoundPool(type);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', __preloadAllAtelierSounds, { once: true });
+        } else {
+            __preloadAllAtelierSounds();
         }
 
         function playAtelierTouchSound(type = 'tap') {
             try {
-                if (!__atelierHasUserGesture) return;
+                const pool = __ensureAtelierSoundPool(type);
+                if (!pool || pool.length === 0) return;
 
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    if (!__atelierSoundCtx) {
-                        __atelierSoundCtx = new AudioCtx();
-                    }
-                    if (__atelierSoundCtx.state === 'suspended') {
-                        __atelierSoundCtx.resume().catch(() => { });
-                    }
-                }
+                const idx = (__atelierSoundCursor[type] || 0) % pool.length;
+                __atelierSoundCursor[type] = (idx + 1) % pool.length;
 
-                const base = __getAtelierSound(type);
-                if (!base) return;
+                const audio = pool[idx];
+                audio.volume = __getAtelierSoundVolume(type);
+                try {
+                    audio.currentTime = 0;
+                } catch (e) { }
 
-                const clip = base.cloneNode();
-                clip.volume = base.volume;
-                const p = clip.play();
-                if (p && typeof p.catch === 'function') {
-                    p.catch(() => { });
+                const playPromise = audio.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => { });
                 }
             } catch (e) {
                 // 사운드 재생 실패 시에도 UI 동작은 유지
             }
         }
 
-        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 터치 사운드 연결 (스크롤 시 오작동 방지 위해 click 기준)
+        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 터치 사운드 연결 (pointerdown 즉시 반응 + 연타 대응)
         (function bindAtelierTouchSounds() {
             if (window.__atelierTouchSoundBound) return;
             window.__atelierTouchSoundBound = true;
+
+            let downX = 0;
+            let downY = 0;
+            let movedTooFar = false;
 
             function isAtelierLoadingScreenVisible() {
                 const candidates = document.querySelectorAll(
@@ -5854,14 +5866,18 @@
                 return false;
             }
 
-            document.addEventListener('click', function (e) {
+            document.addEventListener('pointerdown', function (e) {
                 if (!e.isTrusted) return;
+                downX = e.clientX;
+                downY = e.clientY;
+                movedTooFar = false;
+
                 if (isAtelierLoadingScreenVisible()) return;
 
                 const target = e.target;
                 if (!target || typeof target.closest !== 'function') return;
 
-                // 예약 완료(#successModal) · 변경 완료(#updateSuccessModal) 팝업 내부 버튼은 가벼운 tap.mp3로 처리
+                // 예약 완료(#successModal) · 변경 완료(#updateSuccessModal) 팝업 내부 버튼은 가벼운 tap.mp3
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
@@ -5879,7 +5895,7 @@
                     return;
                 }
 
-                // 메뉴 카드·수량 버튼 -> drop.mp3
+                // 메뉴 카드·수량(+/-) 버튼 -> drop.mp3
                 const dropEl = target.closest(
                     '.qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
@@ -5894,6 +5910,13 @@
                 );
                 if (tapEl && !tapEl.disabled) {
                     playAtelierTouchSound('tap');
+                }
+            }, { passive: true, capture: true });
+
+            document.addEventListener('pointermove', function (e) {
+                if (movedTooFar) return;
+                if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
+                    movedTooFar = true;
                 }
             }, { passive: true, capture: true });
         })();
