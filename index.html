@@ -9306,7 +9306,7 @@
 
             if (modalEl) {
                 if (typeof modalEl.scrollTop === 'number') modalEl.scrollTop = 0;
-                modalEl.querySelectorAll('*').forEach((el) => {
+                modalEl.querySelectorAll('.modal-content, .modal-body, .modal-dialog, [data-scroll-reset]').forEach((el) => {
                     if (typeof el.scrollTop === 'number' && el.scrollTop > 0) {
                         el.scrollTop = 0;
                     }
@@ -9317,7 +9317,7 @@
         function lockBackgroundScroll() {
             if (__bgScrollLocked) return;
             __bgSavedScrollY = 0;
-            scrollPosition = 0;
+            if (typeof scrollPosition !== 'undefined') scrollPosition = 0;
             __bgScrollLocked = true;
             document.documentElement.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
@@ -9330,10 +9330,12 @@
         }
 
         function unlockBackgroundScroll(restorePos = false) {
-            if (!__bgScrollLocked) return;
+            const wasLocked = __bgScrollLocked || document.body.style.position === 'fixed';
+            if (!wasLocked) return;
+
             const targetY = restorePos ? (__bgSavedScrollY || 0) : 0;
             __bgSavedScrollY = 0;
-            scrollPosition = 0;
+            if (typeof scrollPosition !== 'undefined') scrollPosition = 0;
             __bgScrollLocked = false;
             document.documentElement.style.overflow = '';
             document.body.style.position = '';
@@ -9355,9 +9357,16 @@
         function hasAnyActiveModalOpen(excludeId = '') {
             const modals = document.querySelectorAll('.modal');
             for (const m of modals) {
-                if (!m || m.id === excludeId) continue;
-                const isActive = m.classList.contains('active') || (m.style.display && m.style.display !== 'none');
-                if (isActive) return true;
+                if (!m || (excludeId && m.id === excludeId)) continue;
+                const styleDisplay = m.style && m.style.display;
+                const computedDisplay = typeof window.getComputedStyle === 'function'
+                    ? window.getComputedStyle(m).display
+                    : styleDisplay;
+                const isVisible =
+                    (styleDisplay && styleDisplay !== 'none') ||
+                    (computedDisplay && computedDisplay !== 'none') ||
+                    m.classList.contains('active');
+                if (isVisible) return true;
             }
             return false;
         }
