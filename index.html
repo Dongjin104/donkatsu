@@ -4687,12 +4687,22 @@
             </button>
         </div>
     </div>
-    <script>
+<script>
         (function () {
             function parseWonAmount(v) {
                 if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
                 var d = String(v || '').replace(/[^0-9]/g, '');
                 return d ? (parseInt(d, 10) || 0) : 0;
+            }
+
+            // 쿠폰 이름에 이미 붙은 (-2,000원), (-2000원), — 2,000원 할인 등을 깔끔하게 제거
+            function stripCouponDiscountSuffix(name) {
+                return String(name || '')
+                    .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, ' ')
+                    .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, ' ')
+                    .replace(/\s*\(\s*-?\s*[0-9,]+\s*원\s*\)\s*/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
             }
 
             function syncUpdateSuccessCouponAndPrice() {
@@ -4710,28 +4720,35 @@
 
                 if (selectedOpt && selVal) {
                     discountAmt = parseWonAmount(selectedOpt.dataset ? selectedOpt.dataset.discount : 0);
-                    couponName = String((selectedOpt.dataset && selectedOpt.dataset.label) || selectedOpt.textContent || '')
-                        .replace(/\s*\(\s*적용\s*중\s*\)\s*/g, '')
-                        .replace(/\s*—\s*[0-9,]+\s*원\s*할인\s*$/g, '')
-                        .trim();
+                    var rawOptLabel = String((selectedOpt.dataset && selectedOpt.dataset.label) || selectedOpt.textContent || '');
+                    if (!discountAmt) {
+                        var optWonMatch = rawOptLabel.match(/\(\s*-?\s*([0-9,]+)\s*원\s*\)|([0-9,]+)\s*원/);
+                        if (optWonMatch) {
+                            discountAmt = parseWonAmount(optWonMatch[1] || optWonMatch[2]);
+                        }
+                    }
+                    couponName = stripCouponDiscountSuffix(rawOptLabel);
                 }
 
-                if (!discountAmt && typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && selVal !== '') {
-                    discountAmt = parseWonAmount(appliedEditCoupon.value || appliedEditCoupon.discountAmount || appliedEditCoupon.discount || 0);
-                    couponName = couponName || String(appliedEditCoupon.name || appliedEditCoupon.couponName || '').trim();
+                if ((!discountAmt || !couponName) && typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && selVal !== '') {
+                    if (!discountAmt) {
+                        discountAmt = parseWonAmount(
+                            appliedEditCoupon.value ||
+                            appliedEditCoupon.discountAmount ||
+                            appliedEditCoupon.discount ||
+                            0
+                        );
+                    }
+                    if (!couponName) {
+                        couponName = stripCouponDiscountSuffix(
+                            appliedEditCoupon.name || appliedEditCoupon.couponName || ''
+                        );
+                    }
                 }
 
                 if (!discountAmt && couponName) {
                     var wonMatch = couponName.match(/([0-9,]+)\s*원/);
                     if (wonMatch) discountAmt = parseWonAmount(wonMatch[1]);
-                }
-
-                var rawPriceText = String(priceEl.textContent || '');
-                var basePrice = parseWonAmount(rawPriceText);
-                var editTotalEl = document.getElementById('editTotalPrice');
-                var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
-                if (editLivePrice > 0 && (basePrice <= 0 || basePrice === editLivePrice)) {
-                    basePrice = editLivePrice;
                 }
 
                 var hasCoupon = Boolean(selVal && (couponName || discountAmt > 0));
@@ -4748,8 +4765,21 @@
                     if (couponRow) couponRow.style.display = 'none';
                 }
 
-                if (basePrice > 0) {
-                    var finalPrice = Math.max(0, basePrice - discountAmt);
+                // 기준 금액(원가)을 한 번만 기록해서 120ms / 450ms / MutationObserver 재실행 시 중복 차감 방지
+                var editTotalEl = document.getElementById('editTotalPrice');
+                var editLivePrice = editTotalEl ? parseWonAmount(editTotalEl.textContent) : 0;
+                var currentModalPrice = parseWonAmount(priceEl.textContent);
+
+                var rawBasePrice = parseWonAmount(priceEl.dataset.rawBasePrice);
+                if (editLivePrice > 0) {
+                    rawBasePrice = editLivePrice;
+                } else if (!rawBasePrice && currentModalPrice > 0) {
+                    rawBasePrice = currentModalPrice;
+                }
+
+                if (rawBasePrice > 0) {
+                    priceEl.dataset.rawBasePrice = String(rawBasePrice);
+                    var finalPrice = Math.max(0, rawBasePrice - discountAmt);
                     priceEl.textContent = finalPrice.toLocaleString() + '원';
                 }
             }
@@ -4763,6 +4793,11 @@
                         (modal.classList.contains('show') || modal.classList.contains('active') || modal.style.display === 'block' || modal.style.display === 'flex');
                     if (isVisible) {
                         syncUpdateSuccessCouponAndPrice();
+                    } else {
+                        var priceEl = document.getElementById('updateSuccessPriceVal');
+                        if (priceEl && priceEl.dataset) {
+                            delete priceEl.dataset.rawBasePrice;
+                        }
                     }
                 });
                 observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
@@ -4770,6 +4805,10 @@
                 var submitBtn = document.querySelector('#searchModalActionBtns button[onclick*="submitEdit"], #searchModalActionBtns .confirm-btn, #searchModalActionBtns .btn-primary');
                 if (submitBtn) {
                     submitBtn.addEventListener('click', function () {
+                        var priceEl = document.getElementById('updateSuccessPriceVal');
+                        if (priceEl && priceEl.dataset) {
+                            delete priceEl.dataset.rawBasePrice;
+                        }
                         setTimeout(syncUpdateSuccessCouponAndPrice, 120);
                         setTimeout(syncUpdateSuccessCouponAndPrice, 450);
                     });
