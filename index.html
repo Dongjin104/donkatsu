@@ -9731,6 +9731,12 @@
         }
 
         function forcePageAndModalTop(modalId) {
+            const quickBox = document.getElementById('quickReorderBox');
+            const isQuickReorderVisible = quickBox && window.getComputedStyle(quickBox).display !== 'none';
+            if (!modalId && isQuickReorderVisible) {
+                return;
+            }
+
             const resetOnce = () => {
                 try {
                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
