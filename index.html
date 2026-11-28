@@ -4687,7 +4687,7 @@
             </button>
         </div>
     </div>
-<script>
+    <script>
         (function () {
             function parseWonAmount(v) {
                 if (typeof v === 'number') return isNaN(v) ? 0 : Math.max(0, Math.floor(v));
@@ -5832,7 +5832,7 @@
             }
         }
 
-// [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundPools = {};
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
@@ -6165,6 +6165,44 @@
                 syncVolumeNow();
             });
         })();
+
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+
+        function resetInnerScrollContainers() {
+            const selectors = [
+                '.modal',
+                '.modal-content',
+                '.modal-body',
+                '.popup-card',
+                '.atelier-popup-card',
+                '[data-scroll-reset]'
+            ];
+            document.querySelectorAll(selectors.join(',')).forEach((el) => {
+                if (el && typeof el.scrollTop === 'number') {
+                    el.scrollTop = 0;
+                }
+            });
+        }
+
+        function scrollAllToTop() {
+            const runReset = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (e) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                resetInnerScrollContainers();
+            };
+
+            runReset();
+            requestAnimationFrame(() => {
+                runReset();
+            });
+        }
 
         function openSecretCodeGateModal(basePayload, isQuick) {
             formatOrderSummaryForSecretModal(basePayload);
@@ -9075,6 +9113,30 @@
             }
         }
 
+        function scrollNewOrderViewToTop() {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
+                ['orderForm', 'quickReorderBox', 'topNoticeBox'].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el && typeof el.scrollTop === 'number') {
+                        el.scrollTop = 0;
+                    }
+                });
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         function resetToNewOrder() {
             if (typeof isOrderFormEditingActive === 'function' && isOrderFormEditingActive()) {
                 const orderFrm = document.getElementById('orderForm');
@@ -9090,7 +9152,6 @@
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             if (enforcePhone4GateIfNeeded(sess)) return;
 
-            const keptY = captureScrollPos();
             clearReservedSessionLock();
             setLoadingSkeletonVisible(false);
             saveCustomerStateCache({ type: 'new' });
@@ -9113,9 +9174,8 @@
                     handleMainCookTypeChange();
                 }
             }
-            preserveScrollPos(keptY);
+            scrollNewOrderViewToTop();
         }
-
         function openNoticeModal() {
             showModal('noticeModal');
         }
@@ -9297,11 +9357,35 @@
             }
         }
 
+        function scrollSuccessTransitionToTop() {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
+                const successEl = document.getElementById('successModal');
+                if (successEl) {
+                    if (typeof successEl.scrollTop === 'number') successEl.scrollTop = 0;
+                    successEl.querySelectorAll('.modal-content, .modal-body, [data-scroll-reset]').forEach((el) => {
+                        if (typeof el.scrollTop === 'number') el.scrollTop = 0;
+                    });
+                }
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         function reloadAfterSuccess() {
-            const keptY = captureScrollPos();
             hideModal('successModal');
             syncCustomerScreenWithSheet(true);
-            preserveScrollPos(keptY);
+            scrollSuccessTransitionToTop();
         }
 
         function openImageModal(imageUrl) {
@@ -9608,6 +9692,28 @@
 
         let isManualFormEditing = false;
 
+        function scrollFormViewToTop() {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
+                const formEl = document.getElementById('orderForm');
+                if (formEl && typeof formEl.scrollTop === 'number') {
+                    formEl.scrollTop = 0;
+                }
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         function loadPreviousToForm() {
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -9623,7 +9729,6 @@
                 return;
             }
 
-            const keptY = captureScrollPos();
             isManualFormEditing = true;
             userInteractedWithForm = true;
             localOptimisticLockUntil = Date.now() + 8000;
@@ -9682,7 +9787,7 @@
             if (mainSel && mainSel.value) {
                 handleTimeChange(mainSel, 'mainBusyInfoBox');
             }
-            preserveScrollPos(keptY);
+            scrollFormViewToTop();
         }
 
         async function executeQuickReorder() {
@@ -10001,8 +10106,38 @@
             }
         }
 
+        function scrollOrderSuccessToTop(targetModalId) {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
+                const ids = ['successModal', 'eventWinModal', 'eventFailModal'];
+                if (targetModalId && !ids.includes(targetModalId)) {
+                    ids.push(targetModalId);
+                }
+                ids.forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (typeof el.scrollTop === 'number') el.scrollTop = 0;
+                        el.querySelectorAll('.modal-content, .modal-body, [data-scroll-reset]').forEach((child) => {
+                            if (typeof child.scrollTop === 'number') child.scrollTop = 0;
+                        });
+                    }
+                });
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         async function submitOrderToServer(payload, isQuick = false) {
-            const keptY = captureScrollPos();
             if (isQuick) isQuickSubmitting = true;
             else isSubmitting = true;
 
@@ -10133,16 +10268,22 @@
                         populateSuccessModalDetails(modalPayload, isQuick);
                     } catch (e) { }
 
+                    let activeTargetModal = 'successModal';
                     if (showRoulette) {
                         if (data.isWinner) {
+                            activeTargetModal = 'eventWinModal';
                             openEventWinModal(cachedEventMenuList);
                         } else {
+                            activeTargetModal = 'eventFailModal';
                             try { playAtelierTouchSound('success'); } catch (e) { }
                             showModal('eventFailModal');
                         }
                     } else {
+                        activeTargetModal = 'successModal';
                         showModal('successModal');
                     }
+
+                    scrollOrderSuccessToTop(activeTargetModal);
 
                     const numericDisc = parseInt(String(couponDiscountVal || '0').replace(/[^0-9]/g, ''), 10) || 0;
                     const numericFinal = parseInt(String(payload.totalPrice || '0').replace(/[^0-9]/g, ''), 10) || 0;
@@ -10187,8 +10328,6 @@
                     } else {
                         setTimeout(openCouponFlow, 220);
                     }
-
-                    try { preserveScrollPos(keptY); } catch (e) { }
                 } else {
                     showCustomAlert("예약 안내", data.message || "예약 처리 중 문제가 발생했습니다. 다시 시도해 주세요.");
                 }
@@ -10204,7 +10343,6 @@
                 if (quickBtn) quickBtn.disabled = false;
             }
         }
-
         function closeEventFailModal() {
             hideModal('eventFailModal');
             showModal('successModal');
@@ -10536,8 +10674,32 @@
             card.style.display = 'block';
         }
 
+        function scrollSearchViewToTop() {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
+                const modalEl = document.getElementById('searchModal');
+                if (modalEl) {
+                    if (typeof modalEl.scrollTop === 'number') modalEl.scrollTop = 0;
+                    modalEl.querySelectorAll('.modal-content, .modal-body, [data-scroll-reset]').forEach((el) => {
+                        if (typeof el.scrollTop === 'number') el.scrollTop = 0;
+                    });
+                }
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         async function openSearchModal() {
-            const keptY = captureScrollPos();
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
             const nick = (sess.identifier || document.getElementById('nickname')?.value || globalUserNickname || '').trim();
@@ -10548,12 +10710,12 @@
 
             if (currentRenderedStatus === '확인') {
                 showModal('lockedModal');
-                preserveScrollPos(keptY);
+                scrollSearchViewToTop();
                 return;
             }
 
             showModal('searchModal');
-            preserveScrollPos(keptY);
+            scrollSearchViewToTop();
             document.getElementById('modalLoadingBox').style.display = 'flex';
             document.getElementById('searchResultArea').style.display = 'none';
             document.getElementById('searchModalActionBtns').style.display = 'none';
@@ -10654,7 +10816,7 @@
                     }
 
                     showCustomAlert("예약 조회", "수정 가능한 예약 내역을 찾지 못했습니다.");
-                    preserveScrollPos(keptY);
+                    scrollSearchViewToTop();
                     return;
                 }
 
@@ -10663,7 +10825,7 @@
                     hideModal('searchModal');
                     renderActiveReservationNotice(data);
                     showModal('lockedModal');
-                    preserveScrollPos(keptY);
+                    scrollSearchViewToTop();
                     return;
                 }
 
@@ -10745,7 +10907,6 @@
                     if (wonMatch) savedDiscountNum = parseInt(wonMatch[1].replace(/[^0-9]/g, ''), 10) || 0;
                 }
 
-                // 기존 예약에 적용된 쿠폰 코드가 있을 때만 동일 코드로 메타 정보를 조회(다른 사용가능 쿠폰의 ID를 훔쳐오지 않음)
                 const matchedByExactCode = existingCouponCode
                     ? ((typeof findCouponByCode === 'function' ? findCouponByCode(existingCouponCode) : null) ||
                         (Array.isArray(window.globalMyCoupons)
@@ -10841,13 +11002,13 @@
                 if (editSel && editSel.value) {
                     handleTimeChange(editSel, 'editBusyInfoBox');
                 }
-                preserveScrollPos(keptY);
+                scrollSearchViewToTop();
             } catch (e) {
                 window.isEditingReservation = false;
                 document.getElementById('modalLoadingBox').style.display = 'none';
                 hideModal('searchModal');
                 showCustomAlert("조회 오류", "예약 정보를 불러오는 중 오류가 발생했습니다.");
-                preserveScrollPos(keptY);
+                scrollSearchViewToTop();
             }
         }
 
@@ -11061,9 +11222,33 @@
             if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
         }
 
+        function scrollUpdateSuccessToTop() {
+            const resetOnce = () => {
+                try {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, 0);
+                }
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
+                const modalEl = document.getElementById('updateSuccessModal');
+                if (modalEl) {
+                    if (typeof modalEl.scrollTop === 'number') modalEl.scrollTop = 0;
+                    modalEl.querySelectorAll('.modal-content, .modal-body, [data-scroll-reset]').forEach((el) => {
+                        if (typeof el.scrollTop === 'number') el.scrollTop = 0;
+                    });
+                }
+            };
+
+            resetOnce();
+            requestAnimationFrame(() => {
+                resetOnce();
+            });
+        }
+
         async function updateReservation() {
             if (isUpdatingReservation) return;
-            const keptY = captureScrollPos();
 
             const activeAuth = window.KakaoAuthManager || KakaoAuthManager;
             const sess = activeAuth && activeAuth.session ? activeAuth.session : {};
@@ -11286,6 +11471,7 @@
                     playAtelierTouchSound('success');
                     populateUpdateSuccessModalDetails(updatedObj);
                     showModal('updateSuccessModal');
+                    scrollUpdateSuccessToTop();
 
                     const normalizedFinalCode = finalCouponCode.toUpperCase();
                     const isCouponChanged = Boolean(normalizedFinalCode && normalizedFinalCode !== prevCouponCode);
@@ -11312,8 +11498,6 @@
                             );
                         }, 220);
                     }
-
-                    preserveScrollPos(keptY);
                 } else {
                     showCustomAlert("수정 안내", data.message || "예약 수정에 실패했습니다.");
                 }
@@ -11326,7 +11510,6 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
