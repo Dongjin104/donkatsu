@@ -7025,6 +7025,7 @@
 
                     if (reservationData.result === "not_found") {
                         clearReservedSessionLock();
+                        if (typeof hideModal === 'function') hideModal('successModal');
                         try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
 
                         const alreadyEl = document.getElementById('alreadyOrderedNotice');
@@ -7090,7 +7091,7 @@
                 isLiveSyncRequest = false;
                 try {
                     if (!isSubmitting && !isQuickSubmitting && !isUpdatingReservation && typeof checkClosedStatus === 'function') {
-                        const isClosedNow = Boolean(data && data.isClosed) || checkClosedStatus();
+                        const isClosedNow = checkClosedStatus();
                         if (isClosedNow && !isAdminTest && typeof showClosedNoticeScreen === 'function') {
                             showClosedNoticeScreen();
                         }
@@ -7098,7 +7099,7 @@
                 } catch (err) { }
             }
         }
-
+        
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
