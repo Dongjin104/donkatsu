@@ -6040,14 +6040,21 @@
             window.__atelierTouchSoundBound = true;
 
             const SCROLL_CANCEL_DELAY_MS = 120;
+            const DUPLICATE_GUARD_MS = 180;
             let activePointerId = null;
             let downX = 0;
             let downY = 0;
             let pendingTimer = null;
             let pendingSoundType = null;
+            let pendingIsQuickCoupon = false;
             let scrollOccurred = false;
             let scrollResetTimer = null;
-            let lastChangeSoundAt = 0;
+            let lastPlayedAtByType = {
+                tap: 0,
+                drop: 0,
+                confirm: 0,
+                success: 0
+            };
 
             function clearPendingSound() {
                 if (pendingTimer) {
@@ -6055,6 +6062,28 @@
                     pendingTimer = null;
                 }
                 pendingSoundType = null;
+                pendingIsQuickCoupon = false;
+            }
+
+            function canPlaySoundNow(type) {
+                const now = Date.now();
+                const prev = lastPlayedAtByType[type] || 0;
+                if (now - prev < DUPLICATE_GUARD_MS) {
+                    return false;
+                }
+                lastPlayedAtByType[type] = now;
+                return true;
+            }
+
+            function playOnceAtelierTouchSound(type) {
+                if (!type || !canPlaySoundNow(type)) return;
+                playAtelierTouchSound(type);
+            }
+
+            function isQuickCouponTarget(target) {
+                if (!target || typeof target.closest !== 'function') return false;
+                if (target.id === 'quickUseCouponCheckbox') return true;
+                return Boolean(target.closest('.quick-coupon-switch, [class*="quick-coupon" i], [id*="quickCoupon" i]'));
             }
 
             function isAtelierLoadingScreenVisible() {
@@ -6087,6 +6116,11 @@
             function resolveSoundType(target) {
                 if (!target || typeof target.closest !== 'function') return null;
 
+                // 퀵쿠폰 스위치는 실제 상태 변경(change) 시 1회만 재생해 2중 소리 방지
+                if (isQuickCouponTarget(target)) {
+                    return null;
+                }
+
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
@@ -6101,15 +6135,14 @@
                     return 'confirm';
                 }
 
-                // select는 여는 순간(pointerdown)이 아니라 실제 값 변경(change) 시 1회 재생
+                // 드롭박스는 열 때(pointerdown) 1회 울리고, 직후 이어지는 change 중복은 차단
                 const dropEl = target.closest(
-                    '[role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
+                    'select, [role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
                 if (dropEl && !dropEl.disabled) {
                     return 'drop';
                 }
 
-                // 체크박스는 상태가 실제 토글될 때(change) 1회만 재생해 2중 소리 방지
                 const switchEl = target.closest(
                     '[role="switch"], label[for*="Switch" i], label[for*="Toggle" i], [class*="switch" i], [class*="toggle" i]'
                 );
@@ -6147,6 +6180,11 @@
 
                 if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
 
+                if (isQuickCouponTarget(e.target)) {
+                    pendingIsQuickCoupon = true;
+                    return;
+                }
+
                 const soundType = resolveSoundType(e.target);
                 if (!soundType) return;
 
@@ -6155,7 +6193,7 @@
                     const typeToPlay = pendingSoundType;
                     clearPendingSound();
                     if (typeToPlay && !scrollOccurred && !isAtelierLoadingScreenVisible()) {
-                        playAtelierTouchSound(typeToPlay);
+                        playOnceAtelierTouchSound(typeToPlay);
                     }
                 }, SCROLL_CANCEL_DELAY_MS);
             }, { passive: true, capture: true });
@@ -6166,22 +6204,23 @@
                 if (!el || el.disabled) return;
                 if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
 
-                const now = Date.now();
-                if (now - lastChangeSoundAt < 80) return;
+                if (el.id === 'quickUseCouponCheckbox' || isQuickCouponTarget(el)) {
+                    clearPendingSound();
+                    playOnceAtelierTouchSound('tap');
+                    return;
+                }
 
                 if (el.tagName === 'SELECT') {
-                    lastChangeSoundAt = now;
-                    playAtelierTouchSound('drop');
+                    playOnceAtelierTouchSound('drop');
                 } else if (el.type === 'checkbox') {
-                    lastChangeSoundAt = now;
-                    playAtelierTouchSound('tap');
+                    playOnceAtelierTouchSound('tap');
                 }
             }, { passive: true, capture: true });
 
             document.addEventListener('pointermove', function (e) {
                 if (!e.isTrusted) return;
                 if (activePointerId !== null && e.pointerId !== activePointerId) return;
-                if (!pendingTimer) return;
+                if (!pendingTimer && !pendingIsQuickCoupon) return;
 
                 if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) {
                     clearPendingSound();
@@ -6229,7 +6268,7 @@
                 syncVolumeNow();
             });
         })();
-
+        
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
         }
