@@ -6092,11 +6092,13 @@
                 return Boolean(target.closest('label[for="cook1"], label[for="cook2"], .radio-btn'));
             }
 
-            function isImmediateModalCloseButton(target) {
+            function isImmediateTapTarget(target) {
                 if (!target || typeof target.closest !== 'function') return null;
-                const btn = target.closest('.modal-btn, .close-btn, [onclick*="closeCookingGuideModal"]');
-                if (!btn || btn.disabled) return null;
-                return btn;
+                const el = target.closest(
+                    '.modal-btn, .close-btn, [onclick*="closeCookingGuideModal"], #completedCookGuideCard, .completed-guide-card, .uncle-feedback-cancel, [onclick*="closeUncleFeedbackCard"]'
+                );
+                if (!el || el.disabled) return null;
+                return el;
             }
 
             function isAtelierLoadingScreenVisible() {
@@ -6133,6 +6135,10 @@
                     return null;
                 }
 
+                if (isImmediateTapTarget(target)) {
+                    return 'tap';
+                }
+
                 const inDoneModal = target.closest(
                     '#successModal button, #successModal .atelier-confirm-btn, #successModal .modal-btn, #updateSuccessModal button, #updateSuccessModal .atelier-confirm-btn, #updateSuccessModal .modal-btn'
                 );
@@ -6162,7 +6168,7 @@
                 }
 
                 const tapEl = target.closest(
-                    'button, .modal-btn, .close-btn'
+                    'button, [role="button"]'
                 );
                 if (tapEl && !tapEl.disabled) {
                     return 'tap';
@@ -6191,8 +6197,8 @@
 
                 if (isAtelierLoadingScreenVisible()) return;
 
-                // 모달 닫기/확인 버튼은 스크롤 복원 간섭 없이 즉시 1회 재생
-                if (isImmediateModalCloseButton(e.target)) {
+                // 예약완료 조리 가이드 카드, 모달 확인/닫기, 삼촌 한마디 닫기 버튼은 즉시 1회 재생
+                if (isImmediateTapTarget(e.target)) {
                     playOnceAtelierTouchSound('tap');
                     return;
                 }
