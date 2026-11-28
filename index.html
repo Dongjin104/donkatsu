@@ -5629,6 +5629,34 @@
             }
         }
 
+        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 터치 사운드 연결
+        (function bindAtelierTouchSounds() {
+            if (window.__atelierTouchSoundBound) return;
+            window.__atelierTouchSoundBound = true;
+
+            document.addEventListener('pointerdown', function (e) {
+                const target = e.target;
+                if (!target || typeof target.closest !== 'function') return;
+
+                // 확인/접속/저장/제출/예약 확정 계열 버튼은 'confirm' 톤
+                const confirmBtn = target.closest(
+                    '.atelier-confirm-btn, button[type="submit"], [id*="confirm"], [id*="Confirm"], [id*="submit"], [id*="Submit"]'
+                );
+                if (confirmBtn && !confirmBtn.disabled) {
+                    playAtelierTouchSound('confirm');
+                    return;
+                }
+
+                // 그 외 버튼, 수량 조절 버튼, 메뉴/소스 카드, 닫기/취소 버튼은 'tap' 톤
+                const interactiveEl = target.closest(
+                    'button, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, .modal-btn, .close-btn'
+                );
+                if (interactiveEl && !interactiveEl.disabled) {
+                    playAtelierTouchSound('tap');
+                }
+            }, { passive: true, capture: true });
+        })();
+
         function openSecretCodeGateModal(basePayload, isQuick) {
             pendingSecretGatePayload = basePayload;
             pendingSecretGateIsQuick = Boolean(isQuick);
