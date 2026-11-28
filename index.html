@@ -7442,6 +7442,68 @@
                 return disc > 0 ? `${baseLabel} (-${disc.toLocaleString()}원)` : baseLabel;
             }
 
+            function resolveCouponFromKnownLists(code) {
+                const targetCode = String(code || '').trim();
+                if (!targetCode) return null;
+
+                if (typeof findCouponByCode === 'function') {
+                    const foundByFn = findCouponByCode(targetCode);
+                    if (foundByFn && typeof foundByFn === 'object') {
+                        return foundByFn;
+                    }
+                }
+
+                const lists = [
+                    window.myAvailableCoupons,
+                    window.availableCoupons,
+                    window.userCoupons,
+                    window.issuedCoupons,
+                    (window.currentReservationData && window.currentReservationData.availableCoupons),
+                    (window.lastReservationData && window.lastReservationData.availableCoupons)
+                ];
+
+                for (let i = 0; i < lists.length; i++) {
+                    const arr = lists[i];
+                    if (!Array.isArray(arr)) continue;
+                    for (let j = 0; j < arr.length; j++) {
+                        const item = arr[j];
+                        if (!item || typeof item !== 'object') continue;
+                        const itemCode = String(
+                            item.code || item.couponCode || item.couponId || item.id || ''
+                        ).trim();
+                        if (itemCode && itemCode === targetCode) {
+                            return item;
+                        }
+                    }
+                }
+
+                const selectIds = ['couponSelect', 'editCouponSelect', 'orderCouponSelect'];
+                for (let sIdx = 0; sIdx < selectIds.length; sIdx++) {
+                    const sel = document.getElementById(selectIds[sIdx]);
+                    if (!sel || !sel.options) continue;
+                    for (let oIdx = 0; oIdx < sel.options.length; oIdx++) {
+                        const opt = sel.options[oIdx];
+                        const optCode = String(
+                            opt.value || (opt.dataset && (opt.dataset.code || opt.dataset.couponCode || opt.dataset.couponId)) || ''
+                        ).trim();
+                        if (optCode && optCode === targetCode) {
+                            const rawOptText = String(
+                                (opt.dataset && (opt.dataset.label || opt.dataset.name)) || opt.textContent || ''
+                            ).trim();
+                            return {
+                                code: targetCode,
+                                name: rawOptText,
+                                discountAmount: parseWonVal(
+                                    (opt.dataset && (opt.dataset.discount || opt.dataset.value)) || extractDiscountFromText(rawOptText)
+                                )
+                            };
+                        }
+                    }
+                }
+
+                return null;
+            }
+
             const cleanNick = String(savedNick || '').trim();
             const cleanRow = String(resData.rowIndex || '').trim();
             const storageKey = `donkatsu_used_coupon_${cleanRow || 'row'}_${cleanNick || 'nick'}`;
@@ -7545,14 +7607,15 @@
                 appliedDiscount = extractDiscountFromText(candidateText);
             }
 
-            if (rawCode && typeof findCouponByCode === 'function') {
-                const foundCpn = findCouponByCode(rawCode);
+            if (rawCode) {
+                const foundCpn = resolveCouponFromKnownLists(rawCode);
                 if (foundCpn) {
                     if (!appliedDiscount) {
                         appliedDiscount = parseWonVal(foundCpn.value || foundCpn.discountAmount || foundCpn.discount || 0);
                     }
-                    if (!cleanCouponLabel(rawName) && foundCpn.name) {
-                        rawName = String(foundCpn.name).trim();
+                    const resolvedName = String(foundCpn.name || foundCpn.couponName || foundCpn.title || foundCpn.label || '').trim();
+                    if (!cleanCouponLabel(rawName) && cleanCouponLabel(resolvedName)) {
+                        rawName = resolvedName;
                     }
                 }
             }
