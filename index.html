@@ -7583,8 +7583,9 @@
 
             const fortuneSec = document.getElementById('fortuneSection');
             if (fortuneSec) {
-                fortuneSec.style.display = globalFortuneEnabled ? 'block' : 'none';
+                fortuneSec.style.display = 'block';
             }
+            restoreTodayFortuneIfExists();
 
             setReservedSessionLock({
                 nickname: savedNick,
@@ -9656,28 +9657,90 @@
             syncCustomerScreenWithSheet(true);
         }
 
-        function openFortuneCookie() {
-            const btn = document.getElementById('fortuneOpenBtn');
-            const card = document.getElementById('fortuneCard');
-            const textEl = document.getElementById('fortuneText');
-            if (!card || !textEl) return;
+        function getTodaySeoulDateKey_() {
+            try {
+                const parts = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Seoul',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).formatToParts(new Date());
+                const y = parts.find(p => p.type === 'year')?.value || '';
+                const m = parts.find(p => p.type === 'month')?.value || '';
+                const d = parts.find(p => p.type === 'day')?.value || '';
+                if (y && m && d) return `${y}-${m}-${d}`;
+            } catch (e) { }
+            const now = new Date();
+            const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+            return kst.toISOString().slice(0, 10);
+        }
 
+        function isFortuneDailyModeEnabled_() {
+            if (typeof globalFortuneEnabled === 'boolean') return globalFortuneEnabled;
+            if (typeof window !== 'undefined' && typeof window.globalFortuneEnabled === 'boolean') {
+                return window.globalFortuneEnabled;
+            }
+            return false;
+        }
+
+        function getFortunePool_() {
             const defaultFortunes = [
                 "오늘 하루 예상치 못한 기분 좋은 소식이 찾아옵니다! ✨",
                 "바삭한 돈가스 한 입처럼, 오늘 일도 시원하게 풀릴 거예요!",
                 "지금 걸어가고 계신 길이 곧 꽃길이 될 징조입니다 🌸",
                 "오늘 만나는 사람에게 따뜻한 미소를 건네보세요. 행운이 두 배가 됩니다!"
             ];
-            const pool = (Array.isArray(globalFortuneList) && globalFortuneList.length > 0) ? globalFortuneList : defaultFortunes;
-            const picked = pool[Math.floor(Math.random() * pool.length)];
+            return (Array.isArray(globalFortuneList) && globalFortuneList.length > 0)
+                ? globalFortuneList
+                : defaultFortunes;
+        }
 
-            textEl.innerText = `"${picked}"`;
+        function renderOpenedFortuneCard_(pickedText) {
+            const btn = document.getElementById('fortuneOpenBtn');
+            const card = document.getElementById('fortuneCard');
+            const textEl = document.getElementById('fortuneText');
+            if (!card || !textEl) return;
+
+            textEl.innerText = `"${pickedText}"`;
             if (btn) btn.style.display = 'none';
             card.style.display = 'block';
             setTimeout(() => {
                 card.style.opacity = '1';
                 card.style.transform = 'scale(1)';
             }, 30);
+        }
+
+        function restoreTodayFortuneIfExists() {
+            if (!isFortuneDailyModeEnabled_()) return;
+            const todayKey = getTodaySeoulDateKey_();
+            const storageKey = `donkatsu_fortune_${todayKey}`;
+            try {
+                const savedText = localStorage.getItem(storageKey);
+                if (savedText && String(savedText).trim() !== '') {
+                    renderOpenedFortuneCard_(String(savedText).trim());
+                }
+            } catch (e) { }
+        }
+
+        function openFortuneCookie() {
+            const pool = getFortunePool_();
+            const picked = pool[Math.floor(Math.random() * pool.length)];
+            const dailyMode = isFortuneDailyModeEnabled_();
+
+            if (dailyMode) {
+                const todayKey = getTodaySeoulDateKey_();
+                const storageKey = `donkatsu_fortune_${todayKey}`;
+                try {
+                    const existing = localStorage.getItem(storageKey);
+                    if (existing && String(existing).trim() !== '') {
+                        renderOpenedFortuneCard_(String(existing).trim());
+                        return;
+                    }
+                    localStorage.setItem(storageKey, picked);
+                } catch (e) { }
+            }
+
+            renderOpenedFortuneCard_(picked);
         }
 
         function findCatalogCanonicalKey(rawName, isSauce) {
