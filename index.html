@@ -4478,6 +4478,22 @@
         </div>
     </div>
 
+    <!-- 공통 화면 보호 가림막 (별도 버튼 없이 팝업 화면 어디든 터치하면 열림) -->
+    <div id="atelierPrivacyCurtain" class="modal" style="z-index: 10030; cursor: pointer;"
+        onclick="unlockAndDismissPrivacyCurtain()">
+        <div class="atelier-popup-card" style="max-width: 380px;">
+            <div class="atelier-popup-eyebrow">✦ JANGNAL DONGCHEON</div>
+            <div class="atelier-emblem-ring">🔒</div>
+            <h3 class="atelier-popup-title">내역 보호를 위해 화면을 가려두었습니다</h3>
+            <p class="atelier-popup-lead" style="margin-bottom: 14px;">
+                화면을 한 번 터치하시면 예약 화면과 내역이 열립니다.
+            </p>
+            <div class="atelier-pickup-guide" style="text-align: center; margin-bottom: 0;">
+                <b>화면 어디든 터치하면 바로 열립니다</b>
+            </div>
+        </div>
+    </div>
+
     <div id="updateSuccessModal" class="modal" style="z-index: 10024;">
         <div class="atelier-popup-card">
             <div class="atelier-popup-eyebrow">✦ MODIFICATION COMPLETED</div>
@@ -5693,6 +5709,43 @@
             }, { passive: true, capture: true });
         })();
 
+        let __atelierPrivacyCurtainShownOnce = false;
+
+        function showAtelierPrivacyCurtainOnce() {
+            if (__atelierPrivacyCurtainShownOnce) return;
+            const curtainEl = document.getElementById('atelierPrivacyCurtain');
+            if (!curtainEl) return;
+            __atelierPrivacyCurtainShownOnce = true;
+            showModal('atelierPrivacyCurtain');
+        }
+
+        function unlockAndDismissPrivacyCurtain() {
+            const curtainEl = document.getElementById('atelierPrivacyCurtain');
+            if (!curtainEl) return;
+
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    if (typeof __atelierSoundCtx !== 'undefined' && __atelierSoundCtx && __atelierSoundCtx.state === 'suspended') {
+                        __atelierSoundCtx.resume().catch(() => { });
+                    }
+                }
+                if (typeof ATELIER_SOUND_MAP !== 'undefined' && typeof __getAtelierSound === 'function') {
+                    Object.keys(ATELIER_SOUND_MAP).forEach((key) => {
+                        const base = __getAtelierSound(key);
+                        if (base && typeof base.load === 'function') {
+                            base.load();
+                        }
+                    });
+                }
+            } catch (e) { }
+
+            if (typeof playAtelierTouchSound === 'function') {
+                playAtelierTouchSound('tap');
+            }
+            hideModal('atelierPrivacyCurtain');
+        }
+
         function openSecretCodeGateModal(basePayload, isQuick) {
             pendingSecretGatePayload = basePayload;
             pendingSecretGateIsQuick = Boolean(isQuick);
@@ -6810,6 +6863,7 @@
                             document.getElementById('quickReorderBox').style.display = 'none';
                             document.getElementById('closedNotice').style.display = 'none';
                             setLoadingSkeletonVisible(false);
+                            showAtelierPrivacyCurtainOnce();
                             return;
                         }
 
@@ -6894,6 +6948,7 @@
                             }
                         }
                         setLoadingSkeletonVisible(false);
+                        showAtelierPrivacyCurtainOnce();
                     }
                 }
             } catch (e) {
@@ -6909,7 +6964,7 @@
                 } catch (err) { }
             }
         }
-
+        
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
@@ -7344,6 +7399,7 @@
             document.getElementById('quickReorderBox').style.display = 'none';
             document.getElementById('closedNotice').style.display = 'none';
             preserveScrollPos(keptY);
+            showAtelierPrivacyCurtainOnce();
 
             const newlyIssued = (resData && (resData.issuedCoupon || resData.newCoupon || resData.rewardCoupon)) || null;
             let rewardShown = false;
@@ -8257,6 +8313,7 @@
                 }
             }
             preserveScrollPos(keptY);
+            showAtelierPrivacyCurtainOnce();
         }
 
         function openNoticeModal() {
@@ -8747,6 +8804,7 @@
                 handleTimeChange(qSel, 'quickBusyInfoBox');
             }
             refreshQuickCouponSummary(summaryObj);
+            showAtelierPrivacyCurtainOnce();
         }
 
         let isManualFormEditing = false;
