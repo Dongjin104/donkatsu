@@ -9540,7 +9540,7 @@
                 if (quickBtn) quickBtn.disabled = false;
             }
         }
-        
+
         function closeEventFailModal() {
             hideModal('eventFailModal');
             showModal('successModal');
@@ -10776,6 +10776,7 @@
                     }
                 } else {
                     clearReservedSessionLock();
+                    try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
                     if (!keepActiveMenuEditView()) {
                         showOpenOrderScreen(sess);
                     }
@@ -10808,6 +10809,7 @@
                 restoreScrollIfSafe();
             }
         }
+        
         function showClosedNoticeScreen() {
             setLoadingSkeletonVisible(false);
             const setDisplay = (id, val) => {
