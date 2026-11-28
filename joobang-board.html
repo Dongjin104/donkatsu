@@ -787,10 +787,14 @@
             const script = document.createElement('script');
 
             const cleanup = () => {
-                try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                // 늦게 도착한 응답이 호출되어도 ReferenceError가 나지 않도록 빈 함수로 유지
+                window[callbackName] = function () {};
                 if (script.parentNode) {
                     try { script.parentNode.removeChild(script); } catch (e) {}
                 }
+                setTimeout(() => {
+                    try { delete window[callbackName]; } catch (e) {}
+                }, 60000);
             };
 
             const timer = setTimeout(() => {
