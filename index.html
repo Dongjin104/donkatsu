@@ -6130,6 +6130,15 @@
                 activePointerId = null;
             }, { passive: true, capture: true });
 
+            function syncVolumeNow() {
+                if (typeof __tryReadVolumeFromGlobalConfig === 'function') {
+                    __tryReadVolumeFromGlobalConfig();
+                }
+                if (typeof __refreshAllAtelierPoolVolumes === 'function') {
+                    __refreshAllAtelierPoolVolumes();
+                }
+            }
+
             // siteSettings에 볼륨 값이 들어올 때마다 자동 반영
             let lastVolRaw = '';
             setInterval(function () {
@@ -6139,9 +6148,22 @@
                 const sv = (v === undefined || v === null) ? '' : String(v).trim();
                 if (sv !== '' && sv !== lastVolRaw) {
                     lastVolRaw = sv;
-                    window.setAtelierTouchVolumeFromSheet(sv);
+                    if (typeof window.setAtelierTouchVolumeFromSheet === 'function') {
+                        window.setAtelierTouchVolumeFromSheet(sv);
+                    }
                 }
             }, 500);
+
+            // 모바일 화면 복귀 / 페이지 재표시 시 즉시 볼륨 동기화
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    syncVolumeNow();
+                }
+            });
+
+            window.addEventListener('pageshow', function () {
+                syncVolumeNow();
+            });
         })();
 
         function openSecretCodeGateModal(basePayload, isQuick) {
