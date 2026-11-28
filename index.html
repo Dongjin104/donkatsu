@@ -9733,7 +9733,12 @@
         function forcePageAndModalTop(modalId) {
             const quickBox = document.getElementById('quickReorderBox');
             const isQuickReorderVisible = quickBox && window.getComputedStyle(quickBox).display !== 'none';
-            if (!modalId && isQuickReorderVisible) {
+
+            const orderFrm = document.getElementById('orderForm');
+            const isOrderFormVisible = orderFrm && window.getComputedStyle(orderFrm).display !== 'none';
+            const isManualEditing = typeof isManualFormEditing !== 'undefined' && Boolean(isManualFormEditing);
+
+            if (!modalId && (isQuickReorderVisible || (isOrderFormVisible && isManualEditing))) {
                 return;
             }
 
