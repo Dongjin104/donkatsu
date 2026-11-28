@@ -10599,7 +10599,7 @@
                 preserveScrollPos(keptY);
             }
         }
-        
+
         function closeSearchModal() {
             const keptY = captureScrollPos();
             hideModal('searchModal');
@@ -10821,6 +10821,7 @@
 
             const prevCouponCode = String(
                 (window.__lastAppliedCoupon && (window.__lastAppliedCoupon.code || window.__lastAppliedCoupon.couponCode || window.__lastAppliedCoupon.couponId)) ||
+                (window.__initialEditCoupon && (window.__initialEditCoupon.code || window.__initialEditCoupon.couponCode || window.__initialEditCoupon.couponId)) ||
                 (window.currentReservationData && (window.currentReservationData.couponCode || window.currentReservationData.coupon_code)) ||
                 ''
             ).trim().toUpperCase();
@@ -11000,6 +11001,15 @@
                         eventPrize: document.getElementById('displayEventPrize')?.innerText || ''
                     };
                     window.currentReservationData = updatedObj;
+                    window.__initialEditCoupon = (finalCouponCode || finalCouponDiscount > 0)
+                        ? {
+                            code: finalCouponCode,
+                            name: finalCouponName,
+                            value: finalCouponDiscount,
+                            discountAmount: finalCouponDiscount
+                        }
+                        : null;
+
                     saveCustomerStateCache({ type: 'active_order', reservation: updatedObj });
                     renderActiveReservationNotice(updatedObj);
                     localOptimisticLockUntil = Date.now() + 3000;
@@ -11014,6 +11024,7 @@
 
                     if (isCouponChanged && finalCouponDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
                         window.__suppressCouponPopupUntil = 0;
+                        window.__allowChangedCouponPopupOnce = true;
                         try {
                             sessionStorage.removeItem('donkatsu_just_updated_reservation');
                             localStorage.removeItem('donkatsu_just_updated_reservation');
@@ -11043,10 +11054,11 @@
                 showCustomAlert("네트워크 오류", "예약 수정 중 오류가 발생했습니다.");
             } finally {
                 isUpdatingReservation = false;
+                window.isEditingReservation = false;
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-
+        
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
