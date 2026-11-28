@@ -11620,6 +11620,22 @@
             if (!s || typeof s !== 'object') return;
             __lastCustomerRenderAt = Date.now();
 
+            window.siteSettings = Object.assign({}, window.siteSettings || {}, s);
+            const rawVolScale =
+                s.touchVolumeScale ??
+                s.soundVolumeScale ??
+                s.effectVolume ??
+                s.J10 ??
+                s.j10;
+            if (
+                rawVolScale !== undefined &&
+                rawVolScale !== null &&
+                String(rawVolScale).trim() !== '' &&
+                typeof window.setAtelierTouchVolumeFromSheet === 'function'
+            ) {
+                window.setAtelierTouchVolumeFromSheet(rawVolScale);
+            }
+
             if (s.isBlocked) {
                 enforceBlockedOverlay(s.blockMessage || "");
                 return;
