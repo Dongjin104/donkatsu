@@ -2968,6 +2968,81 @@
             transform: scale(0.98);
             opacity: 0.94;
         }
+
+        /* [2단계 최종 덮어쓰기] 픽업 시간 & 쿠폰 셀렉트 박스 일괄 고급화 */
+        select,
+        .coupon-select-box {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            width: 100% !important;
+            padding: 12px 38px 12px 14px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            border: 1.5px solid #DFC793 !important;
+            border-radius: 12px !important;
+            background-color: #FFFFFF !important;
+            background-image:
+                linear-gradient(45deg, transparent 50%, #8C6D1F 50%),
+                linear-gradient(135deg, #8C6D1F 50%, transparent 50%) !important;
+            background-position:
+                calc(100% - 17px) calc(50% - 2px),
+                calc(100% - 12px) calc(50% - 2px) !important;
+            background-size: 5px 5px, 5px 5px !important;
+            background-repeat: no-repeat !important;
+            color: var(--text-main) !important;
+            cursor: pointer !important;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            outline: none !important;
+            font-family: inherit !important;
+            box-shadow: 0 3px 10px rgba(28, 27, 24, 0.04) !important;
+        }
+
+        select:hover,
+        .coupon-select-box:hover {
+            border-color: #C5A059 !important;
+            background-color: #FFFDF8 !important;
+        }
+
+        select:focus,
+        .coupon-select-box:focus {
+            border-color: var(--accent-dark) !important;
+            background-color: #FFFFFF !important;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.22) !important;
+        }
+
+        select:disabled,
+        .coupon-select-box:disabled {
+            background-color: #F4F2EC !important;
+            color: var(--text-muted) !important;
+            border-color: var(--border-color) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+        }
+
+        option.slot-prep {
+            color: #8A857C !important;
+            background-color: #F3F1EC !important;
+            font-weight: 600 !important;
+        }
+
+        option.slot-busy {
+            color: #92400E !important;
+            background-color: #FFFBEB !important;
+            font-weight: 700 !important;
+        }
+
+        option.slot-surge {
+            color: #9F1239 !important;
+            background-color: #FFF1F2 !important;
+            font-weight: 800 !important;
+        }
+
+        option.slot-grace {
+            color: #9F1239 !important;
+            background-color: #FFF1F2 !important;
+            font-weight: 800 !important;
+        }
     </style>
 </head>
 
