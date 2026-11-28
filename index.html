@@ -8005,12 +8005,13 @@
             hideModal('adminAuthModal');
         }
 
-        function confirmAdminAuthPrompt() {
+        async function confirmAdminAuthPrompt() {
             const input = document.getElementById('adminAuthCodeInput');
             const errEl = document.getElementById('adminAuthErrorMsg');
-            const code = input ? input.value.trim() : '';
+            const confirmBtn = document.querySelector('#adminAuthModal .atelier-confirm-btn');
+            const trimmed = input ? input.value.trim() : '';
 
-            if (!code) {
+            if (!trimmed) {
                 if (errEl) {
                     errEl.textContent = '관리자 접속 코드를 입력해 주세요.';
                     errEl.style.display = 'block';
@@ -8019,12 +8020,47 @@
                 return;
             }
 
-            if (code === ADMIN_BYPASS_CODE) {
-                sessionStorage.setItem('donkatsu_admin_bypass', 'true');
+            purgeLegacyAdminKeyLocalStorage();
+            if (errEl) errEl.style.display = 'none';
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '코드 확인 중...';
+            }
+
+            let isValid = false;
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'verifyAdminCode', code: trimmed })
+                });
+                const resData = JSON.parse(await res.text());
+                isValid = Boolean(resData && resData.valid);
+            } catch (e) {
+                if (errEl) {
+                    errEl.textContent = '서버 확인 중 오류가 발생했습니다. 다시 시도해 주세요.';
+                    errEl.style.display = 'block';
+                }
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '접속 확인';
+                }
+                return;
+            }
+
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '접속 확인';
+            }
+
+            if (isValid) {
+                setAdminApiKeyValue(trimmed);
+                try { window.sessionStorage.setItem('isAdminTestMode', 'true'); } catch (e) { }
+                try { window.localStorage.removeItem('isAdminTestMode'); } catch (e) { }
                 closeAdminAuthPrompt();
                 const overlay = document.getElementById('maintenanceOverlay');
                 if (overlay) overlay.style.display = 'none';
-                document.body.style.overflow = '';
+                runFullAppInitialization();
             } else {
                 if (errEl) {
                     errEl.textContent = '접속 코드가 일치하지 않습니다.';
