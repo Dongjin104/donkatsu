@@ -10891,12 +10891,13 @@
             const totalPriceStr = totalPriceNum.toLocaleString() + '원';
 
             const couponSelEl = document.getElementById('editCouponSelect');
-            const selectedCouponCode = couponSelEl ? String(couponSelEl.value || '').trim() : '';
+            const rawSelCode = couponSelEl ? String(couponSelEl.value || '').trim() : '';
+            const selectedCouponCode = rawSelCode === '__APPLIED__' ? '' : rawSelCode;
             const selectedCouponOpt = (couponSelEl && couponSelEl.selectedIndex >= 0) ? couponSelEl.options[couponSelEl.selectedIndex] : null;
             let selectedCouponName = '';
             let selectedCouponDiscount = 0;
 
-            if (selectedCouponCode && selectedCouponOpt) {
+            if (rawSelCode && selectedCouponOpt) {
                 selectedCouponDiscount = parseInt(String(
                     (selectedCouponOpt.dataset && selectedCouponOpt.dataset.discount) ||
                     (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (appliedEditCoupon.value || appliedEditCoupon.discountAmount || appliedEditCoupon.discount)) ||
@@ -10976,23 +10977,16 @@
                 }
 
                 if (data.result === 'success') {
-                    const finalCouponCode = String(data.couponCode || selectedCouponCode || '').trim();
+                    const finalCouponCode = String(data.couponCode || selectedCouponCode || rawSelCode || '').trim();
                     const finalCouponName = String(data.couponName || selectedCouponName || '').trim();
                     const finalCouponDiscount = parseInt(String(
                         data.couponDiscount !== undefined ? data.couponDiscount : selectedCouponDiscount
                     ).replace(/[^0-9]/g, ''), 10) || 0;
 
-                    const serverPriceNum = parseInt(String(data.totalPrice || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                    let finalPayNum = totalPriceNum;
-                    if (serverPriceNum > 0) {
-                        if (finalCouponDiscount > 0 && serverPriceNum === totalPriceNum) {
-                            finalPayNum = Math.max(0, totalPriceNum - finalCouponDiscount);
-                        } else {
-                            finalPayNum = serverPriceNum;
-                        }
-                    } else if (finalCouponDiscount > 0) {
-                        finalPayNum = Math.max(0, totalPriceNum - finalCouponDiscount);
-                    }
+                    // 원가(totalPriceNum)에서 최종 쿠폰 할인을 딱 1회만 차감
+                    const finalPayNum = finalCouponDiscount > 0
+                        ? Math.max(0, totalPriceNum - finalCouponDiscount)
+                        : totalPriceNum;
                     const finalTotalPriceStr = finalPayNum.toLocaleString() + '원';
 
                     const cleanNick = String(nick || '').trim();
@@ -11107,7 +11101,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-
+        
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
