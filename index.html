@@ -9295,22 +9295,45 @@
         let __bgScrollLocked = false;
         let __bgSavedScrollY = 0;
 
+        function resetAllScrollTargetsToTop(modalEl) {
+            try {
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            } catch (e) {
+                window.scrollTo(0, 0);
+            }
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+
+            if (modalEl) {
+                if (typeof modalEl.scrollTop === 'number') modalEl.scrollTop = 0;
+                modalEl.querySelectorAll('*').forEach((el) => {
+                    if (typeof el.scrollTop === 'number' && el.scrollTop > 0) {
+                        el.scrollTop = 0;
+                    }
+                });
+            }
+        }
+
         function lockBackgroundScroll() {
             if (__bgScrollLocked) return;
-            __bgSavedScrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+            __bgSavedScrollY = 0;
+            scrollPosition = 0;
             __bgScrollLocked = true;
             document.documentElement.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
-            document.body.style.top = `-${__bgSavedScrollY}px`;
+            document.body.style.top = '0px';
             document.body.style.left = '0';
             document.body.style.right = '0';
             document.body.style.width = '100%';
             document.body.style.overflow = 'hidden';
+            resetAllScrollTargetsToTop();
         }
 
-        function unlockBackgroundScroll(restorePos = true) {
+        function unlockBackgroundScroll(restorePos = false) {
             if (!__bgScrollLocked) return;
-            const targetY = __bgSavedScrollY;
+            const targetY = restorePos ? (__bgSavedScrollY || 0) : 0;
+            __bgSavedScrollY = 0;
+            scrollPosition = 0;
             __bgScrollLocked = false;
             document.documentElement.style.overflow = '';
             document.body.style.position = '';
@@ -9319,9 +9342,14 @@
             document.body.style.right = '';
             document.body.style.width = '';
             document.body.style.overflow = '';
-            if (restorePos) {
-                window.scrollTo({ top: targetY, left: 0, behavior: 'auto' });
+
+            resetAllScrollTargetsToTop();
+            if (restorePos && targetY > 0) {
+                window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
             }
+            requestAnimationFrame(() => {
+                resetAllScrollTargetsToTop();
+            });
         }
 
         function hasAnyActiveModalOpen(excludeId = '') {
