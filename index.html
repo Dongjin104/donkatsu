@@ -8525,6 +8525,33 @@
                 }
             }
 
+            // 1-2. 수정 모달에서는 원래 이 예약에 적용됐던 쿠폰도 유지(다른 쿠폰 선택 후에도 사라지지 않게 함)
+            if (selectId === 'editCouponSelect') {
+                const initCpn = window.__initialEditCoupon;
+                if (initCpn && typeof initCpn === 'object') {
+                    const initCode = String(initCpn.code || initCpn.couponCode || initCpn.couponId || '').trim().toUpperCase();
+                    pushUniqueCoupon(initCpn, initCode || '__APPLIED__');
+                }
+                const resSources = [window.currentReservationData, window.lastReservationData];
+                for (let rIdx = 0; rIdx < resSources.length; rIdx++) {
+                    const rObj = resSources[rIdx];
+                    if (!rObj || typeof rObj !== 'object') continue;
+                    const rCode = String(rObj.couponCode || rObj.coupon_code || rObj.couponId || '').trim().toUpperCase();
+                    const rName = String(rObj.couponName || rObj.usedCoupon || '').trim();
+                    const rDisc = Number(rObj.couponDiscount ?? rObj.discountAmount ?? rObj.discount ?? 0) || 0;
+                    if (rCode || rName || rDisc > 0) {
+                        pushUniqueCoupon({
+                            code: rCode || '__APPLIED__',
+                            name: rName || (rDisc > 0 ? `${rDisc.toLocaleString()}원 할인쿠폰` : '할인쿠폰'),
+                            discountType: 'amount',
+                            value: rDisc,
+                            discountAmount: rDisc,
+                            minOrder: 0
+                        }, rCode || '__APPLIED__');
+                    }
+                }
+            }
+
             // 2. 시트 기준 사용가능 쿠폰 전체 반영(동일 이름/금액이어도 다른 CPN 코드면 모두 표시)
             if (Array.isArray(list)) {
                 list.forEach(c => {
@@ -8562,7 +8589,7 @@
             sel.value = currentCode;
             sel.disabled = false;
         }
-        
+
         function onSelectMainCouponDrop(code) {
             const rawCode = String(code || '').trim();
             if (!rawCode) {
@@ -8600,9 +8627,41 @@
 
         function onSelectEditCouponDrop(code) {
             const clean = String(code || '').trim().toUpperCase();
-            appliedEditCoupon = clean
-                ? Object.assign({}, findCouponByCode(clean) || { code: clean, name: clean, discountType: 'amount', value: 0, minOrder: 0 })
-                : null;
+            if (!clean) {
+                appliedEditCoupon = null;
+                populateCouponSelectBox('editCouponSelect', '');
+                syncCouponToOrderSummary(true);
+                if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
+                return;
+            }
+
+            const matched =
+                (typeof findCouponByCode === 'function' && (findCouponByCode(clean) || findCouponByCode(code))) ||
+                (window.__initialEditCoupon && String(window.__initialEditCoupon.code || window.__initialEditCoupon.couponId || '').trim().toUpperCase() === clean ? window.__initialEditCoupon : null) ||
+                null;
+
+            let fallbackDisc = 0;
+            if (!matched) {
+                const selEl = document.getElementById('editCouponSelect');
+                const opt = selEl && Array.prototype.find.call(selEl.options || [], o => String(o.value || '').trim().toUpperCase() === clean);
+                const optTxt = opt ? String(opt.textContent || '') : '';
+                const mWon = optTxt.match(/([0-9,]+)\s*원/);
+                if (mWon) fallbackDisc = parseInt(mWon[1].replace(/[^0-9]/g, ''), 10) || 0;
+            }
+
+            appliedEditCoupon = matched
+                ? Object.assign({}, matched)
+                : {
+                    code: clean,
+                    couponId: clean,
+                    name: fallbackDisc > 0 ? `${fallbackDisc.toLocaleString()}원 할인쿠폰` : clean,
+                    couponName: fallbackDisc > 0 ? `${fallbackDisc.toLocaleString()}원 할인쿠폰` : clean,
+                    discountType: 'amount',
+                    value: fallbackDisc,
+                    discountAmount: fallbackDisc,
+                    minOrder: 0
+                };
+
             populateCouponSelectBox('editCouponSelect', clean);
             syncCouponToOrderSummary(true);
             if (typeof refreshEditDiffCard === 'function') refreshEditDiffCard();
