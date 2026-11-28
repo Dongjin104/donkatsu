@@ -3080,6 +3080,43 @@
             padding: 8px 12px !important;
             line-height: 1.45 !important;
         }
+
+        /* [6-1단계] 일반 텍스트·전화번호·요청 입력창 아틀리에 통일 */
+        input[type="text"],
+        input[type="tel"],
+        input[type="number"],
+        textarea {
+            box-sizing: border-box;
+            border: 1.5px solid #DFC793;
+            border-radius: 12px;
+            background: #FFFDF8;
+            color: var(--text-main, #241D14);
+            font-family: inherit;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 2px 8px rgba(28, 27, 24, 0.03);
+        }
+
+        input[type="text"]:focus,
+        input[type="tel"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #9A6B16;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.22);
+        }
+
+        input[type="text"]:disabled,
+        input[type="tel"]:disabled,
+        input[type="number"]:disabled,
+        textarea:disabled,
+        input[readonly],
+        textarea[readonly] {
+            background: #F5EFE3;
+            border-color: #E5D6B8;
+            color: #7D6D52;
+            box-shadow: none;
+        }
     </style>
 </head>
 
