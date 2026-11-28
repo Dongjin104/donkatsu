@@ -10777,6 +10777,10 @@
                 } else {
                     clearReservedSessionLock();
                     try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
+                    const pickupEl = document.getElementById('pickupCompletedNotice');
+                    const alreadyEl = document.getElementById('alreadyOrderedNotice');
+                    if (pickupEl) pickupEl.style.display = 'none';
+                    if (alreadyEl) alreadyEl.style.display = 'none';
                     if (!keepActiveMenuEditView()) {
                         showOpenOrderScreen(sess);
                     }
