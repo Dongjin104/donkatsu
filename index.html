@@ -8189,7 +8189,7 @@
                 buttonText: '예약 내역 확인하기'
             }, onClose);
         }
-        
+
         let appliedMainCoupon = null;
         let appliedEditCoupon = null;
         let appliedQuickCoupon = null;
@@ -10861,6 +10861,12 @@
             }
 
             isUpdatingReservation = true;
+            window.__suppressCouponPopupUntil = Date.now() + 5000;
+            try {
+                sessionStorage.setItem('donkatsu_just_updated_reservation', '1');
+                localStorage.setItem('donkatsu_just_updated_reservation', '1');
+            } catch (e) { }
+
             const updateBtn = document.getElementById('updateBtn');
             if (updateBtn) updateBtn.disabled = true;
             showModal('updatingModal');
@@ -10977,27 +10983,6 @@
                     playAtelierTouchSound('success');
                     populateUpdateSuccessModalDetails(updatedObj);
                     showModal('updateSuccessModal');
-
-                    if (finalCouponDiscount > 0 && typeof showCouponAppliedPopup === 'function') {
-                        const appliedKey = `edit_${String(currentFoundRowIndex || nick || '')}_${finalCouponCode}_${finalCouponDiscount}_${totalPriceNum}`;
-                        if (!__shownAppliedCouponKeys.has(appliedKey)) {
-                            __shownAppliedCouponKeys.add(appliedKey);
-                            const origAmt = totalPriceNum;
-                            const finalAmt = Math.max(0, totalPriceNum - finalCouponDiscount);
-                            setTimeout(() => {
-                                showCouponAppliedPopup(
-                                    {
-                                        code: finalCouponCode,
-                                        name: finalCouponName || `${finalCouponDiscount.toLocaleString()}원 할인쿠폰`
-                                    },
-                                    origAmt,
-                                    finalCouponDiscount,
-                                    finalAmt
-                                );
-                            }, 220);
-                        }
-                    }
-
                     preserveScrollPos(keptY);
                 } else {
                     showCustomAlert("수정 안내", data.message || "예약 수정에 실패했습니다.");
