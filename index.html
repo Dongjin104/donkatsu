@@ -7099,7 +7099,7 @@
                 } catch (err) { }
             }
         }
-        
+
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
@@ -9852,6 +9852,58 @@
 
                 if (!data || data.result !== 'found') {
                     hideModal('searchModal');
+                    if (typeof hideModal === 'function') hideModal('successModal');
+                    if (typeof clearReservedSessionLock === 'function') clearReservedSessionLock();
+                    lastLiveSnapshotSignature = "";
+                    try { localStorage.removeItem("donkatsu_cached_customer_state_v2_kst"); } catch (e) { }
+
+                    const alreadyEl = document.getElementById('alreadyOrderedNotice');
+                    const pickupEl = document.getElementById('pickupCompletedNotice');
+                    const closedEl = document.getElementById('closedNotice');
+                    const topNoticeEl = document.getElementById('topNoticeBox');
+                    const quickBoxEl = document.getElementById('quickReorderBox');
+                    const orderFormEl = document.getElementById('orderForm');
+
+                    if (alreadyEl) alreadyEl.style.display = 'none';
+                    if (pickupEl) pickupEl.style.display = 'none';
+                    if (closedEl) closedEl.style.display = 'none';
+                    if (topNoticeEl) topNoticeEl.style.display = 'block';
+
+                    const hasRealLastOrder = (typeof hasValidLastOrderSummary === 'function')
+                        ? hasValidLastOrderSummary()
+                        : (() => {
+                            try {
+                                const raw = localStorage.getItem('lastOrderSummary') || '';
+                                if (!raw) return false;
+                                const obj = JSON.parse(raw);
+                                return !!(obj && (String(obj.menu || '').trim() || Number(obj.totalPrice || 0) > 0));
+                            } catch (err) {
+                                return false;
+                            }
+                        })();
+
+                    if (hasRealLastOrder) {
+                        if (typeof saveCustomerStateCache === 'function') {
+                            saveCustomerStateCache({ type: 'quick_reorder' });
+                        }
+                        if (quickBoxEl) quickBoxEl.style.display = 'block';
+                        if (orderFormEl) orderFormEl.style.display = 'none';
+                        if (typeof renderQuickReorderBox === 'function') {
+                            renderQuickReorderBox();
+                        }
+                    } else {
+                        if (typeof saveCustomerStateCache === 'function') {
+                            saveCustomerStateCache({ type: 'new' });
+                        }
+                        if (quickBoxEl) quickBoxEl.style.display = 'none';
+                        if (orderFormEl) {
+                            orderFormEl.style.display = 'block';
+                            if (typeof renderMenuAndSauceCards === 'function') renderMenuAndSauceCards();
+                            if (typeof populateTimeSelect === 'function') populateTimeSelect('pickupTime', '', false);
+                            if (typeof handleMainCookTypeChange === 'function') handleMainCookTypeChange();
+                        }
+                    }
+
                     showCustomAlert("예약 조회", "수정 가능한 예약 내역을 찾지 못했습니다.");
                     preserveScrollPos(keptY);
                     return;
