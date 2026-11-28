@@ -2656,9 +2656,9 @@
         .coupon-atelier-card {
             background: linear-gradient(145deg, #FFFDF8 0%, #FBF6EA 60%, #F6EFE0 100%);
             border: 1.5px solid #D8BC82;
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 10px 24px -10px rgba(28, 27, 24, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            border-radius: 13px;
+            padding: 9px 12px;
+            box-shadow: 0 8px 20px -12px rgba(28, 27, 24, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
         .coupon-top-row {
@@ -2666,7 +2666,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin-bottom: 10px;
+            min-height: 26px;
         }
 
         .coupon-pill-tag {
@@ -2686,13 +2686,15 @@
         .coupon-discount-pill {
             display: inline-flex;
             align-items: center;
-            padding: 3px 9px;
+            padding: 4px 9px;
             border-radius: 999px;
             background: rgba(197, 160, 89, 0.16);
             border: 1px solid rgba(197, 160, 89, 0.45);
             color: #8A5E12;
             font-size: 11.5px;
             font-weight: 800;
+            line-height: 1;
+            white-space: nowrap;
             font-variant-numeric: tabular-nums;
         }
 
@@ -2750,8 +2752,9 @@
             gap: 8px;
             margin: 0;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 800;
+            line-height: 1.2;
             color: #1C1B18;
         }
 
