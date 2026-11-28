@@ -5891,7 +5891,7 @@
             }
         }
 
-        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success, dropdownOpen)
+        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundPools = {};
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
@@ -5904,8 +5904,7 @@
             tap: './sound/tap.mp3',
             drop: './sound/drop.mp3',
             confirm: './sound/confirm.mp3',
-            success: './sound/success.mp3',
-            dropdownOpen: './sound/dropdown_open.mp3'
+            success: './sound/success.mp3'
         };
 
         function __normalizeVolumeScale(rawVal) {
@@ -5969,7 +5968,7 @@
             let baseVol = 0.35;
             if (type === 'success') baseVol = 0.5;
             else if (type === 'confirm') baseVol = 0.45;
-            else if (type === 'drop' || type === 'dropdownOpen') baseVol = 0.32;
+            else if (type === 'drop') baseVol = 0.32;
 
             const scaled = baseVol * ATELIER_TOUCH_VOLUME_SCALE;
             return Math.max(0, Math.min(1, Number(scaled.toFixed(3))));
@@ -6054,8 +6053,7 @@
                 tap: 0,
                 drop: 0,
                 confirm: 0,
-                success: 0,
-                dropdownOpen: 0
+                success: 0
             };
 
             function clearPendingSound() {
@@ -6137,16 +6135,9 @@
                     return 'confirm';
                 }
 
-                // 드롭박스 열기(pointerdown)는 전용 소리 dropdown_open.mp3 재생
-                const dropdownOpenEl = target.closest(
-                    'select, [role="combobox"], [role="listbox"], .select-box, .dropdown-toggle'
-                );
-                if (dropdownOpenEl && !dropdownOpenEl.disabled) {
-                    return 'dropdownOpen';
-                }
-
+                // select 드롭박스는 열 때 소리 없이 값 선택(change) 시 tap 1회만 재생
                 const dropEl = target.closest(
-                    '.qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
+                    '[role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
                 if (dropEl && !dropEl.disabled) {
                     return 'drop';
@@ -6220,8 +6211,7 @@
                 }
 
                 if (el.tagName === 'SELECT') {
-                    // 열 때 이미 dropdownOpen이 울렸으므로 선택(change) 시 중복 재생 방지
-                    return;
+                    playOnceAtelierTouchSound('tap');
                 } else if (el.type === 'checkbox') {
                     playOnceAtelierTouchSound('tap');
                 }
