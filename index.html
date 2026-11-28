@@ -8313,24 +8313,23 @@
                 return d ? (parseInt(d, 10) || 0) : 0;
             }
 
-            const hasCouponArray =
-                (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
-                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0) ||
-                (Array.isArray(window.myAvailableCoupons) && window.myAvailableCoupons.length > 0) ||
-                (Array.isArray(window.availableCoupons) && window.availableCoupons.length > 0);
+            function normalizeCouponItem(c, forceCode) {
+                if (!c || typeof c !== 'object') return null;
+                const code = String(
+                    forceCode ||
+                    c.code ||
+                    c.couponCode ||
+                    c.couponId ||
+                    c.id ||
+                    ''
+                ).trim().toUpperCase();
 
-            const list = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
-            const currentCode = String(selectedCode || '').trim().toUpperCase();
-
-            const mergedList = [];
-            const seenCodes = new Set();
-            const seenKeys = new Set();
-
-            function pushUniqueCoupon(c) {
-                if (!c) return;
-                const code = String(c.code || c.couponId || c.id || '').trim().toUpperCase();
-                let val = parseAmountVal(c.value ?? c.discountAmount ?? c.discount ?? c.amount ?? 0);
-                const rawName = String(c.name || c.couponName || c.title || '').trim();
+                let val = parseAmountVal(
+                    c.value ?? c.discountAmount ?? c.couponDiscount ?? c.discount ?? c.amount ?? 0
+                );
+                const rawName = String(
+                    c.name || c.couponName || c.usedCouponName || c.appliedCouponName || c.title || c.label || ''
+                ).trim();
 
                 if (!val && rawName) {
                     const wonMatch = rawName.match(/\(\s*-\s*([0-9,]+)\s*원\s*\)|([0-9,]+)\s*원/);
@@ -8340,25 +8339,25 @@
                 }
 
                 const cleanName = cleanCouponDisplayName(rawName);
-                if (!code && val <= 0 && !cleanName) return;
+                if (!code && val <= 0 && !cleanName) return null;
 
-                if (code && seenCodes.has(code)) return;
-                const fallbackKey = `${cleanName || code}__${val}`;
-                if (!code && seenKeys.has(fallbackKey)) return;
-
-                if (code) seenCodes.add(code);
-                seenKeys.add(fallbackKey);
-
-                const safeName = cleanName || (val > 0 ? `${val.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
-
-                mergedList.push({
-                    code: code || '__APPLIED__',
-                    name: safeName,
+                return {
+                    code: code,
+                    name: cleanName || (val > 0 ? `${val.toLocaleString()}원 할인쿠폰` : '할인쿠폰'),
                     discountType: c.discountType || 'amount',
                     value: val,
                     minOrder: Number(c.minOrder) || 0
-                });
+                };
             }
+
+            const hasCouponArray =
+                (Array.isArray(window.globalMyCoupons) && window.globalMyCoupons.length > 0) ||
+                (Array.isArray(window.globalCouponList) && window.globalCouponList.length > 0) ||
+                (Array.isArray(window.myAvailableCoupons) && window.myAvailableCoupons.length > 0) ||
+                (Array.isArray(window.availableCoupons) && window.availableCoupons.length > 0);
+
+            const list = typeof getAvailableCouponsList === 'function' ? getAvailableCouponsList() : [];
+            const currentCode = String(selectedCode || '').trim().toUpperCase();
 
             function findMatchedCouponInfo(code) {
                 if (!code) return null;
@@ -8383,22 +8382,15 @@
                         if (!item || typeof item !== 'object') continue;
                         const itemCode = String(item.code || item.couponCode || item.couponId || item.id || '').trim().toUpperCase();
                         if (itemCode && itemCode === code) {
-                            const itemName = cleanCouponDisplayName(item.name || item.couponName || item.title || item.label || '');
-                            const itemVal = parseAmountVal(item.value ?? item.discountAmount ?? item.discount ?? item.amount ?? 0);
-                            if (itemName || itemVal > 0) {
-                                return {
-                                    code: code,
-                                    name: itemName || `${itemVal.toLocaleString()}원 할인쿠폰`,
-                                    value: itemVal
-                                };
-                            }
+                            const norm = normalizeCouponItem(item, code);
+                            if (norm) return norm;
                         }
                     }
                 }
 
                 const extraObjs = [
-                    (typeof appliedEditCoupon !== 'undefined' ? appliedEditCoupon : null),
-                    window.__initialEditCoupon,
+                    (selectId === 'editCouponSelect' && typeof appliedEditCoupon !== 'undefined' ? appliedEditCoupon : null),
+                    (selectId === 'editCouponSelect' ? window.__initialEditCoupon : null),
                     window.currentReservationData,
                     window.lastReservationData
                 ];
@@ -8409,51 +8401,63 @@
                     const objCode = String(
                         obj.code || obj.couponCode || obj.appliedCouponCode || obj.usedCouponCode || obj.couponId || ''
                     ).trim().toUpperCase();
-                    const objName = cleanCouponDisplayName(
-                        obj.name || obj.couponName || obj.usedCouponName || obj.appliedCouponName || ''
-                    );
-                    const objVal = parseAmountVal(
-                        obj.value ?? obj.discountAmount ?? obj.couponDiscount ?? obj.discount ?? obj.amount ?? 0
-                    );
-                    if ((objCode && objCode === code) || objName || objVal > 0) {
-                        if (objName || objVal > 0) {
-                            return {
-                                code: code,
-                                name: objName || `${objVal.toLocaleString()}원 할인쿠폰`,
-                                value: objVal
-                            };
-                        }
+                    if (objCode && objCode === code) {
+                        const norm = normalizeCouponItem(obj, code);
+                        if (norm) return norm;
                     }
                 }
 
                 return null;
             }
 
-            if (selectId === 'editCouponSelect') {
-                const initC = window.__initialEditCoupon;
-                if (initC && (parseAmountVal(initC.value ?? initC.discountAmount ?? initC.discount ?? 0) > 0 || cleanCouponDisplayName(initC.name || initC.couponName))) {
-                    pushUniqueCoupon(initC);
-                }
-                if (typeof appliedEditCoupon !== 'undefined' && appliedEditCoupon && (parseAmountVal(appliedEditCoupon.value ?? appliedEditCoupon.discountAmount ?? appliedEditCoupon.discount ?? 0) > 0 || cleanCouponDisplayName(appliedEditCoupon.name || appliedEditCoupon.couponName))) {
-                    pushUniqueCoupon(appliedEditCoupon);
+            const mergedList = [];
+            const seenCodes = new Set();
+            const seenKeys = new Set();
+
+            function pushUniqueCoupon(rawItem, forceCode) {
+                const norm = normalizeCouponItem(rawItem, forceCode);
+                if (!norm) return;
+
+                const code = String(norm.code || '').trim().toUpperCase();
+                if (code && seenCodes.has(code)) return;
+
+                const fallbackKey = `${norm.name || code}__${norm.value}`;
+                if (!code && seenKeys.has(fallbackKey)) return;
+
+                if (code) seenCodes.add(code);
+                seenKeys.add(fallbackKey);
+
+                mergedList.push({
+                    code: code || '__APPLIED__',
+                    name: norm.name,
+                    discountType: norm.discountType,
+                    value: norm.value,
+                    minOrder: norm.minOrder
+                });
+            }
+
+            // 1. 현재 선택/적용 중인 쿠폰이 있으면 먼저 기준으로 반영(시트에서 사용완료 처리된 현재 적용 쿠폰도 드롭박스에 유지)
+            if (currentCode) {
+                const matchedCurrent = findMatchedCouponInfo(currentCode);
+                if (matchedCurrent) {
+                    pushUniqueCoupon(matchedCurrent, currentCode);
+                } else {
+                    pushUniqueCoupon({
+                        code: currentCode,
+                        name: '할인쿠폰',
+                        discountType: 'amount',
+                        value: 0,
+                        minOrder: 0
+                    }, currentCode);
                 }
             }
 
-            list.forEach(c => pushUniqueCoupon(c));
-
-            if (currentCode && !seenCodes.has(currentCode)) {
-                const matched = findMatchedCouponInfo(currentCode);
-                const fallbackDisc = matched ? matched.value : 0;
-                const fallbackName = matched
-                    ? matched.name
-                    : (fallbackDisc > 0 ? `${fallbackDisc.toLocaleString()}원 할인쿠폰` : '할인쿠폰');
-
-                pushUniqueCoupon({
-                    code: currentCode,
-                    name: fallbackName,
-                    discountType: 'amount',
-                    value: fallbackDisc,
-                    minOrder: 0
+            // 2. 시트 기준 사용 가능 쿠폰 목록 반영(이미 현재 선택 쿠폰으로 들어간 코드는 중복 제외)
+            if (Array.isArray(list)) {
+                list.forEach(c => {
+                    const cCode = String((c && (c.code || c.couponCode || c.couponId || c.id)) || '').trim().toUpperCase();
+                    if (currentCode && cCode && cCode === currentCode) return;
+                    pushUniqueCoupon(c);
                 });
             }
 
@@ -8470,7 +8474,8 @@
             } else {
                 mergedList.forEach(c => {
                     const code = String(c.code || '').trim().toUpperCase();
-                    const selectedAttr = currentCode === code ? ' selected' : '';
+                    const isSelected = Boolean(currentCode && code === currentCode);
+                    const selectedAttr = isSelected ? ' selected' : '';
                     const cleanOptName = cleanCouponDisplayName(c.name) || (Number(c.value) > 0 ? `${Number(c.value).toLocaleString()}원 할인쿠폰` : '할인쿠폰');
                     const cleanItem = Object.assign({}, c, { name: cleanOptName });
                     const label = typeof formatCouponOptionLabel === 'function'
@@ -8484,7 +8489,7 @@
             sel.value = currentCode;
             sel.disabled = false;
         }
-
+        
         function onSelectMainCouponDrop(code) {
             const rawCode = String(code || '').trim();
             if (!rawCode) {
@@ -11058,7 +11063,7 @@
                 if (updateBtn) updateBtn.disabled = false;
             }
         }
-        
+
         function setLoadingSkeletonVisible(visible) {
             const loadingOverlay = document.getElementById('pageLoadingOverlay');
             if (loadingOverlay) {
