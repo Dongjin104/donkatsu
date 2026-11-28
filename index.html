@@ -3362,6 +3362,55 @@
             word-break: keep-all;
             overflow-wrap: break-word;
         }
+
+        .net-pill {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            z-index: 20;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1;
+            background: rgba(255, 253, 248, 0.92);
+            border: 1px solid rgba(120, 95, 55, 0.14);
+            color: #4a4338;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            user-select: none;
+            pointer-events: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .net-dot {
+            width: 6.5px;
+            height: 6.5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #22c55e;
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.16);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .net-pill.is-sync .net-dot {
+            background: #eab308;
+            box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.18);
+        }
+
+        .net-pill.is-warn {
+            background: rgba(254, 242, 242, 0.96);
+            border-color: rgba(239, 68, 68, 0.24);
+            color: #991b1b;
+        }
+
+        .net-pill.is-warn .net-dot {
+            background: #ef4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
+        }
     </style>
 </head>
 
@@ -3437,7 +3486,11 @@
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" style="position: relative;">
+        <div id="customerNetStatus" class="net-pill is-ok" aria-live="polite">
+            <span class="net-dot"></span>
+            <span class="net-label">방금 반영됨</span>
+        </div>
         <div class="header-wrapper">
             <div class="brand-badge">PREMIUM TONKATSU</div>
             <h1>장날동천 돈가스 예약</h1>
@@ -7339,6 +7392,9 @@
             const savedNick = sess.identifier || localStorage.getItem('savedNickname') || (typeof TripleStorage !== 'undefined' && typeof TripleStorage.getCookie === 'function' ? TripleStorage.getCookie('savedNickname') : '') || globalUserNickname || "";
 
             isLiveSyncRequest = true;
+            if (typeof setCustomerNetStatus === 'function') {
+                setCustomerNetStatus('sync', '동기화 중');
+            }
             try {
                 const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
@@ -7356,8 +7412,18 @@
                 });
                 const text = await res.text();
                 let data = null;
-                try { data = JSON.parse(text); } catch (e) { return; }
-                if (!data) return;
+                try { data = JSON.parse(text); } catch (e) {
+                    if (typeof setCustomerNetStatus === 'function') {
+                        setCustomerNetStatus('warn', '연결 불안정');
+                    }
+                    return;
+                }
+                if (!data) {
+                    if (typeof setCustomerNetStatus === 'function') {
+                        setCustomerNetStatus('warn', '연결 불안정');
+                    }
+                    return;
+                }
 
                 if (Array.isArray(data.myCoupons)) {
                     window.globalMyCoupons = data.myCoupons;
@@ -7373,8 +7439,16 @@
                     window.isLoadingCoupons = false;
                 }
 
-                if (!forceApply && isPageSkeletonLoadingActive()) return;
+                if (!forceApply && isPageSkeletonLoadingActive()) {
+                    if (typeof setCustomerNetStatus === 'function') {
+                        setCustomerNetStatus('ok', '방금 반영됨');
+                    }
+                    return;
+                }
                 if (!forceApply && Date.now() < localOptimisticLockUntil) {
+                    if (typeof setCustomerNetStatus === 'function') {
+                        setCustomerNetStatus('ok', '방금 반영됨');
+                    }
                     return;
                 }
 
@@ -7405,6 +7479,9 @@
                     if (closedByTimeOrFlagNow && !isAdminTest) {
                         if (typeof showClosedNoticeScreen === 'function') showClosedNoticeScreen();
                     }
+                    if (typeof setCustomerNetStatus === 'function') {
+                        setCustomerNetStatus('ok', '방금 반영됨');
+                    }
                     return;
                 }
                 lastLiveSnapshotSignature = nextSig;
@@ -7412,13 +7489,21 @@
                 if (data.settings || Array.isArray(data.pickupTimesList) || data.isClosed !== undefined) {
                     saveSettingsCache(mergedSettings);
                     applySettingsObject(mergedSettings);
-                    if (mergedSettings.isBlocked) return;
+                    if (mergedSettings.isBlocked) {
+                        if (typeof setCustomerNetStatus === 'function') {
+                            setCustomerNetStatus('ok', '방금 반영됨');
+                        }
+                        return;
+                    }
                 }
 
                 const isClosedNow = Boolean(mergedSettings.isClosed) || (typeof checkClosedStatus === 'function' && checkClosedStatus());
                 if (isClosedNow && !isAdminTest) {
                     if (typeof showClosedNoticeScreen === 'function') {
                         showClosedNoticeScreen();
+                    }
+                    if (typeof setCustomerNetStatus === 'function') {
+                        setCustomerNetStatus('ok', '방금 반영됨');
                     }
                     return;
                 }
@@ -7427,6 +7512,9 @@
                 if (reservationData) {
                     if (reservationData.result === "blocked") {
                         enforceBlockedOverlay(reservationData.message);
+                        if (typeof setCustomerNetStatus === 'function') {
+                            setCustomerNetStatus('ok', '방금 반영됨');
+                        }
                         return;
                     }
 
@@ -7437,6 +7525,9 @@
                             const dismissedCompleted = isDismissedCompletedForReorder();
                             if (dismissedCompleted || isOrderFormEditingActive()) {
                                 showNewOrQuickReorderScreen();
+                                if (typeof setCustomerNetStatus === 'function') {
+                                    setCustomerNetStatus('ok', '방금 반영됨');
+                                }
                                 return;
                             }
 
@@ -7448,6 +7539,9 @@
                             document.getElementById('quickReorderBox').style.display = 'none';
                             document.getElementById('closedNotice').style.display = 'none';
                             setLoadingSkeletonVisible(false);
+                            if (typeof setCustomerNetStatus === 'function') {
+                                setCustomerNetStatus('ok', '방금 반영됨');
+                            }
                             return;
                         }
 
@@ -7470,6 +7564,9 @@
                         if ((typeof isAlreadyOrderedScreenVisible === 'function' && isAlreadyOrderedScreenVisible()) || !isOrderFormEditingActive()) {
                             renderActiveReservationNotice(reservationData);
                         }
+                        if (typeof setCustomerNetStatus === 'function') {
+                            setCustomerNetStatus('ok', '방금 반영됨');
+                        }
                         return;
                     }
 
@@ -7480,7 +7577,14 @@
                         showNewOrQuickReorderScreen();
                     }
                 }
+
+                if (typeof setCustomerNetStatus === 'function') {
+                    setCustomerNetStatus('ok', '방금 반영됨');
+                }
             } catch (e) {
+                if (typeof setCustomerNetStatus === 'function') {
+                    setCustomerNetStatus('warn', '연결 불안정');
+                }
             } finally {
                 isLiveSyncRequest = false;
                 try {
@@ -7493,7 +7597,6 @@
                 } catch (err) { }
             }
         }
-
         function startLiveCustomerSync() {
             stopLiveCustomerSync();
             liveSyncStartedAt = Date.now();
@@ -12586,6 +12689,39 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             runFullAppInitialization();
+        });
+        function setCustomerNetStatus(state = 'ok', text = '') {
+            const pill = document.getElementById('customerNetStatus');
+            if (!pill) return;
+            const label = pill.querySelector('.net-label');
+
+            pill.classList.remove('is-ok', 'is-sync', 'is-warn');
+
+            if (state === 'sync') {
+                pill.classList.add('is-sync');
+                if (label) label.textContent = text || '동기화 중';
+            } else if (state === 'warn') {
+                pill.classList.add('is-warn');
+                if (label) label.textContent = text || '연결 불안정';
+            } else {
+                pill.classList.add('is-ok');
+                if (label) label.textContent = text || '방금 반영됨';
+            }
+        }
+
+        window.addEventListener('offline', () => {
+            setCustomerNetStatus('warn', '연결 끊김');
+        });
+
+        window.addEventListener('online', () => {
+            setCustomerNetStatus('sync', '다시 연결 중');
+            if (typeof syncCustomerScreenWithSheet === 'function') {
+                Promise.resolve(syncCustomerScreenWithSheet(true))
+                    .then(() => setCustomerNetStatus('ok', '방금 반영됨'))
+                    .catch(() => setCustomerNetStatus('warn', '연결 불안정'));
+            } else {
+                setCustomerNetStatus('ok', '방금 반영됨');
+            }
         });
     </script>
     <div id="luxuryMenuAlertModal" class="luxury-notice-backdrop">
