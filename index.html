@@ -6092,6 +6092,13 @@
                 return Boolean(target.closest('label[for="cook1"], label[for="cook2"], .radio-btn'));
             }
 
+            function isImmediateModalCloseButton(target) {
+                if (!target || typeof target.closest !== 'function') return null;
+                const btn = target.closest('.modal-btn, .close-btn, [onclick*="closeCookingGuideModal"]');
+                if (!btn || btn.disabled) return null;
+                return btn;
+            }
+
             function isAtelierLoadingScreenVisible() {
                 const candidates = document.querySelectorAll(
                     '[id*="loading" i], [id*="Loading"], [class*="loading" i], [class*="Loading"], [id*="submitting" i], [class*="submitting" i], [id*="progress" i], [id*="spinner" i]'
@@ -6122,22 +6129,8 @@
             function resolveSoundType(target) {
                 if (!target || typeof target.closest !== 'function') return null;
 
-                // 퀵쿠폰 스위치는 실제 상태 변경(change) 시 tap 1회만 재생해 2중 소리 방지
-                if (isQuickCouponTarget(target)) {
+                if (isQuickCouponTarget(target) || isCookTypeTarget(target)) {
                     return null;
-                }
-
-                // 조리방식(튀겨서 포장/생고기) 라디오/라벨은 change 시 1회 재생해 중복 방지
-                if (isCookTypeTarget(target)) {
-                    return null;
-                }
-
-                // 조리법 안내 모달의 "확인했습니다" 등 모달 버튼은 tap 재생
-                const modalBtnEl = target.closest(
-                    '.modal-btn, .close-btn, [onclick*="closeCookingGuideModal"]'
-                );
-                if (modalBtnEl && !modalBtnEl.disabled) {
-                    return 'tap';
                 }
 
                 const inDoneModal = target.closest(
@@ -6169,7 +6162,7 @@
                 }
 
                 const tapEl = target.closest(
-                    'button'
+                    'button, .modal-btn, .close-btn'
                 );
                 if (tapEl && !tapEl.disabled) {
                     return 'tap';
@@ -6196,7 +6189,15 @@
                 downX = e.clientX;
                 downY = e.clientY;
 
-                if (scrollOccurred || isAtelierLoadingScreenVisible()) return;
+                if (isAtelierLoadingScreenVisible()) return;
+
+                // 모달 닫기/확인 버튼은 스크롤 복원 간섭 없이 즉시 1회 재생
+                if (isImmediateModalCloseButton(e.target)) {
+                    playOnceAtelierTouchSound('tap');
+                    return;
+                }
+
+                if (scrollOccurred) return;
 
                 if (isQuickCouponTarget(e.target) || isCookTypeTarget(e.target)) {
                     pendingIsQuickCoupon = true;
