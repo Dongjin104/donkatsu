@@ -5832,10 +5832,13 @@
             }
         }
 
-        // [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
+// [6-3단계] ./sound/ MP3 효과음 플레이어 (tap, drop, confirm, success)
         const __atelierSoundPools = {};
         const __atelierSoundCursor = {};
         const ATELIER_SOUND_POOL_SIZE = 3;
+
+        // UI 조작 효과음 전체 볼륨 배율 (0.0 ~ 1.0, 값이 낮을수록 작게 들림)
+        const ATELIER_TOUCH_VOLUME_SCALE = 0.45;
 
         const ATELIER_SOUND_MAP = {
             tap: './sound/tap.mp3',
@@ -5845,9 +5848,13 @@
         };
 
         function __getAtelierSoundVolume(type) {
-            if (type === 'success') return 0.5;
-            if (type === 'confirm') return 0.45;
-            return 0.35;
+            let baseVol = 0.35;
+            if (type === 'success') baseVol = 0.5;
+            else if (type === 'confirm') baseVol = 0.45;
+            else if (type === 'drop') baseVol = 0.32;
+
+            const scaled = baseVol * ATELIER_TOUCH_VOLUME_SCALE;
+            return Math.max(0, Math.min(1, Number(scaled.toFixed(3))));
         }
 
         function __ensureAtelierSoundPool(type) {
@@ -5907,7 +5914,7 @@
             }
         }
 
-        // [6-3단계] 화면의 버튼·카드·팝업 조작 시 즉시 반응 + 스크롤 시 재생 취소
+        // [6-3단계] 화면의 버튼·드롭박스·스위치·카드·팝업 조작 시 즉시 반응 + 스크롤 시 재생 취소
         (function bindAtelierTouchSounds() {
             if (window.__atelierTouchSoundBound) return;
             window.__atelierTouchSoundBound = true;
@@ -5975,12 +5982,20 @@
                     return 'confirm';
                 }
 
-                // 메뉴 카드·수량(+/-) 버튼 -> drop.mp3
+                // 드롭박스(select) 및 커스텀 드롭다운/메뉴 카드·수량(+/-) 버튼 -> drop.mp3
                 const dropEl = target.closest(
-                    '.qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
+                    'select, [role="combobox"], [role="listbox"], .select-box, .dropdown-toggle, .qty-btn, .btn-qty, .count-btn, .menu-card, .menu-item, .option-card, .sauce-card, button[class*="qty"], button[class*="plus"], button[class*="minus"]'
                 );
                 if (dropEl && !dropEl.disabled) {
                     return 'drop';
+                }
+
+                // 토글 스위치(ON/OFF) -> tap.mp3 (필요 시 'confirm' 또는 'drop'으로 변경 가능)
+                const switchEl = target.closest(
+                    'input[type="checkbox"], [role="switch"], label[for*="Coupon" i], label[for*="Switch" i], label[for*="Toggle" i], [class*="switch" i], [class*="toggle" i]'
+                );
+                if (switchEl && !switchEl.disabled) {
+                    return 'tap';
                 }
 
                 // 그 외 일반 버튼·모달 닫기/취소 -> tap.mp3
@@ -6025,6 +6040,23 @@
                         playAtelierTouchSound(typeToPlay);
                     }
                 }, SCROLL_CANCEL_DELAY_MS);
+            }, { passive: true, capture: true });
+
+            // 드롭박스(select)는 PC/모바일에서 항목을 고를 때 change 이벤트가 확실히 울리도록 보완
+            document.addEventListener('change', function (e) {
+                if (!e.isTrusted) return;
+                const el = e.target;
+                if (!el || el.disabled) return;
+
+                if (el.tagName === 'SELECT') {
+                    if (!scrollOccurred && !isAtelierLoadingScreenVisible()) {
+                        playAtelierTouchSound('drop');
+                    }
+                } else if (el.type === 'checkbox') {
+                    if (!scrollOccurred && !isAtelierLoadingScreenVisible()) {
+                        playAtelierTouchSound('tap');
+                    }
+                }
             }, { passive: true, capture: true });
 
             document.addEventListener('pointermove', function (e) {
